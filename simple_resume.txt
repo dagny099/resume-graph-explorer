@@ -1,0 +1,32 @@
+John Smith
+john.smith@email.com
+(555) 123-4567
+San Francisco, CA
+
+PROFESSIONAL SUMMARY
+Software engineer with 5 years of experience in web development and cloud infrastructure.
+
+WORK EXPERIENCE
+
+Software Engineer
+Tech Company Inc., San Francisco, CA
+January 2021 - Present
+- Developed web applications using React and Node.js
+- Implemented CI/CD pipelines using GitHub Actions
+- Collaborated with cross-functional teams on product features
+
+Junior Developer
+StartupCo, Palo Alto, CA
+June 2019 - December 2020
+- Built RESTful APIs using Python and Flask
+- Maintained database systems (PostgreSQL)
+- Participated in agile development processes
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+University of California, Berkeley
+Graduated: May 2019
+
+SKILLS
+Python, JavaScript, React, Node.js, PostgreSQL

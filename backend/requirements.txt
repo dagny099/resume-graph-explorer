@@ -1,0 +1,65 @@
+# Resume Explorer - Backend Dependencies
+# Install with: pip install -r requirements.txt
+
+# ==============================================================================
+# Core Flask Framework
+# ==============================================================================
+flask>=3.0.0
+flask-cors>=4.0.0                    # CORS support for React frontend
+flask-socketio>=5.3.0                # WebSocket support for real-time updates
+python-socketio>=5.10.0              # Socket.IO client/server
+werkzeug>=3.0.0                      # WSGI utilities
+
+# ==============================================================================
+# LLM Provider Abstraction (from montrose-marathon patterns)
+# ==============================================================================
+dspy-ai>=2.4.9                       # DSPy for advanced LLM pipelines
+anthropic>=0.18.0                    # Claude API client
+openai>=1.12.0                       # OpenAI API client
+requests>=2.31.0                     # HTTP client for Ollama and custom backends
+
+# ==============================================================================
+# RDF & Semantic Web (SKOS compliance)
+# ==============================================================================
+rdflib>=7.0.0                        # RDF graph manipulation
+rdflib-jsonld>=0.6.2                 # JSON-LD serialization support
+
+# ==============================================================================
+# Graph & Network Analysis
+# ==============================================================================
+networkx>=3.2                        # Graph algorithms and NetworkX adapter
+
+# ==============================================================================
+# Document Processing
+# ==============================================================================
+PyMuPDF>=1.23.0                      # PDF extraction (primary)
+pdfplumber>=0.10.0                   # PDF extraction (fallback)
+python-docx>=1.1.0                   # Word document processing
+python-magic>=0.4.27                 # File type detection
+
+# ==============================================================================
+# Data Validation & Serialization
+# ==============================================================================
+pydantic>=2.5.0                      # Data validation with type hints
+python-dateutil>=2.8.2               # Date/time parsing utilities
+python-dotenv>=1.0.0                 # Environment variable management
+
+# ==============================================================================
+# Optional: Experiment Tracking
+# ==============================================================================
+mlflow>=2.10.0                       # ML experiment tracking (optional)
+
+# ==============================================================================
+# Utilities
+# ==============================================================================
+uuid>=1.30                           # UUID generation for entities
+typing-extensions>=4.8.0             # Extended typing support
+
+# ==============================================================================
+# Development Dependencies (install separately with requirements-dev.txt)
+# ==============================================================================
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+# black>=23.0.0
+# flake8>=6.1.0
+# mypy>=1.7.0

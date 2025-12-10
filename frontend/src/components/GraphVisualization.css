@@ -1,0 +1,102 @@
+.graph-visualization {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.graph-visualization.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.graph-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.graph-stats {
+  display: flex;
+  gap: 20px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.graph-container {
+  width: 100%;
+  height: 600px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.graph-legend {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.graph-legend h4 {
+  margin: 0 0 10px 0;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.legend-person {
+  background: #FF6B6B;
+}
+
+.legend-job {
+  background: #4ECDC4;
+}
+
+.legend-skill {
+  background: #45B7D1;
+}
+
+.legend-education {
+  background: #96CEB4;
+}
+
+.legend-certification {
+  background: #FFEAA7;
+}
+
+.legend-organization {
+  background: #DDA15E;
+}
+
+.legend-label {
+  font-size: 0.85rem;
+  color: #666;
+}

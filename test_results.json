@@ -1,0 +1,83 @@
+{
+  "test_execution": {
+    "test_id": "TEST-2025-12-10-001",
+    "tester_name": "Your Name Here",
+    "start_time": "2025-12-10T09:00:00Z",
+    "end_time": "2025-12-10T16:30:00Z",
+    "environment": {
+      "backend_version": "1.0.0",
+      "frontend_version": "1.0.0",
+      "python_version": "3.10.x",
+      "node_version": "18.x"
+    }
+  },
+  "test_cases": [
+    {
+      "test_id": "TC-EXAMPLE",
+      "category": "Example Category",
+      "name": "Example Test Name",
+      "provider": "N/A",
+      "status": "PASS",
+      "execution_time_sec": 0,
+      "notes": "This is an example test case. Replace with actual test results.",
+      "timestamp": "2025-12-10T09:00:00Z"
+    }
+  ],
+  "provider_metrics": [
+    {
+      "provider": "claude",
+      "model": "claude-sonnet-4-20250514",
+      "resume_filename": "ATLASSIAN RESUME - BARBARA HIDALGO-SOTELO.md",
+      "extraction_time_sec": 0.0,
+      "entities_extracted": {
+        "person": 0,
+        "jobs": 0,
+        "skills": 0,
+        "education": 0,
+        "certifications": 0,
+        "organizations": 0
+      },
+      "avg_confidence": 0.0,
+      "accuracy_percent": 0,
+      "relationship_accuracy": 0,
+      "notes": "Placeholder for Claude test results"
+    },
+    {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "resume_filename": "ATLASSIAN RESUME - BARBARA HIDALGO-SOTELO.md",
+      "extraction_time_sec": 0.0,
+      "entities_extracted": {
+        "person": 0,
+        "jobs": 0,
+        "skills": 0,
+        "education": 0,
+        "certifications": 0,
+        "organizations": 0
+      },
+      "avg_confidence": 0.0,
+      "accuracy_percent": 0,
+      "relationship_accuracy": 0,
+      "notes": "Placeholder for OpenAI test results"
+    },
+    {
+      "provider": "ollama",
+      "model": "llama3.1:8b",
+      "resume_filename": "ATLASSIAN RESUME - BARBARA HIDALGO-SOTELO.md",
+      "extraction_time_sec": 0.0,
+      "entities_extracted": {
+        "person": 0,
+        "jobs": 0,
+        "skills": 0,
+        "education": 0,
+        "certifications": 0,
+        "organizations": 0
+      },
+      "avg_confidence": 0.0,
+      "accuracy_percent": 0,
+      "relationship_accuracy": 0,
+      "notes": "Placeholder for Ollama test results"
+    }
+  ],
+  "errors": []
+}

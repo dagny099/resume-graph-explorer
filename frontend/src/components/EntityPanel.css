@@ -1,0 +1,105 @@
+.entity-panel {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.entity-panel.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.entity-header {
+  margin-bottom: 15px;
+}
+
+.entity-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.entity-person {
+  background: #FFE5E5;
+  color: #C62828;
+}
+
+.entity-job {
+  background: #E0F7FA;
+  color: #00695C;
+}
+
+.entity-skill {
+  background: #E1F5FE;
+  color: #01579B;
+}
+
+.entity-education {
+  background: #F1F8E9;
+  color: #558B2F;
+}
+
+.entity-certification {
+  background: #FFF9C4;
+  color: #F57F17;
+}
+
+.entity-organization {
+  background: #FFE0B2;
+  color: #E65100;
+}
+
+.entity-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.entity-tooltip {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  margin: 15px 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.entity-metadata h4 {
+  margin: 20px 0 10px 0;
+  color: #666;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.entity-metadata dl {
+  margin: 0;
+}
+
+.metadata-item {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.metadata-item:last-child {
+  border-bottom: none;
+}
+
+.metadata-item dt {
+  flex: 0 0 120px;
+  font-weight: 500;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.metadata-item dd {
+  margin: 0;
+  color: #333;
+  font-size: 0.85rem;
+}
