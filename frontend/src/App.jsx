@@ -23,6 +23,7 @@ function App() {
   const [graphData, setGraphData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (currentSessionId) {
@@ -51,8 +52,11 @@ function App() {
   };
 
   const handleUploadComplete = () => {
-    // Reload graph after extraction complete
-    setTimeout(() => loadGraph(), 1000);
+    // Reload graph and stats after extraction complete
+    setTimeout(() => {
+      loadGraph();
+      setRefreshKey(prev => prev + 1); // Trigger stats refresh
+    }, 1000);
   };
 
   return (
@@ -71,7 +75,7 @@ function App() {
 
           {currentSessionId && (
             <>
-              <ExportPanel sessionId={currentSessionId} />
+              <ExportPanel sessionId={currentSessionId} refreshKey={refreshKey} />
             </>
           )}
         </div>

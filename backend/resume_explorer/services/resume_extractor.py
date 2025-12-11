@@ -151,8 +151,12 @@ class ResumeExtractor:
                 'timestamp': datetime.now().isoformat()
             })
 
+            # Get person name safely (entities contains objects, not dicts)
+            person = entities.get('person')
+            person_name = getattr(person, 'name', 'N/A') if person else 'N/A'
+
             logger.info(f"Extraction complete for {filename}: "
-                       f"person={entities.get('person', {}).get('name', 'N/A')}, "
+                       f"person={person_name}, "
                        f"jobs={len(entities.get('jobs', []))}, "
                        f"skills={len(entities.get('skills', []))}")
 

@@ -192,7 +192,7 @@ Return ONLY valid JSON following this exact schema:
   "jobs": [
     {{
       "title": "...",
-      "organization_id": "org-{uuid}",
+      "organization_id": "org-{{{{uuid}}}}",
       "start_date": "YYYY-MM-DD",
       "end_date": "YYYY-MM-DD or null",
       "is_current": false,
@@ -215,7 +215,7 @@ Return ONLY valid JSON following this exact schema:
     {{
       "degree_type": "PhD",
       "field_of_study": "...",
-      "institution_id": "org-{uuid}",
+      "institution_id": "org-{{{{uuid}}}}",
       "start_date": "YYYY-MM-DD",
       "end_date": "YYYY-MM-DD",
       "gpa": 3.9
@@ -232,7 +232,7 @@ Return ONLY valid JSON following this exact schema:
   ],
   "organizations": [
     {{
-      "id": "org-{uuid}",
+      "id": "org-{{{{uuid}}}}",
       "name": "...",
       "org_type": "Company",
       "location": "...",

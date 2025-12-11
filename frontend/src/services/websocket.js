@@ -23,7 +23,8 @@ class WebSocketClient {
       return this.socket;
     }
 
-    this.socket = io(WS_URL, {
+    // Connect to /extraction namespace to match backend
+    this.socket = io(`${WS_URL}/extraction`, {
       path: '/socket.io',
       transports: ['websocket', 'polling'],
     });

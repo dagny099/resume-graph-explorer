@@ -1,5 +1,5 @@
 """
-Centralized logging configuration for ChronoScope.
+Centralized logging configuration for Resume Explorer.
 
 Provides consistent logging across all modules with appropriate formatting and levels.
 """
@@ -7,7 +7,9 @@ Provides consistent logging across all modules with appropriate formatting and l
 import logging
 from typing import Optional
 
-from chrono_scope.utils.constants import LOG_LEVEL_DEFAULT, LOG_FORMAT
+# Logging constants
+LOG_LEVEL_DEFAULT = "INFO"
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 
 # Global logger cache to avoid recreating loggers
@@ -27,7 +29,7 @@ def get_logger(name: str, level: Optional[str] = None) -> logging.Logger:
         Configured logger instance
 
     Example:
-        >>> from chronoscope.utils.logger import get_logger
+        >>> from resume_explorer.utils.logger import get_logger
         >>> logger = get_logger(__name__)
         >>> logger.info("Processing document...")
         >>> logger.warning("Low confidence extraction")
@@ -71,7 +73,7 @@ def configure_root_logger(level: str = LOG_LEVEL_DEFAULT):
         level: Log level string ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
 
     Example:
-        >>> from chronoscope.utils.logger import configure_root_logger
+        >>> from resume_explorer.utils.logger import configure_root_logger
         >>> configure_root_logger('DEBUG')  # Enable debug logging
     """
     logging.basicConfig(

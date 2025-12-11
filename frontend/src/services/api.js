@@ -131,7 +131,7 @@ export const getStorageStats = async () => {
 };
 
 export const getHealth = async () => {
-  const response = await axios.get('http://localhost:5000/health');
+  const response = await axios.get('/health');
   return response.data;
 };
 

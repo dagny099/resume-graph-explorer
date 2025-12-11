@@ -164,8 +164,12 @@ def upload_document(session_id):
         return jsonify({'error': 'Failed to add document to session'}), 500
 
     # Start extraction in background thread
+    # Capture app instance before thread starts
+    app = current_app._get_current_object()
+
     def extract_async():
-        _run_extraction(session_id, document.id, filename, file_bytes)
+        with app.app_context():
+            _run_extraction(session_id, document.id, filename, file_bytes)
 
     thread = threading.Thread(target=extract_async, daemon=True)
     thread.start()
@@ -293,22 +297,22 @@ def get_session_graph(session_id):
         # Collect entities
         person = entities.get('person')
         if person and isinstance(person, dict):
-            all_persons.append(Person(**person))
+            all_persons.append(Person.from_dict(person))
 
         jobs = entities.get('jobs', [])
-        all_jobs.extend([Job(**j) if isinstance(j, dict) else j for j in jobs])
+        all_jobs.extend([Job.from_dict(j) if isinstance(j, dict) else j for j in jobs])
 
         skills = entities.get('skills', [])
-        all_skills.extend([Skill(**s) if isinstance(s, dict) else s for s in skills])
+        all_skills.extend([Skill.from_dict(s) if isinstance(s, dict) else s for s in skills])
 
         education = entities.get('education', [])
-        all_education.extend([Education(**e) if isinstance(e, dict) else e for e in education])
+        all_education.extend([Education.from_dict(e) if isinstance(e, dict) else e for e in education])
 
         certifications = entities.get('certifications', [])
-        all_certifications.extend([Certification(**c) if isinstance(c, dict) else c for c in certifications])
+        all_certifications.extend([Certification.from_dict(c) if isinstance(c, dict) else c for c in certifications])
 
         organizations = entities.get('organizations', [])
-        all_organizations.extend([Organization(**o) if isinstance(o, dict) else o for o in organizations])
+        all_organizations.extend([Organization.from_dict(o) if isinstance(o, dict) else o for o in organizations])
 
     # Use first person (or create placeholder)
     person = all_persons[0] if all_persons else Person(name="Unknown")
@@ -361,17 +365,17 @@ def export_session_graph(session_id, format):
         person = entities.get('person')
         if person:
             if isinstance(person, dict):
-                person = Person(**person)
+                person = Person.from_dict(person)
             builder.add_person(person)
 
         for job in entities.get('jobs', []):
             if isinstance(job, dict):
-                job = Job(**job)
+                job = Job.from_dict(job)
             builder.add_job(job)
 
         for skill in entities.get('skills', []):
             if isinstance(skill, dict):
-                skill = Skill(**skill)
+                skill = Skill.from_dict(skill)
             builder.add_skill(skill)
 
     # Export graph

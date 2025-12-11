@@ -5,15 +5,19 @@ Builds SKOS-compliant RDF knowledge graph from resume entities.
 Supports export to Turtle, RDF/XML, and JSON-LD formats.
 """
 
+from __future__ import annotations
+
 from rdflib import Graph, Namespace, Literal, URIRef
 from rdflib.namespace import RDF, RDFS, SKOS, XSD, DCTERMS
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from pathlib import Path
 from datetime import datetime
 
-from ..models import Person, Job, Skill, Education, Certification, Organization
 from .vocabularies import SCHEMA, ESCO, RE, RESUME, EntityType, bind_namespaces
 from ..utils.logger import logger
+
+if TYPE_CHECKING:
+    from ..models import Person, Job, Skill, Education, Certification, Organization
 
 
 class RDFGraphBuilder:

@@ -10,8 +10,13 @@ from typing import Dict, Any, Optional
 from ..utils.logger import logger
 
 
-# Global SocketIO instance (initialized by Flask app)
-socketio: Optional[SocketIO] = None
+# Global SocketIO instance (created at module level, bound to app later)
+socketio = SocketIO(
+    cors_allowed_origins="*",  # Allow all origins for development
+    async_mode='threading',     # Use threading for compatibility
+    logger=True,
+    engineio_logger=False
+)
 
 
 def init_socketio(app) -> SocketIO:
@@ -24,17 +29,8 @@ def init_socketio(app) -> SocketIO:
     Returns:
         Configured SocketIO instance
     """
-    global socketio
-
-    socketio = SocketIO(
-        app,
-        cors_allowed_origins="*",  # Allow all origins for development
-        async_mode='threading',     # Use threading for compatibility
-        logger=True,
-        engineio_logger=False
-    )
-
-    logger.info("SocketIO initialized")
+    socketio.init_app(app)
+    logger.info("SocketIO initialized with Flask app")
     return socketio
 
 
@@ -62,16 +58,12 @@ class ExtractionEventEmitter:
             event_name: Event type (e.g., 'extraction_started')
             data: Event payload
         """
-        if socketio is None:
-            logger.warning("SocketIO not initialized, cannot emit event")
-            return
-
         try:
+            # When calling from background thread, don't use broadcast parameter
             socketio.emit(
                 event_name,
                 data,
-                namespace=self.namespace,
-                broadcast=True
+                namespace=self.namespace
             )
             logger.debug(f"Emitted {event_name}: {data.get('document_id', 'N/A')}")
         except Exception as e:
@@ -189,10 +181,6 @@ def emit_to_session(session_id: str, event_name: str, data: Dict[str, Any]):
         event_name: Event type
         data: Event payload
     """
-    if socketio is None:
-        logger.warning("SocketIO not initialized, cannot emit to session")
-        return
-
     try:
         socketio.emit(
             event_name,

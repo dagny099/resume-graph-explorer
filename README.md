@@ -138,6 +138,11 @@ python -m resume_explorer.api.app
 
 Backend will be available at: **http://localhost:5000**
 
+or
+```bash
+python -c "from resume_explorer.api.app import run_app; run_app(port=5002)"
+```
+
 #### Terminal 2: Frontend
 
 ```bash

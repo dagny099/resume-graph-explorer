@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { exportSessionGraph, getSessionStats } from '../services/api';
 import './ExportPanel.css';
 
-const ExportPanel = ({ sessionId }) => {
+const ExportPanel = ({ sessionId, refreshKey }) => {
   const [exporting, setExporting] = useState(false);
   const [stats, setStats] = useState(null);
 
@@ -16,7 +16,7 @@ const ExportPanel = ({ sessionId }) => {
     if (sessionId) {
       loadStats();
     }
-  }, [sessionId]);
+  }, [sessionId, refreshKey]);
 
   const loadStats = async () => {
     try {

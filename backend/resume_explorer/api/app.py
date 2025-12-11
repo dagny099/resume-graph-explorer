@@ -34,7 +34,7 @@ def create_app(config: dict = None) -> Flask:
     app.config.from_mapping(
         SECRET_KEY=os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production'),
         MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max upload
-        UPLOAD_FOLDER='backend/data/sessions',
+        UPLOAD_FOLDER='data/sessions',
 
         # LLM configuration
         LLM_PROVIDER=os.getenv('LLM_PROVIDER', 'claude'),
@@ -65,7 +65,7 @@ def create_app(config: dict = None) -> Flask:
     socketio = init_socketio(app)
 
     # Initialize session store
-    session_store = SessionStore(base_path=os.getenv('DATA_PATH', 'backend/data'))
+    session_store = SessionStore(base_path=os.getenv('DATA_PATH', 'data'))
     app.session_store = session_store
 
     # Initialize LLM client
@@ -128,3 +128,7 @@ def run_app(host='0.0.0.0', port=5000, debug=True):
 
 
 __all__ = ['create_app', 'run_app']
+
+
+if __name__ == '__main__':
+    run_app()

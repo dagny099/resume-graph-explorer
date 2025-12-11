@@ -52,7 +52,7 @@ const GraphVisualization = ({ graphData, onNodeClick }) => {
       physics: {
         enabled: true,
         barnesHut: {
-          gravitational Constant: -2000,
+          gravitationalConstant: -2000,
           centralGravity: 0.3,
           springLength: 150,
           springConstant: 0.04,

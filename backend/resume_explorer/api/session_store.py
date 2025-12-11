@@ -398,8 +398,26 @@ class SessionStore:
         extracted_dir = self._get_session_dir(document.session_id) / "extracted"
         entities_path = extracted_dir / f"{document_id}.json"
 
+        # Convert entity objects to dictionaries
+        serializable_entities = {}
+        for key, value in entities.items():
+            if key == 'metadata':
+                # Metadata is already a dict
+                serializable_entities[key] = value
+            elif isinstance(value, list):
+                # Convert list of entity objects to list of dicts
+                serializable_entities[key] = [
+                    item.to_dict() if hasattr(item, 'to_dict') else item
+                    for item in value
+                ]
+            elif hasattr(value, 'to_dict'):
+                # Convert single entity object to dict
+                serializable_entities[key] = value.to_dict()
+            else:
+                serializable_entities[key] = value
+
         with open(entities_path, 'w') as f:
-            json.dump(entities, f, indent=2, default=str)
+            json.dump(serializable_entities, f, indent=2, default=str)
 
         # Update document
         document.extracted_entities_path = str(entities_path)
