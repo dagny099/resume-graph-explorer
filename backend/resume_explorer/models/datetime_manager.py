@@ -36,6 +36,12 @@ class DateTimeManager:
 
         if isinstance(date_input, str):
             try:
+                # Try parsing ISO 8601 format with fromisoformat first (handles microseconds)
+                try:
+                    return datetime.fromisoformat(date_input).date()
+                except (ValueError, AttributeError):
+                    pass
+
                 # Try parsing common date formats
                 for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%Y-%m-%d %H:%M:%S']:
                     try:
@@ -77,8 +83,14 @@ class DateTimeManager:
 
         if isinstance(date_input, str):
             try:
-                # Try parsing common datetime formats first
-                for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%d']:
+                # Try parsing ISO 8601 format with fromisoformat first (handles microseconds)
+                try:
+                    return datetime.fromisoformat(date_input)
+                except (ValueError, AttributeError):
+                    pass
+
+                # Try parsing common datetime formats
+                for fmt in ['%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%d']:
                     try:
                         return datetime.strptime(date_input, fmt)
                     except ValueError:
