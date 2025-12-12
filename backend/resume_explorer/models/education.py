@@ -7,6 +7,7 @@ Maps to schema:EducationalOccupationalCredential from schema.org
 from dataclasses import dataclass
 from datetime import date
 from typing import Optional
+from urllib.parse import quote
 
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, XSD
@@ -68,7 +69,7 @@ class Education(SKOSEntity):
         if self.field_of_study:
             graph.add((uri, SCHEMA.educationalCredentialAwarded, Literal(self.field_of_study)))
         if self.institution_id:
-            institution_uri = base_namespace[self.institution_id]
+            institution_uri = base_namespace[quote(self.institution_id, safe='')]
             graph.add((uri, SCHEMA.recognizedBy, institution_uri))
         if self.location:
             graph.add((uri, SCHEMA.availableAtOrFrom, Literal(self.location)))

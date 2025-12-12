@@ -456,7 +456,7 @@ class SessionStore:
             format: RDF format (turtle, rdfxml, jsonld)
 
         Returns:
-            Path to graph file
+            Absolute path to graph file
         """
         session_dir = self._get_session_dir(session_id)
 
@@ -467,7 +467,8 @@ class SessionStore:
         }
 
         ext = extension_map.get(format, 'ttl')
-        return session_dir / f"graph.{ext}"
+        # Return absolute path to ensure send_file() finds it correctly
+        return (session_dir / f"graph.{ext}").resolve()
 
     def _get_session_dir(self, session_id: str) -> Path:
         """Get session directory path."""

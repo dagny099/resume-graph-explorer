@@ -7,6 +7,7 @@ Maps to schema:JobPosting from schema.org
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Optional, List
+from urllib.parse import quote
 
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, XSD
@@ -93,7 +94,7 @@ class Job(SKOSEntity):
         if self.title:
             graph.add((uri, SCHEMA.title, Literal(self.title)))
         if self.organization_id:
-            org_uri = base_namespace[self.organization_id]
+            org_uri = base_namespace[quote(self.organization_id, safe='')]
             graph.add((uri, SCHEMA.hiringOrganization, org_uri))
         if self.location:
             graph.add((uri, SCHEMA.jobLocation, Literal(self.location)))
@@ -111,12 +112,12 @@ class Job(SKOSEntity):
 
         # Skill relationships
         for skill_id in self.skills_used:
-            skill_uri = base_namespace[skill_id]
+            skill_uri = base_namespace[quote(skill_id, safe='')]
             graph.add((uri, RelationType.USED_SKILL, skill_uri))
 
         # Technology relationships
         for tech_id in self.technologies_used:
-            tech_uri = base_namespace[tech_id]
+            tech_uri = base_namespace[quote(tech_id, safe='')]
             graph.add((uri, RelationType.USED_TECHNOLOGY, tech_uri))
 
         # Achievements

@@ -12,6 +12,7 @@ from rdflib.namespace import RDF, RDFS, SKOS, XSD, DCTERMS
 from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from pathlib import Path
 from datetime import datetime
+from urllib.parse import quote
 
 from .vocabularies import SCHEMA, ESCO, RE, RESUME, EntityType, bind_namespaces
 from ..utils.logger import logger
@@ -77,22 +78,22 @@ class RDFGraphBuilder:
 
         # Add relationships to jobs
         for job_id in person.jobs:
-            job_uri = self.base_namespace[job_id]
+            job_uri = self.base_namespace[quote(job_id, safe='')]
             self.graph.add((uri, RE.hasJob, job_uri))
 
         # Add relationships to skills
         for skill_id in person.skills:
-            skill_uri = self.base_namespace[skill_id]
+            skill_uri = self.base_namespace[quote(skill_id, safe='')]
             self.graph.add((uri, RE.hasSkill, skill_uri))
 
         # Add relationships to education
         for edu_id in person.education:
-            edu_uri = self.base_namespace[edu_id]
+            edu_uri = self.base_namespace[quote(edu_id, safe='')]
             self.graph.add((uri, SCHEMA.alumniOf, edu_uri))
 
         # Add relationships to certifications
         for cert_id in person.certifications:
-            cert_uri = self.base_namespace[cert_id]
+            cert_uri = self.base_namespace[quote(cert_id, safe='')]
             self.graph.add((uri, RE.hasCertification, cert_uri))
 
         # Add provenance
@@ -135,12 +136,12 @@ class RDFGraphBuilder:
 
         # Add relationship to organization
         if job.organization_id:
-            org_uri = self.base_namespace[job.organization_id]
+            org_uri = self.base_namespace[quote(job.organization_id, safe='')]
             self.graph.add((uri, SCHEMA.hiringOrganization, org_uri))
 
         # Add relationships to skills used
         for skill_id in job.skills_used:
-            skill_uri = self.base_namespace[skill_id]
+            skill_uri = self.base_namespace[quote(skill_id, safe='')]
             self.graph.add((uri, RE.usedSkill, skill_uri))
 
         # Add technologies used
@@ -220,7 +221,7 @@ class RDFGraphBuilder:
 
         # Add relationship to institution
         if education.institution_id:
-            inst_uri = self.base_namespace[education.institution_id]
+            inst_uri = self.base_namespace[quote(education.institution_id, safe='')]
             self.graph.add((uri, SCHEMA.recognizedBy, inst_uri))
 
         # Add provenance
