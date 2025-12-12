@@ -19,6 +19,8 @@ class ExtractResumeEntities(dspy.Signature):
     Extract structured entities from resume text following SKOS schema.
 
     Uses hybrid vocabulary (ESCO + schema.org + custom RE namespace).
+    Make sure organization IDs are stable and reused between the
+    organizations list and any jobs/education that reference them.
     """
 
     resume_text: str = dspy.InputField(
@@ -30,7 +32,7 @@ class ExtractResumeEntities(dspy.Signature):
     )
 
     jobs: list = dspy.OutputField(
-        desc="List of job positions (schema:JobPosting) with title, company, dates, location, description, skills_used"
+        desc="List of job positions (schema:JobPosting) with title, company, dates, location, description, skills_used. organization_id MUST point to an id from the organizations list; prefer ids like org-{kebab-case-company-name} and reuse them across all jobs."
     )
 
     skills: list = dspy.OutputField(
@@ -38,7 +40,7 @@ class ExtractResumeEntities(dspy.Signature):
     )
 
     education: list = dspy.OutputField(
-        desc="List of education records (schema:EducationalOccupationalCredential) with degree_type, field_of_study, institution, dates, gpa"
+        desc="List of education records (schema:EducationalOccupationalCredential) with degree_type, field_of_study, institution, dates, gpa. institution_id MUST reuse an id from the organizations list (use org-{kebab-case-institution-name})."
     )
 
     certifications: list = dspy.OutputField(
@@ -46,7 +48,7 @@ class ExtractResumeEntities(dspy.Signature):
     )
 
     organizations: list = dspy.OutputField(
-        desc="List of organizations (schema:Organization) mentioned - companies, institutions with name, org_type, location, website"
+        desc="List of organizations (schema:Organization) mentioned - companies, institutions with name, org_type, location, website. Provide a stable id for each (org-{kebab-case-name}) and ensure jobs/education reference these ids."
     )
 
     reasoning: str = dspy.OutputField(
@@ -137,6 +139,12 @@ class SimplifiedExtractor:
 
     EXTRACTION_PROMPT = """You are a resume parser that extracts structured information.
 
+Organization ID rules:
+- Build the organizations array first.
+- For every organization, set an id using "org-{{kebab-case-organization-name}}". Example: "OpenAI" -> "org-openai".
+- Use those exact ids in jobs.organization_id and education.institution_id. Never invent ids that are not present in the organizations array.
+- Do NOT use template strings like org-{{uuid}} or org-{{uuid1}}. If no name is available, fall back to a short, unique id such as org-company-1.
+
 Extract the following entities from the resume:
 
 1. PERSON: Name, email, phone, location, professional summary
@@ -192,7 +200,7 @@ Return ONLY valid JSON following this exact schema:
   "jobs": [
     {{
       "title": "...",
-      "organization_id": "org-{{{{uuid}}}}",
+      "organization_id": "org-openai",
       "start_date": "YYYY-MM-DD",
       "end_date": "YYYY-MM-DD or null",
       "is_current": false,
@@ -215,7 +223,7 @@ Return ONLY valid JSON following this exact schema:
     {{
       "degree_type": "PhD",
       "field_of_study": "...",
-      "institution_id": "org-{{{{uuid}}}}",
+      "institution_id": "org-mit",
       "start_date": "YYYY-MM-DD",
       "end_date": "YYYY-MM-DD",
       "gpa": 3.9
@@ -232,11 +240,11 @@ Return ONLY valid JSON following this exact schema:
   ],
   "organizations": [
     {{
-      "id": "org-{{{{uuid}}}}",
-      "name": "...",
+      "id": "org-openai",
+      "name": "OpenAI",
       "org_type": "Company",
-      "location": "...",
-      "website": "..."
+      "location": "San Francisco, CA",
+      "website": "https://openai.com"
     }}
   ]
 }}

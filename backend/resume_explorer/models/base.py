@@ -125,7 +125,7 @@ class SKOSEntity:
             graph.add((uri, SKOS.related, related_uri))
 
         # Provenance metadata
-        graph.add((uri, RE.confidence, Literal(self.confidence, datatype=XSD.float)))
+        graph.add((uri, RE.confidence, Literal(self.confidence)))
         if self.source_doc:
             graph.add((uri, RE.sourceDocument, Literal(self.source_doc)))
         graph.add((uri, RE.createdAt, Literal(self.created_at, datatype=XSD.dateTime)))

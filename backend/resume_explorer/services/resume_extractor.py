@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime, date
 import uuid
 import asyncio
+import re
 
 from .extraction_dspy import create_extraction_pipeline
 from .llm_client import LLMClient
@@ -219,24 +220,118 @@ class ResumeExtractor:
             Dictionary with entity objects
         """
         # Create ID mappings for relationships
-        org_id_map = {}  # Map organization names to IDs
+        organizations: List[Organization] = []
+        orgs_by_id: Dict[str, Organization] = {}
+        org_name_to_id: Dict[str, str] = {}
+        org_alias_map: Dict[str, str] = {}
+        used_org_ids = set()
+
+        def _normalize_org_id(candidate_id: Optional[str], name: str) -> str:
+            """Build a stable org id using kebab-case names with an org- prefix."""
+            raw_candidate = (candidate_id or "").strip()
+            name = (name or "").strip()
+
+            # Drop template artifacts like org-{{uuid}}
+            if "{{" in raw_candidate or "}}" in raw_candidate:
+                raw_candidate = ""
+            if "uuid" in raw_candidate.lower():
+                raw_candidate = ""
+
+            cleaned_candidate = re.sub(r'[^a-zA-Z0-9_-]+', '-', raw_candidate).strip('-').lower()
+            if cleaned_candidate and not cleaned_candidate.startswith('org-'):
+                cleaned_candidate = f"org-{cleaned_candidate}"
+
+            name_slug = re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-') if name else ""
+            base = cleaned_candidate or (f"org-{name_slug}" if name_slug else "")
+            if not base:
+                base = f"org-{uuid.uuid4()}"
+            elif not base.startswith('org-'):
+                base = f"org-{base}"
+
+            org_id = base
+            suffix = 2
+            while org_id in used_org_ids:
+                org_id = f"{base}-{suffix}"
+                suffix += 1
+
+            used_org_ids.add(org_id)
+            return org_id
+
+        def register_org(
+            name: Optional[str],
+            org_type: Optional[str] = None,
+            location: Optional[str] = None,
+            website: Optional[str] = None,
+            description: Optional[str] = None,
+            candidate_id: Optional[str] = None,
+            confidence: float = 1.0
+        ) -> str:
+            """
+            Ensure an Organization exists and return its canonical ID.
+            Reuses orgs by name/alias and normalizes IDs for consistency.
+            """
+            name_clean = (name or "").strip()
+            name_key = name_clean.lower() if name_clean else None
+
+            if name_key and name_key in org_name_to_id:
+                existing_id = org_name_to_id[name_key]
+                if candidate_id:
+                    org_alias_map.setdefault(candidate_id, existing_id)
+                return existing_id
+
+            if candidate_id and candidate_id in org_alias_map:
+                resolved_id = org_alias_map[candidate_id]
+            else:
+                resolved_id = _normalize_org_id(candidate_id, name_clean or candidate_id or "")
+
+            org_alias_map.setdefault(resolved_id, resolved_id)
+            if candidate_id:
+                org_alias_map.setdefault(candidate_id, resolved_id)
+
+            if resolved_id in orgs_by_id:
+                org = orgs_by_id[resolved_id]
+                if name_clean and not org.name:
+                    org.name = name_clean
+                    org.label = name_clean
+                if org_type and not org.org_type:
+                    org.org_type = org_type
+                if location and not org.location:
+                    org.location = location
+                if website and not org.website:
+                    org.website = website
+                if description and not org.description:
+                    org.description = description
+            else:
+                org = Organization(
+                    id=resolved_id,
+                    label=name_clean or resolved_id,
+                    name=name_clean or resolved_id,
+                    org_type=org_type,
+                    location=location,
+                    website=website,
+                    description=description,
+                    source_doc=source_filename,
+                    confidence=confidence
+                )
+                organizations.append(org)
+                orgs_by_id[resolved_id] = org
+
+            if name_key:
+                org_name_to_id.setdefault(name_key, resolved_id)
+
+            return resolved_id
 
         # 1. Create Organizations first (needed for Job and Education relationships)
-        organizations = []
         for org_data in raw_result.get('organizations', []):
-            org = Organization(
-                id=org_data.get('id', str(uuid.uuid4())),
-                label=org_data.get('name', ''),
-                name=org_data.get('name', ''),
+            register_org(
+                name=org_data.get('name', org_data.get('label', '')),
                 org_type=org_data.get('org_type'),
                 location=org_data.get('location'),
                 website=org_data.get('website'),
                 description=org_data.get('description'),
-                source_doc=source_filename,
+                candidate_id=org_data.get('id'),
                 confidence=org_data.get('confidence', 1.0)
             )
-            organizations.append(org)
-            org_id_map[org.name] = org.id
 
         # 2. Create Skills (needed for Job relationships)
         skills = []
@@ -261,10 +356,30 @@ class ResumeExtractor:
         # 3. Create Jobs
         jobs = []
         for job_data in raw_result.get('jobs', []):
-            # Map organization name to ID
-            org_id = job_data.get('organization_id', '')
-            if not org_id and 'company' in job_data:
-                org_id = org_id_map.get(job_data['company'], '')
+            company_name = job_data.get('company') or job_data.get('organization') or job_data.get('organization_name')
+            provided_org_id = job_data.get('organization_id')
+
+            resolved_org_id = provided_org_id
+            if provided_org_id and provided_org_id in org_alias_map:
+                resolved_org_id = org_alias_map[provided_org_id]
+
+            if not resolved_org_id and company_name:
+                resolved_org_id = org_name_to_id.get(company_name.strip().lower())
+
+            if company_name or resolved_org_id:
+                resolved_org_id = register_org(
+                    name=company_name or resolved_org_id,
+                    org_type=job_data.get('org_type') or "Company",
+                    candidate_id=resolved_org_id or provided_org_id,
+                    confidence=job_data.get('confidence', 1.0)
+                )
+            elif provided_org_id:
+                resolved_org_id = register_org(
+                    name=provided_org_id,
+                    org_type=job_data.get('org_type') or "Company",
+                    candidate_id=provided_org_id,
+                    confidence=job_data.get('confidence', 1.0)
+                )
 
             # Map skill names to IDs
             skills_used = []
@@ -276,7 +391,7 @@ class ResumeExtractor:
                 id=str(uuid.uuid4()),
                 label=job_data.get('title', ''),
                 title=job_data.get('title', ''),
-                organization_id=org_id,
+                organization_id=resolved_org_id or '',
                 start_date=self._parse_date(job_data.get('start_date')),
                 end_date=self._parse_date(job_data.get('end_date')),
                 is_current=job_data.get('is_current', False),
@@ -293,17 +408,37 @@ class ResumeExtractor:
         # 4. Create Education
         education_list = []
         for edu_data in raw_result.get('education', []):
-            # Map institution name to ID
-            inst_id = edu_data.get('institution_id', '')
-            if not inst_id and 'institution' in edu_data:
-                inst_id = org_id_map.get(edu_data['institution'], '')
+            institution_name = edu_data.get('institution')
+            provided_inst_id = edu_data.get('institution_id')
+
+            resolved_inst_id = provided_inst_id
+            if provided_inst_id and provided_inst_id in org_alias_map:
+                resolved_inst_id = org_alias_map[provided_inst_id]
+
+            if not resolved_inst_id and institution_name:
+                resolved_inst_id = org_name_to_id.get(institution_name.strip().lower())
+
+            if institution_name or resolved_inst_id:
+                resolved_inst_id = register_org(
+                    name=institution_name or resolved_inst_id,
+                    org_type=edu_data.get('org_type') or "University",
+                    candidate_id=resolved_inst_id or provided_inst_id,
+                    confidence=edu_data.get('confidence', 1.0)
+                )
+            elif provided_inst_id:
+                resolved_inst_id = register_org(
+                    name=provided_inst_id,
+                    org_type=edu_data.get('org_type') or "University",
+                    candidate_id=provided_inst_id,
+                    confidence=edu_data.get('confidence', 1.0)
+                )
 
             education = Education(
                 id=str(uuid.uuid4()),
                 label=f"{edu_data.get('degree_type', '')} in {edu_data.get('field_of_study', '')}",
                 degree_type=edu_data.get('degree_type', ''),
                 field_of_study=edu_data.get('field_of_study'),
-                institution_id=inst_id,
+                institution_id=resolved_inst_id or '',
                 start_date=self._parse_date(edu_data.get('start_date')),
                 end_date=self._parse_date(edu_data.get('end_date')),
                 is_current=edu_data.get('is_current', False),
