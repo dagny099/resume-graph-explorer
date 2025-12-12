@@ -87,6 +87,7 @@ class ClaudeBackend(LLMBackend):
         system_prompt: Optional[str] = None,
         temperature: float = 0.2,
         max_tokens: int = 4096,
+        json_mode: bool = False,
         **kwargs,
     ) -> str:
         """
@@ -97,20 +98,26 @@ class ClaudeBackend(LLMBackend):
             system_prompt: Optional system prompt
             temperature: Sampling temperature (0.0 = deterministic, 1.0 = creative)
             max_tokens: Maximum tokens to generate
+            json_mode: If True, adds JSON formatting instructions
             **kwargs: Additional Claude options
 
         Returns:
             Generated text string
         """
         try:
-            logger.debug(f"Claude generate request: model={self.model_name}, prompt_len={len(prompt)}")
+            logger.debug(f"Claude generate request: model={self.model_name}, prompt_len={len(prompt)}, json_mode={json_mode}")
+
+            # Add JSON formatting instruction if needed
+            effective_prompt = prompt
+            if json_mode and "json" not in prompt.lower():
+                effective_prompt = f"{prompt}\n\nRespond with valid JSON only. Do not include markdown formatting or explanations."
 
             message = self.client.messages.create(
                 model=self.model_name,
                 max_tokens=max_tokens,
                 temperature=temperature,
                 system=system_prompt or "",
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": effective_prompt}],
                 **kwargs,
             )
 
@@ -392,10 +399,20 @@ try:
 
             response = self.backend.generate(prompt, temperature=temperature, max_tokens=max_tokens)
 
-            # Log for DSPy optimization
-            self.history.append({"prompt": prompt, "response": response, "kwargs": kwargs})
+            # Log raw response for debugging
+            logger.debug(f"Raw LLM response length: {len(response)}")
+            logger.debug(f"Raw LLM response preview: {response[:200]}...")
 
-            return response
+            # Clean up markdown-formatted JSON responses for DSPy adapters
+            cleaned_response = self._clean_json_response(response)
+
+            logger.debug(f"Cleaned response length: {len(cleaned_response)}")
+            logger.debug(f"Cleaned response preview: {cleaned_response[:200]}...")
+
+            # Log for DSPy optimization
+            self.history.append({"prompt": prompt, "response": cleaned_response, "kwargs": kwargs})
+
+            return cleaned_response
 
         def __call__(self, prompt=None, messages=None, **kwargs):
             """
@@ -404,6 +421,10 @@ try:
             """
             if messages:
                 prompt = self._messages_to_prompt(messages)
+
+            # Add JSON formatting instruction to ensure valid JSON output
+            if prompt and "```json" not in prompt.lower():
+                prompt = f"{prompt}\n\nIMPORTANT: Respond with ONLY valid JSON. Do not include any markdown formatting, code blocks, or explanatory text. Return the raw JSON object directly."
 
             return self.basic_request(prompt, **kwargs)
 
@@ -418,6 +439,34 @@ try:
                 prompt_parts.append(f"{role.capitalize()}: {content}")
 
             return "\n\n".join(prompt_parts)
+
+        def _clean_json_response(self, response: str) -> str:
+            """
+            Clean up LLM response to extract valid JSON.
+            Removes markdown code blocks and other formatting.
+            """
+            import re
+
+            cleaned = response.strip()
+
+            # Remove markdown code blocks
+            if cleaned.startswith('```json'):
+                cleaned = cleaned[7:]
+            elif cleaned.startswith('```'):
+                cleaned = cleaned[3:]
+
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+
+            cleaned = cleaned.strip()
+
+            # Try to extract JSON object if response contains extra text
+            # Look for the first { and last } to extract the JSON object
+            json_match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+            if json_match:
+                return json_match.group(0)
+
+            return cleaned
 
         def inspect_history(self, n: int = 1) -> List[Dict]:
             """

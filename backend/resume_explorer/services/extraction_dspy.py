@@ -15,16 +15,21 @@ from ..utils.logger import logger
 
 
 class ExtractResumeEntities(dspy.Signature):
-    """
-    Extract structured entities from resume text following SKOS schema.
+    """Extract structured entities from resume text following SKOS schema.
 
     Uses hybrid vocabulary (ESCO + schema.org + custom RE namespace).
     Make sure organization IDs are stable and reused between the
     organizations list and any jobs/education that reference them.
+
+    Return a JSON object with all required fields: reasoning, person, jobs, skills, education, certifications, organizations.
     """
 
     resume_text: str = dspy.InputField(
         desc="Full resume text including contact info, work history, education, skills"
+    )
+
+    reasoning: str = dspy.OutputField(
+        desc="Brief explanation of extraction decisions, ambiguities resolved, and confidence assessments"
     )
 
     person: dict = dspy.OutputField(
@@ -49,10 +54,6 @@ class ExtractResumeEntities(dspy.Signature):
 
     organizations: list = dspy.OutputField(
         desc="List of organizations (schema:Organization) mentioned - companies, institutions with name, org_type, location, website. Provide a stable id for each (org-{kebab-case-name}) and ensure jobs/education reference these ids."
-    )
-
-    reasoning: str = dspy.OutputField(
-        desc="Explanation of extraction decisions, ambiguities resolved, and confidence assessments"
     )
 
 
@@ -80,13 +81,14 @@ class ResumeExtractionModule(dspy.Module):
     """
     DSPy module for resume entity extraction with reasoning.
 
-    Uses Chain of Thought for structured extraction and hierarchical reasoning.
+    Uses Predict for structured extraction (reasoning is already in the signature).
     """
 
     def __init__(self):
         super().__init__()
-        self.extract_entities = dspy.ChainOfThought(ExtractResumeEntities)
-        self.extract_hierarchy = dspy.ChainOfThought(ExtractSkillHierarchy)
+        # Use Predict instead of ChainOfThought since reasoning is already an output field
+        self.extract_entities = dspy.Predict(ExtractResumeEntities)
+        self.extract_hierarchy = dspy.Predict(ExtractSkillHierarchy)
 
     def forward(self, resume_text: str) -> Dict[str, Any]:
         """
@@ -100,8 +102,13 @@ class ResumeExtractionModule(dspy.Module):
         """
         logger.info("Starting DSPy resume extraction")
 
-        # Step 1: Extract base entities
-        extraction_result = self.extract_entities(resume_text=resume_text)
+        try:
+            # Step 1: Extract base entities
+            extraction_result = self.extract_entities(resume_text=resume_text)
+        except Exception as e:
+            logger.error(f"DSPy extraction failed: {e}")
+            logger.debug(f"Error details: {type(e).__name__}: {str(e)}")
+            raise
 
         # Step 2: Build skill hierarchy
         skills = extraction_result.skills
@@ -335,15 +342,23 @@ def create_extraction_pipeline(llm_backend, use_dspy: bool = True) -> Any:
     if use_dspy:
         try:
             # Configure DSPy with LLM backend
-            from .llm_client import DSPyLMAdapter
-            dspy_lm = DSPyLMAdapter(backend=llm_backend)
-            dspy.settings.configure(lm=dspy_lm)
+            from .llm_client import DSPyLMAdapter, LenientChatAdapter
 
-            logger.info("Using DSPy extraction pipeline")
+            dspy_lm = DSPyLMAdapter(backend=llm_backend)
+
+            # Use LenientChatAdapter - it's more forgiving than JSONAdapter
+            # and handles various response formats better
+            dspy.settings.configure(
+                lm=dspy_lm,
+                adapter=LenientChatAdapter()
+            )
+            logger.info("Using DSPy extraction pipeline with LenientChatAdapter")
+
             return ResumeExtractionModule()
 
         except Exception as e:
             logger.warning(f"DSPy initialization failed, falling back to simplified extractor: {e}")
+            logger.debug(f"Error details: {type(e).__name__}: {str(e)}")
             return SimplifiedExtractor(llm_backend)
     else:
         logger.info("Using simplified extraction pipeline")
