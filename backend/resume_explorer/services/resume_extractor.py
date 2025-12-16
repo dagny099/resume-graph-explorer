@@ -238,6 +238,8 @@ class ResumeExtractor:
             organizations.append(org)
             org_id_map[org.name] = org.id
 
+        logger.debug(f"Organization map created with {len(org_id_map)} entries: {list(org_id_map.keys())}")
+
         # 2. Create Skills (needed for Job relationships)
         skills = []
         skill_id_map = {}
@@ -263,8 +265,23 @@ class ResumeExtractor:
         for job_data in raw_result.get('jobs', []):
             # Map organization name to ID
             org_id = job_data.get('organization_id', '')
+
+            # Fallback to organization_name (new field from prompt)
+            if not org_id and 'organization_name' in job_data:
+                org_id = org_id_map.get(job_data['organization_name'], '')
+
+            # Fallback to company field (legacy support)
             if not org_id and 'company' in job_data:
                 org_id = org_id_map.get(job_data['company'], '')
+
+            # Log warning if organization not found
+            if not org_id:
+                org_ref = job_data.get('organization_name') or job_data.get('company') or job_data.get('organization_id')
+                if org_ref:
+                    logger.warning(
+                        f"Job '{job_data.get('title')}' references organization '{org_ref}' "
+                        f"which was not found. Available organizations: {list(org_id_map.keys())}"
+                    )
 
             # Map skill names to IDs
             skills_used = []
@@ -295,8 +312,24 @@ class ResumeExtractor:
         for edu_data in raw_result.get('education', []):
             # Map institution name to ID
             inst_id = edu_data.get('institution_id', '')
+
+            # Fallback to institution_name (new field from prompt)
+            if not inst_id and 'institution_name' in edu_data:
+                inst_id = org_id_map.get(edu_data['institution_name'], '')
+
+            # Fallback to institution field (legacy support)
             if not inst_id and 'institution' in edu_data:
                 inst_id = org_id_map.get(edu_data['institution'], '')
+
+            # Log warning if institution not found
+            if not inst_id:
+                inst_ref = edu_data.get('institution_name') or edu_data.get('institution') or edu_data.get('institution_id')
+                if inst_ref:
+                    logger.warning(
+                        f"Education entry '{edu_data.get('degree_type')} in {edu_data.get('field_of_study')}' "
+                        f"references institution '{inst_ref}' which was not found. "
+                        f"Available organizations: {list(org_id_map.keys())}"
+                    )
 
             education = Education(
                 id=str(uuid.uuid4()),

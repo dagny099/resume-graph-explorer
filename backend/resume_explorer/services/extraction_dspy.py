@@ -30,7 +30,7 @@ class ExtractResumeEntities(dspy.Signature):
     )
 
     jobs: list = dspy.OutputField(
-        desc="List of job positions (schema:JobPosting) with title, company, dates, location, description, skills_used"
+        desc="List of job positions (schema:JobPosting) with title, organization_name (exact name from organizations list), dates, location, description, skills_used"
     )
 
     skills: list = dspy.OutputField(
@@ -38,7 +38,7 @@ class ExtractResumeEntities(dspy.Signature):
     )
 
     education: list = dspy.OutputField(
-        desc="List of education records (schema:EducationalOccupationalCredential) with degree_type, field_of_study, institution, dates, gpa"
+        desc="List of education records (schema:EducationalOccupationalCredential) with degree_type, field_of_study, institution_name (exact name from organizations list), dates, gpa"
     )
 
     certifications: list = dspy.OutputField(
@@ -46,7 +46,7 @@ class ExtractResumeEntities(dspy.Signature):
     )
 
     organizations: list = dspy.OutputField(
-        desc="List of organizations (schema:Organization) mentioned - companies, institutions with name, org_type, location, website"
+        desc="List of ALL organizations (schema:Organization) mentioned - companies, institutions with name, org_type, location, website. Extract FIRST, then reference by name in jobs/education"
     )
 
     reasoning: str = dspy.OutputField(
@@ -139,6 +139,29 @@ class SimplifiedExtractor:
 
 Extract the following entities from the resume:
 
+IMPORTANT EXTRACTION ORDER:
+1. First, identify ALL organizations (companies, universities, institutions) mentioned in the resume
+2. List each organization ONCE in the "organizations" array with its exact name
+3. When listing jobs and education, reference organizations by their EXACT NAME (not UUID)
+4. Use the exact same spelling and capitalization
+
+REFERENCE RULES:
+- Jobs: Use "organization_name" field with the company's exact name
+- Education: Use "institution_name" field with the university's exact name
+- These names must match entries in the "organizations" array
+
+EXAMPLE:
+"organizations": [
+  {{"name": "Google", "org_type": "Company", ...}},
+  {{"name": "MIT", "org_type": "University", ...}}
+],
+"jobs": [
+  {{"title": "Software Engineer", "organization_name": "Google", ...}}
+],
+"education": [
+  {{"degree_type": "BS", "institution_name": "MIT", ...}}
+]
+
 1. PERSON: Name, email, phone, location, professional summary
 2. JOBS: For each position, extract:
    - Job title
@@ -192,7 +215,7 @@ Return ONLY valid JSON following this exact schema:
   "jobs": [
     {{
       "title": "...",
-      "organization_id": "org-{{{{uuid}}}}",
+      "organization_name": "Company Name Here",
       "start_date": "YYYY-MM-DD",
       "end_date": "YYYY-MM-DD or null",
       "is_current": false,
@@ -215,7 +238,7 @@ Return ONLY valid JSON following this exact schema:
     {{
       "degree_type": "PhD",
       "field_of_study": "...",
-      "institution_id": "org-{{{{uuid}}}}",
+      "institution_name": "University Name Here",
       "start_date": "YYYY-MM-DD",
       "end_date": "YYYY-MM-DD",
       "gpa": 3.9
@@ -232,7 +255,6 @@ Return ONLY valid JSON following this exact schema:
   ],
   "organizations": [
     {{
-      "id": "org-{{{{uuid}}}}",
       "name": "...",
       "org_type": "Company",
       "location": "...",
