@@ -225,6 +225,9 @@ The session panel shows:
 
 Resume Explorer supports:
 - **PDF** (.pdf) - Most common format
+  - Uses dual-library extraction (PyMuPDF + pdfplumber) for maximum compatibility
+  - Handles standard PDFs, forms, and complex layouts
+  - Note: Scanned/image-only PDFs require OCR (not yet supported)
 - **Word** (.doc, .docx)
 - **Text** (.txt)
 - **Markdown** (.md)
@@ -518,6 +521,56 @@ export default defineConfig({
 2. Check your internet connection
 3. For Ollama: Make sure Ollama is running (`ollama serve`)
 4. Check backend logs for detailed error messages
+
+---
+
+### PDF-Specific Issues
+
+**Problem**: PDF uploads successfully but shows no extracted information
+
+**Possible Causes**:
+
+1. **Image-only/Scanned PDF**: The PDF contains only scanned images, not searchable text
+   - **How to Check**: Try selecting text in the PDF with a PDF reader - if you can't, it's image-only
+   - **Solution**: Use an OCR tool to convert to text-based PDF, or export from the original source document
+   - **Note**: OCR is not yet built into Resume Explorer
+
+2. **Corrupted PDF**: File may be damaged or malformed
+   - **Solution**: Try opening the PDF in a standard reader (Adobe Acrobat, Preview, etc.)
+   - If it doesn't open properly, the file is corrupted
+   - Re-export or re-download the PDF
+
+3. **Complex PDF Layout**: Some PDFs use unusual structures or encodings
+   - **Solution**: Resume Explorer uses two libraries automatically (PyMuPDF → pdfplumber fallback)
+   - Check backend logs to see if both extraction attempts failed
+   - Try exporting the PDF from the original source with "text-based" settings
+
+**Problem**: "Extraction failed" error with PDF
+
+**Solution**:
+1. Check backend logs for specific error:
+   ```bash
+   # Look for PDF extraction errors
+   tail -f backend/logs/app.log | grep -i "pdf\|extraction"
+   ```
+2. The system automatically tries two extraction libraries - if both fail, the PDF may be:
+   - Password-protected (not supported)
+   - Encrypted with DRM (not supported)
+   - Severely corrupted
+
+3. Try with a different PDF to rule out system issues
+
+**Problem**: Large PDF (>10MB) times out
+
+**Solution**:
+1. The default file size limit is 16MB
+2. Large PDFs may take longer to process - wait for completion
+3. If it consistently times out:
+   - Split the PDF into smaller parts
+   - Remove unnecessary pages
+   - Compress images in the PDF
+
+**For More Details**: See [Document Processing Architecture](DOCUMENT_PROCESSING.md) for technical details about PDF extraction.
 
 ---
 

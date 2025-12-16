@@ -54,6 +54,63 @@ Assume you are starting from a blank implementation.
 
 Initially, choose the simplest implementation that demonstrates the idea.
 
+## **Document Processing Architecture**
+
+Resume Explorer supports multiple document formats with a robust extraction pipeline. Understanding this architecture is crucial for future development.
+
+### **Supported Formats**
+- **PDF**: Dual-library approach (PyMuPDF primary, pdfplumber fallback)
+- **DOCX/DOC**: Microsoft Word via python-docx
+- **TXT**: Plain text (direct read)
+- **MD**: Markdown (direct read)
+
+### **PDF Extraction Strategy**
+
+We use a **dual-library fallback approach** for PDFs to ensure maximum compatibility:
+
+**1. Primary: PyMuPDF (fitz)**
+- Fast, efficient
+- Handles standard PDFs well
+- Extracts text page-by-page
+
+**2. Fallback: pdfplumber**
+- Better for complex layouts
+- Handles tables and forms
+- Used when PyMuPDF returns empty/fails
+
+**Why Two Libraries?**
+- Different PDFs require different extraction strategies
+- PyMuPDF is faster but may miss complex layouts
+- pdfplumber is slower but more comprehensive
+- Fallback ensures maximum compatibility
+
+### **Implementation Location**
+- File: `backend/resume_explorer/utils/document_processor.py`
+- Class: `DocumentProcessor`
+- Byte stream processing for file uploads supported
+
+### **Fallback Flow**
+```
+PDF Upload
+    ↓
+Try PyMuPDF extraction
+    ↓
+Success? → Use extracted text
+    ↓ No
+Try pdfplumber extraction
+    ↓
+Success? → Use extracted text
+    ↓ No
+Return error
+```
+
+### **Future Developers**
+- If adding new file formats, follow the pattern in `DocumentProcessor`
+- Always provide fallback mechanisms for reliability
+- Test with complex/edge-case documents (scanned PDFs, forms, tables)
+- Log extraction failures for debugging
+- See `docs/DOCUMENT_PROCESSING.md` for complete technical details
+
 ## **Tasks for the First Iterations**
 
 1. Read the outline and summarize the minimal viable architecture.
