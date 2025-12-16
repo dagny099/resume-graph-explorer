@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import uuid
+from urllib.parse import quote
 
 from rdflib import URIRef, Literal, Graph, Namespace
 from rdflib.namespace import RDF, RDFS, SKOS, XSD
@@ -76,7 +77,9 @@ class SKOSEntity:
             >>> str(entity.get_uri())
             'http://resumeexplorer.org/resource/abc-123'
         """
-        return base_namespace[self.id]
+        # URL-encode the ID to handle spaces and special characters
+        encoded_id = quote(self.id, safe='')
+        return base_namespace[encoded_id]
 
     def to_rdf(self, graph: Graph, base_namespace: Namespace = RESUME) -> URIRef:
         """
@@ -110,15 +113,21 @@ class SKOSEntity:
 
         # SKOS hierarchical relationships
         for broader_id in self.broader_concepts:
-            broader_uri = base_namespace[broader_id]
+            # URL-encode ID to handle spaces and special characters
+            encoded_id = quote(broader_id, safe='')
+            broader_uri = base_namespace[encoded_id]
             graph.add((uri, SKOS.broader, broader_uri))
 
         for narrower_id in self.narrower_concepts:
-            narrower_uri = base_namespace[narrower_id]
+            # URL-encode ID to handle spaces and special characters
+            encoded_id = quote(narrower_id, safe='')
+            narrower_uri = base_namespace[encoded_id]
             graph.add((uri, SKOS.narrower, narrower_uri))
 
         for related_id in self.related_concepts:
-            related_uri = base_namespace[related_id]
+            # URL-encode ID to handle spaces and special characters
+            encoded_id = quote(related_id, safe='')
+            related_uri = base_namespace[encoded_id]
             graph.add((uri, SKOS.related, related_uri))
 
         # Provenance metadata

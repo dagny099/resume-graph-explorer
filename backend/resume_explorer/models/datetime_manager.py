@@ -36,6 +36,14 @@ class DateTimeManager:
 
         if isinstance(date_input, str):
             try:
+                # Try ISO 8601 format first (most common in serialization)
+                try:
+                    # Parse ISO 8601 with datetime.fromisoformat() (Python 3.7+)
+                    parsed = datetime.fromisoformat(date_input.replace('Z', '+00:00'))
+                    return parsed.date()
+                except (ValueError, AttributeError):
+                    pass
+
                 # Try parsing common date formats
                 for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%Y-%m-%d %H:%M:%S']:
                     try:
@@ -77,7 +85,15 @@ class DateTimeManager:
 
         if isinstance(date_input, str):
             try:
-                # Try parsing common datetime formats first
+                # Try ISO 8601 format first (most common in serialization)
+                try:
+                    # Parse ISO 8601 with datetime.fromisoformat() (Python 3.7+)
+                    # Handles formats like: 2025-12-16T14:58:06.854229
+                    return datetime.fromisoformat(date_input.replace('Z', '+00:00'))
+                except (ValueError, AttributeError):
+                    pass
+
+                # Try parsing common datetime formats
                 for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%d']:
                     try:
                         return datetime.strptime(date_input, fmt)

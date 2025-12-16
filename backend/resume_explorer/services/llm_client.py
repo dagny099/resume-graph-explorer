@@ -375,37 +375,95 @@ try:
         """
         DSPy language model adapter wrapping our LLMBackend.
         Enables DSPy modules to use the same backend as production.
+
+        Compatible with DSPy 3.x which expects litellm-style responses.
         """
 
         def __init__(self, backend: LLMBackend):
             self.backend = backend
             self.history = []  # DSPy requires history for optimization
-            super().__init__(model=backend.model_name)
-            logger.info(f"DSPy adapter initialized with {type(backend).__name__}")
 
-        def basic_request(self, prompt: str, **kwargs) -> str:
+            # Map backend to litellm-compatible model name
+            model_name = backend.model_name
+            if isinstance(backend, ClaudeBackend):
+                # Use the actual Claude model name
+                model_name = backend.model_name
+            elif isinstance(backend, OpenAIBackend):
+                # Use the actual OpenAI model name
+                model_name = backend.model_name
+            elif isinstance(backend, OllamaBackend):
+                # Prefix with ollama/ for litellm compatibility
+                model_name = f"ollama/{backend.model_name}"
+
+            super().__init__(model=model_name)
+            logger.info(f"DSPy adapter initialized with {type(backend).__name__}, model={model_name}")
+
+        def forward(self, prompt=None, messages=None, **kwargs):
             """
-            Core method DSPy calls for text generation.
+            Forward method called by DSPy 3.x.
+            Must return a litellm-compatible response object.
             """
+            # Extract parameters
             temperature = kwargs.get("temperature", 0.2)
             max_tokens = kwargs.get("max_tokens", 4096)
 
-            response = self.backend.generate(prompt, temperature=temperature, max_tokens=max_tokens)
+            # Convert messages to prompt if needed
+            if messages and not prompt:
+                prompt = self._messages_to_prompt(messages)
+            elif not messages and prompt:
+                messages = [{"role": "user", "content": prompt}]
 
-            # Log for DSPy optimization
-            self.history.append({"prompt": prompt, "response": response, "kwargs": kwargs})
+            # Generate response using our backend
+            try:
+                response_text = self.backend.generate(
+                    prompt=prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens
+                )
+            except Exception as e:
+                logger.error(f"Backend generation failed: {e}")
+                raise
+
+            # Log for debugging
+            self.history.append({
+                "prompt": prompt,
+                "messages": messages,
+                "response": response_text,
+                "kwargs": kwargs
+            })
+
+            # Create a litellm-compatible response object
+            # This mimics the structure that litellm returns
+            from types import SimpleNamespace
+
+            message = SimpleNamespace(
+                content=response_text,
+                role='assistant'
+            )
+
+            choice = SimpleNamespace(
+                message=message,
+                index=0,
+                finish_reason='stop'
+            )
+
+            usage = SimpleNamespace(
+                prompt_tokens=len(prompt.split()) if prompt else 0,
+                completion_tokens=len(response_text.split()),
+                total_tokens=len(prompt.split()) + len(response_text.split()) if prompt else len(response_text.split())
+            )
+
+            response = SimpleNamespace(
+                choices=[choice],
+                model=self.model,
+                usage=usage,
+                cache_hit=False,
+                id=f"chatcmpl-{hash(response_text) % 10000000}",
+                created=int(__import__('time').time()),
+                object='chat.completion'
+            )
 
             return response
-
-        def __call__(self, prompt=None, messages=None, **kwargs):
-            """
-            DSPy's main call interface.
-            Can receive either a prompt string or messages list.
-            """
-            if messages:
-                prompt = self._messages_to_prompt(messages)
-
-            return self.basic_request(prompt, **kwargs)
 
         def _messages_to_prompt(self, messages: List[Dict[str, str]]) -> str:
             """
@@ -415,7 +473,10 @@ try:
             for msg in messages:
                 role = msg.get("role", "user")
                 content = msg.get("content", "")
-                prompt_parts.append(f"{role.capitalize()}: {content}")
+                if role == "system":
+                    prompt_parts.insert(0, f"System: {content}")
+                else:
+                    prompt_parts.append(f"{role.capitalize()}: {content}")
 
             return "\n\n".join(prompt_parts)
 

@@ -348,16 +348,53 @@ def create_extraction_pipeline(llm_backend, use_dspy: bool = True) -> Any:
     """
     if use_dspy:
         try:
-            # Configure DSPy with LLM backend
-            from .llm_client import DSPyLMAdapter
-            dspy_lm = DSPyLMAdapter(backend=llm_backend)
-            dspy.settings.configure(lm=dspy_lm)
+            import os
+            from .llm_client import ClaudeBackend, OpenAIBackend, OllamaBackend
 
-            logger.info("Using DSPy extraction pipeline")
+            # Configure DSPy using native LM support (DSPy 3.x)
+            # This is more reliable than custom adapters
+            if isinstance(llm_backend, OpenAIBackend):
+                logger.info(f"Configuring DSPy with OpenAI: {llm_backend.model_name}")
+                # Use DSPy's native OpenAI support via litellm
+                dspy_lm = dspy.LM(
+                    model=llm_backend.model_name,
+                    api_key=llm_backend.api_key,
+                    temperature=0.2,
+                    max_tokens=4096
+                )
+                dspy.settings.configure(lm=dspy_lm)
+
+            elif isinstance(llm_backend, ClaudeBackend):
+                logger.info(f"Configuring DSPy with Claude: {llm_backend.model_name}")
+                # Use DSPy's native Claude support via litellm
+                dspy_lm = dspy.LM(
+                    model=llm_backend.model_name,
+                    api_key=llm_backend.api_key,
+                    temperature=0.2,
+                    max_tokens=4096
+                )
+                dspy.settings.configure(lm=dspy_lm)
+
+            elif isinstance(llm_backend, OllamaBackend):
+                logger.info(f"Configuring DSPy with Ollama: {llm_backend.model_name}")
+                # Use DSPy's native Ollama support via litellm
+                dspy_lm = dspy.LM(
+                    model=f"ollama/{llm_backend.model_name}",
+                    api_base=llm_backend.base_url,
+                    temperature=0.2,
+                    max_tokens=4096
+                )
+                dspy.settings.configure(lm=dspy_lm)
+
+            else:
+                raise ValueError(f"Unsupported backend type: {type(llm_backend)}")
+
+            logger.info("DSPy configured successfully, creating extraction module")
             return ResumeExtractionModule()
 
         except Exception as e:
             logger.warning(f"DSPy initialization failed, falling back to simplified extractor: {e}")
+            logger.exception(e)  # Log full traceback for debugging
             return SimplifiedExtractor(llm_backend)
     else:
         logger.info("Using simplified extraction pipeline")
