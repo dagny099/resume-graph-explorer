@@ -417,7 +417,8 @@ def get_session_stats(session_id):
             'skills': 0,
             'education': 0,
             'certifications': 0,
-            'organizations': 0
+            'organizations': 0,
+            'persons': 0
         }
     }
 
@@ -435,6 +436,9 @@ def get_session_stats(session_id):
                 stats['total_entities']['education'] += len(entities.get('education', []))
                 stats['total_entities']['certifications'] += len(entities.get('certifications', []))
                 stats['total_entities']['organizations'] += len(entities.get('organizations', []))
+                # Count person entity (0 or 1 per document)
+                if entities.get('person'):
+                    stats['total_entities']['persons'] += 1
 
     return jsonify(stats)
 

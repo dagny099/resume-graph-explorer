@@ -138,3 +138,51 @@
   font-size: 0.85rem;
   color: #721c24;
 }
+
+/* Compact mode wrapper */
+.resume-upload.compact {
+  margin-bottom: 15px;
+}
+
+/* Compact upload area */
+.upload-area.compact {
+  padding: 12px 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #f8f9fa;
+}
+
+.upload-area.compact:hover {
+  border-color: #4ECDC4;
+  background: white;
+}
+
+/* Compact prompt */
+.upload-prompt-compact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.upload-icon-compact {
+  font-size: 1.5rem;
+}
+
+.upload-text-compact {
+  font-size: 0.95rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.upload-hint-inline {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: normal;
+}
+
+/* Compact drag-over state */
+.upload-area.compact.drag-over {
+  border-color: #4ECDC4;
+  background: #e3f6f5;
+  border-width: 2px;
+}

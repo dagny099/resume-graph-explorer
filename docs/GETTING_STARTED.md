@@ -11,10 +11,11 @@ Welcome to Resume Explorer! This guide will walk you through installing, configu
 5. [Your First Session](#your-first-session)
 6. [Uploading a Resume](#uploading-a-resume)
 7. [Exploring the Graph](#exploring-the-graph)
-8. [Understanding Entities](#understanding-entities)
-9. [Exporting Your Graph](#exporting-your-graph)
-10. [Troubleshooting](#troubleshooting)
-11. [Next Steps](#next-steps)
+8. [Interface Overview](#interface-overview)
+9. [Understanding Entities](#understanding-entities)
+10. [Exporting Your Graph](#exporting-your-graph)
+11. [Troubleshooting](#troubleshooting)
+12. [Next Steps](#next-steps)
 
 ---
 
@@ -203,19 +204,22 @@ Sessions are containers that hold one or more resumes and their extracted knowle
 
 ### Step 1: Create a Session
 
-1. Click the **"+ New Session"** button in the sidebar
+1. Click the **"+ New Session"** button in the sidebar (below the session dropdown)
 2. Enter a session name (e.g., "My Resume 2025")
 3. Click **"Create"**
 
-Your new session will appear in the session list and be automatically selected.
+Your new session will appear in the session dropdown and be automatically selected.
 
 ### Step 2: Session Overview
 
-The session panel shows:
-- **Session name** - Click to switch between sessions
-- **Document count** - Number of resumes uploaded
-- **Created date** - When the session was created
-- **Delete button** - Remove the session (careful!)
+The session selector uses a compact dropdown interface:
+- **Current session** - Displays in the dropdown trigger (click to expand)
+- **Session list** - Shows all sessions when expanded
+- **Session metadata** - Each session shows document count and last updated time
+- **Actions** - Rename (✏️) or Delete (🗑️) buttons appear on hover
+- **Active indicator** - ✓ checkmark shows which session is currently active
+
+This compact design maximizes space for your knowledge graph while keeping all sessions easily accessible.
 
 ---
 
@@ -241,9 +245,15 @@ Make sure your resume includes:
 
 ### Step 2: Upload the File
 
+The upload area adapts to your workflow:
+- **Empty session** - Shows a large, prominent upload area
+- **Graph loaded** - Displays as a compact "Add another document" bar
+
+Both modes support the same upload methods:
+
 **Method 1: Drag and Drop**
 1. Drag your resume file from your file browser
-2. Drop it onto the upload area
+2. Drop it onto the upload area (works in both compact and full modes)
 
 **Method 2: Click to Browse**
 1. Click the upload area
@@ -322,6 +332,62 @@ The legend (top right) shows:
 - Entity types and their colors
 - Count of each entity type
 - Total nodes and edges in the graph
+
+---
+
+## Interface Overview
+
+The Resume Explorer interface is designed for maximum efficiency with a compact, space-optimized layout that dedicates most screen space to your knowledge graph.
+
+### Session Selector (Sidebar - Top)
+
+The session selector uses a compact dropdown design:
+
+**When collapsed:**
+- Shows only the current session name
+- Takes minimal vertical space (~60px)
+- Click to expand the full session list
+
+**When expanded:**
+- Shows all your sessions with metadata (document count, last updated)
+- Active session marked with a ✓ checkmark
+- Edit (✏️) and Delete (🗑️) buttons appear on hover
+- Click any session to switch to it
+
+**Creating a New Session:**
+- Click the "+ New Session" button (always visible below the dropdown)
+- Enter a session name and click "Create"
+
+### Export Panel (Sidebar - Bottom)
+
+The export panel shows:
+
+**Entity Type Summary:**
+- All entity types present in your graph
+- Count for each type (Documents, Person, Jobs, Organizations, Education, Certifications, Skills)
+- Displayed in a clean 2-column grid
+- Note: Unknown entities are automatically excluded from exports
+
+**Export Buttons:**
+- Export Turtle (.ttl) - Human-readable RDF format
+- Export RDF/XML (.rdf) - XML-based RDF format
+- Export JSON-LD (.jsonld) - Web-friendly JSON format
+
+### Document Upload Area (Content Area - Top)
+
+The upload area adapts based on your graph state:
+
+**When session is empty (full mode):**
+- Large, prominent drag-and-drop area
+- Clear instructions and supported file formats
+- Takes ~200px of vertical space
+
+**When graph is loaded (compact mode):**
+- Compact bar showing "Add another document"
+- Still supports drag-and-drop and click-to-browse
+- Takes only ~50px, maximizing space for graph visualization
+
+This progressive disclosure keeps the upload feature accessible while prioritizing graph visibility.
 
 ---
 
@@ -414,18 +480,31 @@ You can export your knowledge graph in standard semantic web formats.
 
 ### How to Export
 
-1. Click the **Export** button in the top toolbar
-2. Select your desired format (Turtle, RDF/XML, or JSON-LD)
-3. The file will download automatically
+The Export Panel is located in the sidebar and provides a quick overview before exporting:
+
+**Step 1: Review Entity Counts**
+- The export panel shows all entity types in your graph
+- Entity counts are displayed in a 2-column grid
+- You'll see: Documents, Person, Jobs, Organizations, Education, Certifications, Skills
+- Note: Unknown entities are automatically excluded from exports
+
+**Step 2: Choose Export Format**
+1. Click one of the export buttons:
+   - **Export Turtle (.ttl)** - Human-readable format
+   - **Export RDF/XML (.rdf)** - XML-based format
+   - **Export JSON-LD (.jsonld)** - Web-friendly JSON
+
+2. The file will download automatically to your default downloads folder
 
 ### What's in the Export?
 
 The RDF export includes:
 
-- **All entities** with SKOS properties
+- **All entities** with SKOS properties (Person, Jobs, Skills, Education, Certifications, Organizations)
 - **All relationships** between entities
 - **SKOS hierarchies** (broader/narrower/related concepts)
 - **External vocabulary links** (ESCO skills, schema.org types)
+- **Unknown entities are excluded** - Only well-structured entities are exported
 - **Metadata** (creation dates, confidence scores, source documents)
 
 ### Example: Turtle Output

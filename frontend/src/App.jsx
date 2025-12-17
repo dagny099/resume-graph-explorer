@@ -86,6 +86,7 @@ function App() {
               <ResumeUpload
                 sessionId={currentSessionId}
                 onUploadComplete={handleUploadComplete}
+                graphData={graphData}
               />
 
               {loading ? (

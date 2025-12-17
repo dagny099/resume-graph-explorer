@@ -13,7 +13,7 @@ import { uploadDocument, getSession } from '../services/api';
 import wsClient from '../services/websocket';
 import './ResumeUpload.css';
 
-const ResumeUpload = ({ sessionId, onUploadComplete }) => {
+const ResumeUpload = ({ sessionId, onUploadComplete, graphData }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [extractionProgress, setExtractionProgress] = useState({});
@@ -118,9 +118,9 @@ const ResumeUpload = ({ sessionId, onUploadComplete }) => {
   };
 
   return (
-    <div className="resume-upload">
+    <div className={`resume-upload ${graphData ? 'compact' : 'full'}`}>
       <div
-        className={`upload-area ${dragOver ? 'drag-over' : ''} ${uploading ? 'uploading' : ''}`}
+        className={`upload-area ${graphData ? 'compact' : ''} ${dragOver ? 'drag-over' : ''} ${uploading ? 'uploading' : ''}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -133,6 +133,13 @@ const ResumeUpload = ({ sessionId, onUploadComplete }) => {
               <div className="progress-fill" style={{ width: `${uploadProgress}%` }} />
             </div>
             <p className="progress-text">{uploadProgress}%</p>
+          </div>
+        ) : graphData ? (
+          <div className="upload-prompt-compact">
+            <span className="upload-icon-compact">📄</span>
+            <span className="upload-text-compact">
+              Add another document <span className="upload-hint-inline">(click or drag & drop)</span>
+            </span>
           </div>
         ) : (
           <div className="upload-prompt">
