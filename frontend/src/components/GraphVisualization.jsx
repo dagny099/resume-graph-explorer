@@ -8,14 +8,45 @@
  * - Physics-based layout
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Network } from 'vis-network';
+import RelationshipStatsPanel from './RelationshipStatsPanel';
+import UnknownNodesTable from './UnknownNodesTable';
 import './GraphVisualization.css';
 
 const GraphVisualization = ({ graphData, onNodeClick }) => {
   const containerRef = useRef(null);
   const networkRef = useRef(null);
   const [stats, setStats] = useState(null);
+  const [hiddenNodeTypes, setHiddenNodeTypes] = useState(new Set());
+
+  // Toggle node type visibility
+  const handleLegendToggle = (nodeType) => {
+    setHiddenNodeTypes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(nodeType)) {
+        newSet.delete(nodeType);
+      } else {
+        newSet.add(nodeType);
+      }
+      return newSet;
+    });
+  };
+
+  // Filter visible nodes
+  const visibleNodes = useMemo(() => {
+    if (!graphData?.nodes) return [];
+    return graphData.nodes.filter(node => !hiddenNodeTypes.has(node.group));
+  }, [graphData?.nodes, hiddenNodeTypes]);
+
+  // Filter visible edges (only include if both nodes visible)
+  const visibleEdges = useMemo(() => {
+    if (!graphData?.edges) return [];
+    const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
+    return graphData.edges.filter(edge =>
+      visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to)
+    );
+  }, [graphData?.edges, visibleNodes]);
 
   useEffect(() => {
     if (!graphData || !containerRef.current) {
@@ -74,12 +105,12 @@ const GraphVisualization = ({ graphData, onNodeClick }) => {
       },
     };
 
-    // Create network
+    // Create network with filtered data
     networkRef.current = new Network(
       containerRef.current,
       {
-        nodes: graphData.nodes || [],
-        edges: graphData.edges || [],
+        nodes: visibleNodes,
+        edges: visibleEdges,
       },
       options
     );
@@ -114,7 +145,7 @@ const GraphVisualization = ({ graphData, onNodeClick }) => {
         networkRef.current.destroy();
       }
     };
-  }, [graphData, onNodeClick]);
+  }, [graphData, onNodeClick, visibleNodes, visibleEdges]);
 
   if (!graphData) {
     return (
@@ -144,7 +175,18 @@ const GraphVisualization = ({ graphData, onNodeClick }) => {
           <h4>Legend</h4>
           <div className="legend-items">
             {Object.entries(stats.entity_type_counts).map(([type, count]) => (
-              <div key={type} className="legend-item">
+              <div
+                key={type}
+                className={`legend-item ${hiddenNodeTypes.has(type) ? 'hidden' : ''}`}
+                onClick={() => handleLegendToggle(type)}
+                role="button"
+                tabIndex={0}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleLegendToggle(type);
+                  }
+                }}
+              >
                 <span className={`legend-color legend-${type}`} />
                 <span className="legend-label">
                   {type.charAt(0).toUpperCase() + type.slice(1)} ({count})
@@ -154,6 +196,14 @@ const GraphVisualization = ({ graphData, onNodeClick }) => {
           </div>
         </div>
       )}
+
+      <RelationshipStatsPanel stats={stats} />
+
+      <UnknownNodesTable
+        nodes={graphData?.nodes || []}
+        edges={graphData?.edges || []}
+        hiddenTypes={hiddenNodeTypes}
+      />
     </div>
   );
 };

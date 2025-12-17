@@ -1,0 +1,163 @@
+.unknown-nodes-table {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 15px;
+  overflow: hidden;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  cursor: pointer;
+  background: #fff9e6;
+  border-bottom: 1px solid #e0e0e0;
+  transition: background 0.2s;
+}
+
+.table-header:hover {
+  background: #fff4cc;
+}
+
+.table-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.unknown-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ff9800;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.hidden-indicator {
+  font-size: 0.8rem;
+  color: #999;
+  font-style: italic;
+  font-weight: normal;
+}
+
+.table-content {
+  padding: 15px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+thead {
+  background: #f8f9fa;
+}
+
+th {
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+}
+
+tbody tr:hover {
+  background: #f8f9fa;
+}
+
+tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+tbody tr:nth-child(even):hover {
+  background: #f0f0f0;
+}
+
+td {
+  padding: 10px 12px;
+  color: #333;
+}
+
+.node-label {
+  font-weight: 500;
+  color: #4ECDC4;
+}
+
+.confidence {
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
+
+.confidence-high {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.confidence-medium {
+  background: #fff9c4;
+  color: #f57f17;
+}
+
+.confidence-low {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.relationship-count {
+  text-align: center;
+  font-weight: 600;
+  color: #45B7D1;
+}
+
+.connected-nodes {
+  color: #666;
+  font-size: 0.8rem;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-help {
+  margin-top: 15px;
+  padding: 12px;
+  background: #e3f2fd;
+  border-left: 3px solid #1565C0;
+  font-size: 0.8rem;
+  color: #666;
+  line-height: 1.5;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  border-radius: 4px;
+}
+
+.help-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.help-text {
+  flex: 1;
+}

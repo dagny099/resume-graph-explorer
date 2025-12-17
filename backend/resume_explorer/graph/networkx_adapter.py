@@ -96,13 +96,19 @@ class NetworkXAdapter:
         # Convert dict to list
         nodes_list = list(nodes_dict.values())
 
+        # Compute edge statistics
+        edge_stats = self._count_edge_statistics(edges_list)
+
         result = {
             'nodes': nodes_list,
             'edges': edges_list,
             'stats': {
                 'node_count': len(nodes_list),
                 'edge_count': len(edges_list),
-                'entity_type_counts': self._count_entity_types(nodes_list)
+                'entity_type_counts': self._count_entity_types(nodes_list),
+                'edge_type_counts': edge_stats['edge_type_counts'],
+                'predicate_counts': edge_stats['predicate_counts'],
+                'predicates_by_edge_type': edge_stats['predicates_by_edge_type']
             }
         }
 
@@ -358,7 +364,17 @@ class NetworkXAdapter:
             return pred_str
 
     def _classify_edge(self, pred: URIRef) -> str:
-        """Classify edge type for styling."""
+        """
+        Classify edge type for visualization styling.
+        
+        Custom classification scheme for Resume Explorer:
+        - ownership: Person possesses/has something (hasJob, hasSkill, etc.)
+        - organizational: Connections to organizations
+        - usage: Application/use of skills or technology
+        - hierarchical: Taxonomy relationships (SKOS)
+        - typing: RDF type declarations
+        - other: Uncategorized relationships
+        """
         pred_str = str(pred)
 
         if pred_str in [str(RE.hasJob), str(RE.hasSkill), str(RE.hasCertification), str(SCHEMA.alumniOf)]:
@@ -405,6 +421,42 @@ class NetworkXAdapter:
             entity_type = node.get('group', 'unknown')
             counts[entity_type] += 1
         return dict(counts)
+
+    def _count_edge_statistics(self, edges: List[Dict]) -> Dict[str, Dict[str, int]]:
+        """
+        Count edges by type and predicate.
+
+        Args:
+            edges: List of edge dictionaries with metadata
+
+        Returns:
+            Dictionary with edge_type_counts, predicate_counts, and predicates_by_edge_type
+        """
+        edge_type_counts = defaultdict(int)
+        predicate_counts = defaultdict(int)
+        predicates_by_edge_type = defaultdict(lambda: defaultdict(int))
+
+        for edge in edges:
+            # Count by edge type classification
+            edge_type = edge.get('metadata', {}).get('edge_type', 'other')
+            edge_type_counts[edge_type] += 1
+
+            # Count by specific predicate
+            predicate_uri = edge.get('metadata', {}).get('predicate', 'unknown')
+            if predicate_uri and predicate_uri != 'unknown':
+                predicate_label = self._get_predicate_label(URIRef(predicate_uri))
+                predicate_counts[predicate_label] += 1
+                # Group predicate under its edge type
+                predicates_by_edge_type[edge_type][predicate_label] += 1
+            else:
+                predicate_counts['unknown'] += 1
+                predicates_by_edge_type[edge_type]['unknown'] += 1
+
+        return {
+            'edge_type_counts': dict(edge_type_counts),
+            'predicate_counts': dict(predicate_counts),
+            'predicates_by_edge_type': {k: dict(v) for k, v in predicates_by_edge_type.items()}
+        }
 
     def to_networkx(self) -> nx.MultiDiGraph:
         """
