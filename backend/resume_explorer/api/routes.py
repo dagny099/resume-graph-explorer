@@ -20,6 +20,7 @@ from ..services import ResumeExtractor
 from ..utils import DocumentProcessor, logger
 from ..graph import RDFGraphBuilder, NetworkXAdapter
 from ..models import Person, Job, Skill, Education, Certification, Organization
+from .google_services import GoogleDriveClient, GoogleOAuthService, OAuthToken
 
 
 api_bp = Blueprint('api', __name__)
@@ -163,16 +164,7 @@ def upload_document(session_id):
     if not document:
         return jsonify({'error': 'Failed to add document to session'}), 500
 
-    # Start extraction in background thread
-    # Capture app instance before thread starts
-    app = current_app._get_current_object()
-
-    def extract_async():
-        with app.app_context():
-            _run_extraction(session_id, document.id, filename, file_bytes)
-
-    thread = threading.Thread(target=extract_async, daemon=True)
-    thread.start()
+    _enqueue_extraction(session_id, document.id, filename, file_bytes)
 
     return jsonify({
         'document': document.to_dict(),
@@ -223,6 +215,18 @@ def _run_extraction(session_id: str, document_id: str, filename: str, file_bytes
     except Exception as e:
         logger.error(f"Extraction failed for document {document_id}: {e}", exc_info=True)
         session_store.update_document_status(document_id, 'error', str(e))
+
+
+def _enqueue_extraction(session_id: str, document_id: str, filename: str, file_bytes: bytes):
+    """Start extraction in a background thread."""
+    app = current_app._get_current_object()
+
+    def extract_async():
+        with app.app_context():
+            _run_extraction(session_id, document_id, filename, file_bytes)
+
+    thread = threading.Thread(target=extract_async, daemon=True)
+    thread.start()
 
 
 @api_bp.route('/documents/<document_id>', methods=['GET'])
@@ -449,6 +453,113 @@ def get_storage_stats():
     session_store: SessionStore = current_app.session_store
 
     return jsonify(session_store.get_stats())
+
+
+# ============================================================================
+# Google OAuth + Drive Integration
+# ============================================================================
+
+
+def _get_google_services() -> tuple[GoogleOAuthService, GoogleDriveClient]:
+    oauth_service: GoogleOAuthService = getattr(current_app, 'google_oauth_service', None)
+    drive_client: GoogleDriveClient = getattr(current_app, 'google_drive_client', None)
+
+    if not oauth_service or not drive_client:
+        raise RuntimeError('Google OAuth is not configured')
+
+    return oauth_service, drive_client
+
+
+@api_bp.route('/google/auth', methods=['POST'])
+def google_auth():
+    """Return consent URL for Google OAuth."""
+    session_store: SessionStore = current_app.session_store
+    data = request.get_json() or {}
+    session_id = data.get('session_id')
+
+    if not session_id or not session_store.get_session(session_id):
+        return jsonify({'error': 'Session not found'}), 404
+
+    try:
+        oauth_service, _ = _get_google_services()
+    except RuntimeError as exc:
+        return jsonify({'error': str(exc)}), 503
+
+    state = data.get('state', session_id)
+    consent_url = oauth_service.build_consent_url(state=state)
+
+    return jsonify({'url': consent_url})
+
+
+@api_bp.route('/google/callback', methods=['POST'])
+def google_callback():
+    """Exchange authorization code for tokens and persist them for the session."""
+    session_store: SessionStore = current_app.session_store
+    data = request.get_json() or {}
+    code = data.get('code')
+    session_id = data.get('session_id') or data.get('state')
+
+    if not code:
+        return jsonify({'error': 'Missing authorization code'}), 400
+
+    if not session_id or not session_store.get_session(session_id):
+        return jsonify({'error': 'Session not found'}), 404
+
+    try:
+        oauth_service, _ = _get_google_services()
+    except RuntimeError as exc:
+        return jsonify({'error': str(exc)}), 503
+
+    try:
+        token: OAuthToken = oauth_service.exchange_code_for_tokens(code)
+        current_app.token_store.set_tokens(session_id, token)
+    except Exception as exc:
+        logger.error(f"Token exchange failed: {exc}", exc_info=True)
+        return jsonify({'error': 'Failed to exchange code for tokens'}), 500
+
+    return jsonify({'message': 'Tokens stored successfully'})
+
+
+@api_bp.route('/sessions/<session_id>/google/fetch', methods=['POST'])
+def fetch_google_document(session_id: str):
+    """Accept a Google URL, enqueue download/export, and store as a document."""
+    session_store: SessionStore = current_app.session_store
+    session = session_store.get_session(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    data = request.get_json() or {}
+    file_url = data.get('url')
+    if not file_url:
+        return jsonify({'error': 'Missing Google file URL'}), 400
+
+    try:
+        oauth_service, drive_client = _get_google_services()
+    except RuntimeError as exc:
+        return jsonify({'error': str(exc)}), 503
+
+    token = current_app.token_store.get_tokens(session_id)
+    if not token:
+        return jsonify({'error': 'No tokens stored for this session'}), 404
+
+    try:
+        file_id, file_type = drive_client.parse_file_url(file_url)
+        file_bytes, filename = drive_client.download_file(file_id, file_type, token)
+        filename = secure_filename(filename)
+    except Exception as exc:
+        logger.error(f"Failed to queue Google file: {exc}", exc_info=True)
+        return jsonify({'error': 'Failed to process Google file'}), 400
+
+    document = session_store.add_document(session_id, filename, file_bytes)
+    if not document:
+        return jsonify({'error': 'Failed to add document to session'}), 500
+
+    _enqueue_extraction(session_id, document.id, filename, file_bytes)
+
+    return jsonify({
+        'document': document.to_dict(),
+        'message': 'Google file enqueued for download and extraction'
+    }), 201
 
 
 __all__ = ['api_bp']

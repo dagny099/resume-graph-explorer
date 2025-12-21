@@ -16,6 +16,7 @@ from pathlib import Path
 from datetime import datetime
 
 from resume_explorer.api import create_app, SessionStore
+from resume_explorer.api.google_services import OAuthToken
 
 
 @pytest.fixture
@@ -303,6 +304,78 @@ class TestHealthEndpoint:
         assert data['status'] == 'healthy'
         assert 'llm_available' in data
         assert 'sessions' in data
+
+
+class TestGoogleIntegration:
+    """Test Google OAuth and Drive routes."""
+
+    def test_google_auth_url(self, client):
+        """Test POST /api/google/auth returns consent URL."""
+        create_response = client.post('/api/sessions', json={'name': 'Google Session'})
+        session_id = create_response.get_json()['session']['id']
+
+        response = client.post('/api/google/auth', json={'session_id': session_id})
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'url' in data
+        assert 'client_id' in data['url']
+
+    def test_google_callback_stores_tokens(self, client, app, monkeypatch):
+        """Test exchanging code stores tokens."""
+        create_response = client.post('/api/sessions', json={'name': 'Google Session'})
+        session_id = create_response.get_json()['session']['id']
+
+        fake_token = OAuthToken(
+            access_token='access',
+            refresh_token='refresh',
+            expires_at=datetime.utcnow(),
+            scope='scope'
+        )
+
+        monkeypatch.setattr(
+            app.google_oauth_service,
+            'exchange_code_for_tokens',
+            lambda code: fake_token
+        )
+
+        response = client.post('/api/google/callback', json={
+            'code': 'test-code',
+            'session_id': session_id
+        })
+
+        assert response.status_code == 200
+        stored = app.token_store.get_tokens(session_id)
+        assert stored is not None
+        assert stored.access_token == 'access'
+
+    def test_fetch_google_document(self, client, app, monkeypatch):
+        """Test enqueuing a Google document download."""
+        create_response = client.post('/api/sessions', json={'name': 'Google Session'})
+        session_id = create_response.get_json()['session']['id']
+
+        token = OAuthToken(
+            access_token='access',
+            refresh_token='refresh',
+            expires_at=datetime.utcnow()
+        )
+        app.token_store.set_tokens(session_id, token)
+
+        monkeypatch.setattr(
+            app.google_drive_client,
+            'download_file',
+            lambda file_id, file_type, token: (b'content', 'FILE123.pdf')
+        )
+
+        response = client.post(
+            f'/api/sessions/{session_id}/google/fetch',
+            json={'url': 'https://docs.google.com/spreadsheets/d/FILE123/edit'}
+        )
+
+        assert response.status_code == 201
+        data = response.get_json()
+        assert 'document' in data
+        assert data['document']['filename'] == 'FILE123.pdf'
 
 
 class TestSessionStore:
