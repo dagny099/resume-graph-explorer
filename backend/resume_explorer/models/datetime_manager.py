@@ -38,7 +38,9 @@ class DateTimeManager:
             try:
                 # Try parsing ISO 8601 format with fromisoformat first (handles microseconds)
                 try:
-                    return datetime.fromisoformat(date_input).date()
+                    # Handle 'Z' timezone marker (not supported until Python 3.11)
+                    parsed = datetime.fromisoformat(date_input.replace('Z', '+00:00'))
+                    return parsed.date()
                 except (ValueError, AttributeError):
                     pass
 
@@ -85,7 +87,8 @@ class DateTimeManager:
             try:
                 # Try parsing ISO 8601 format with fromisoformat first (handles microseconds)
                 try:
-                    return datetime.fromisoformat(date_input)
+                    # Handle 'Z' timezone marker (not supported until Python 3.11)
+                    return datetime.fromisoformat(date_input.replace('Z', '+00:00'))
                 except (ValueError, AttributeError):
                     pass
 
