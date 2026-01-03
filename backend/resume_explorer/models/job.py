@@ -94,9 +94,7 @@ class Job(SKOSEntity):
         if self.title:
             graph.add((uri, SCHEMA.title, Literal(self.title)))
         if self.organization_id:
-            # URL-encode ID to handle spaces and special characters
-            encoded_org_id = quote(self.organization_id, safe='')
-            org_uri = base_namespace[encoded_org_id]
+            org_uri = base_namespace[quote(self.organization_id, safe='')]
             graph.add((uri, SCHEMA.hiringOrganization, org_uri))
         if self.location:
             graph.add((uri, SCHEMA.jobLocation, Literal(self.location)))
@@ -114,16 +112,12 @@ class Job(SKOSEntity):
 
         # Skill relationships
         for skill_id in self.skills_used:
-            # URL-encode ID to handle spaces and special characters
-            encoded_skill_id = quote(skill_id, safe='')
-            skill_uri = base_namespace[encoded_skill_id]
+            skill_uri = base_namespace[quote(skill_id, safe='')]
             graph.add((uri, RelationType.USED_SKILL, skill_uri))
 
         # Technology relationships
         for tech_id in self.technologies_used:
-            # URL-encode ID to handle spaces and special characters
-            encoded_tech_id = quote(tech_id, safe='')
-            tech_uri = base_namespace[encoded_tech_id]
+            tech_uri = base_namespace[quote(tech_id, safe='')]
             graph.add((uri, RelationType.USED_TECHNOLOGY, tech_uri))
 
         # Achievements

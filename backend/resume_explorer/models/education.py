@@ -69,9 +69,7 @@ class Education(SKOSEntity):
         if self.field_of_study:
             graph.add((uri, SCHEMA.educationalCredentialAwarded, Literal(self.field_of_study)))
         if self.institution_id:
-            # URL-encode ID to handle spaces and special characters
-            encoded_inst_id = quote(self.institution_id, safe='')
-            institution_uri = base_namespace[encoded_inst_id]
+            institution_uri = base_namespace[quote(self.institution_id, safe='')]
             graph.add((uri, SCHEMA.recognizedBy, institution_uri))
         if self.location:
             graph.add((uri, SCHEMA.availableAtOrFrom, Literal(self.location)))

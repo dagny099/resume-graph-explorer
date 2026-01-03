@@ -15,14 +15,21 @@ from ..utils.logger import logger
 
 
 class ExtractResumeEntities(dspy.Signature):
-    """
-    Extract structured entities from resume text following SKOS schema.
+    """Extract structured entities from resume text following SKOS schema.
 
     Uses hybrid vocabulary (ESCO + schema.org + custom RE namespace).
+    Make sure organization IDs are stable and reused between the
+    organizations list and any jobs/education that reference them.
+
+    Return a JSON object with all required fields: reasoning, person, jobs, skills, education, certifications, organizations.
     """
 
     resume_text: str = dspy.InputField(
         desc="Full resume text including contact info, work history, education, skills"
+    )
+
+    reasoning: str = dspy.OutputField(
+        desc="Brief explanation of extraction decisions, ambiguities resolved, and confidence assessments"
     )
 
     person: dict = dspy.OutputField(
@@ -30,7 +37,7 @@ class ExtractResumeEntities(dspy.Signature):
     )
 
     jobs: list = dspy.OutputField(
-        desc="List of job positions (schema:JobPosting) with title, organization_name (exact name from organizations list), dates, location, description, skills_used"
+        desc="List of job positions (schema:JobPosting) with title, company, dates, location, description, skills_used. organization_id MUST point to an id from the organizations list; prefer ids like org-{kebab-case-company-name} and reuse them across all jobs."
     )
 
     skills: list = dspy.OutputField(
@@ -38,7 +45,7 @@ class ExtractResumeEntities(dspy.Signature):
     )
 
     education: list = dspy.OutputField(
-        desc="List of education records (schema:EducationalOccupationalCredential) with degree_type, field_of_study, institution_name (exact name from organizations list), dates, gpa"
+        desc="List of education records (schema:EducationalOccupationalCredential) with degree_type, field_of_study, institution, dates, gpa. institution_id MUST reuse an id from the organizations list (use org-{kebab-case-institution-name})."
     )
 
     certifications: list = dspy.OutputField(
@@ -46,11 +53,7 @@ class ExtractResumeEntities(dspy.Signature):
     )
 
     organizations: list = dspy.OutputField(
-        desc="List of ALL organizations (schema:Organization) mentioned - companies, institutions with name, org_type, location, website. Extract FIRST, then reference by name in jobs/education"
-    )
-
-    reasoning: str = dspy.OutputField(
-        desc="Explanation of extraction decisions, ambiguities resolved, and confidence assessments"
+        desc="List of organizations (schema:Organization) mentioned - companies, institutions with name, org_type, location, website. Provide a stable id for each (org-{kebab-case-name}) and ensure jobs/education reference these ids."
     )
 
 
@@ -78,13 +81,14 @@ class ResumeExtractionModule(dspy.Module):
     """
     DSPy module for resume entity extraction with reasoning.
 
-    Uses Chain of Thought for structured extraction and hierarchical reasoning.
+    Uses Predict for structured extraction (reasoning is already in the signature).
     """
 
     def __init__(self):
         super().__init__()
-        self.extract_entities = dspy.ChainOfThought(ExtractResumeEntities)
-        self.extract_hierarchy = dspy.ChainOfThought(ExtractSkillHierarchy)
+        # Use Predict instead of ChainOfThought since reasoning is already an output field
+        self.extract_entities = dspy.Predict(ExtractResumeEntities)
+        self.extract_hierarchy = dspy.Predict(ExtractSkillHierarchy)
 
     def forward(self, resume_text: str) -> Dict[str, Any]:
         """
@@ -98,8 +102,13 @@ class ResumeExtractionModule(dspy.Module):
         """
         logger.info("Starting DSPy resume extraction")
 
-        # Step 1: Extract base entities
-        extraction_result = self.extract_entities(resume_text=resume_text)
+        try:
+            # Step 1: Extract base entities
+            extraction_result = self.extract_entities(resume_text=resume_text)
+        except Exception as e:
+            logger.error(f"DSPy extraction failed: {e}")
+            logger.debug(f"Error details: {type(e).__name__}: {str(e)}")
+            raise
 
         # Step 2: Build skill hierarchy
         skills = extraction_result.skills
@@ -137,30 +146,13 @@ class SimplifiedExtractor:
 
     EXTRACTION_PROMPT = """You are a resume parser that extracts structured information.
 
+Organization ID rules:
+- Build the organizations array first.
+- For every organization, set an id using "org-{{kebab-case-organization-name}}". Example: "OpenAI" -> "org-openai".
+- Use those exact ids in jobs.organization_id and education.institution_id. Never invent ids that are not present in the organizations array.
+- Do NOT use template strings like org-{{uuid}} or org-{{uuid1}}. If no name is available, fall back to a short, unique id such as org-company-1.
+
 Extract the following entities from the resume:
-
-IMPORTANT EXTRACTION ORDER:
-1. First, identify ALL organizations (companies, universities, institutions) mentioned in the resume
-2. List each organization ONCE in the "organizations" array with its exact name
-3. When listing jobs and education, reference organizations by their EXACT NAME (not UUID)
-4. Use the exact same spelling and capitalization
-
-REFERENCE RULES:
-- Jobs: Use "organization_name" field with the company's exact name
-- Education: Use "institution_name" field with the university's exact name
-- These names must match entries in the "organizations" array
-
-EXAMPLE:
-"organizations": [
-  {{"name": "Google", "org_type": "Company", ...}},
-  {{"name": "MIT", "org_type": "University", ...}}
-],
-"jobs": [
-  {{"title": "Software Engineer", "organization_name": "Google", ...}}
-],
-"education": [
-  {{"degree_type": "BS", "institution_name": "MIT", ...}}
-]
 
 1. PERSON: Name, email, phone, location, professional summary
 2. JOBS: For each position, extract:
@@ -215,7 +207,7 @@ Return ONLY valid JSON following this exact schema:
   "jobs": [
     {{
       "title": "...",
-      "organization_name": "Company Name Here",
+      "organization_id": "org-openai",
       "start_date": "YYYY-MM-DD",
       "end_date": "YYYY-MM-DD or null",
       "is_current": false,
@@ -238,7 +230,7 @@ Return ONLY valid JSON following this exact schema:
     {{
       "degree_type": "PhD",
       "field_of_study": "...",
-      "institution_name": "University Name Here",
+      "institution_id": "org-mit",
       "start_date": "YYYY-MM-DD",
       "end_date": "YYYY-MM-DD",
       "gpa": 3.9
@@ -255,10 +247,11 @@ Return ONLY valid JSON following this exact schema:
   ],
   "organizations": [
     {{
-      "name": "...",
+      "id": "org-openai",
+      "name": "OpenAI",
       "org_type": "Company",
-      "location": "...",
-      "website": "..."
+      "location": "San Francisco, CA",
+      "website": "https://openai.com"
     }}
   ]
 }}
@@ -348,53 +341,24 @@ def create_extraction_pipeline(llm_backend, use_dspy: bool = True) -> Any:
     """
     if use_dspy:
         try:
-            import os
-            from .llm_client import ClaudeBackend, OpenAIBackend, OllamaBackend
+            # Configure DSPy with LLM backend
+            from .llm_client import DSPyLMAdapter, LenientChatAdapter
 
-            # Configure DSPy using native LM support (DSPy 3.x)
-            # This is more reliable than custom adapters
-            if isinstance(llm_backend, OpenAIBackend):
-                logger.info(f"Configuring DSPy with OpenAI: {llm_backend.model_name}")
-                # Use DSPy's native OpenAI support via litellm
-                dspy_lm = dspy.LM(
-                    model=llm_backend.model_name,
-                    api_key=llm_backend.api_key,
-                    temperature=0.2,
-                    max_tokens=4096
-                )
-                dspy.settings.configure(lm=dspy_lm)
+            dspy_lm = DSPyLMAdapter(backend=llm_backend)
 
-            elif isinstance(llm_backend, ClaudeBackend):
-                logger.info(f"Configuring DSPy with Claude: {llm_backend.model_name}")
-                # Use DSPy's native Claude support via litellm
-                dspy_lm = dspy.LM(
-                    model=llm_backend.model_name,
-                    api_key=llm_backend.api_key,
-                    temperature=0.2,
-                    max_tokens=4096
-                )
-                dspy.settings.configure(lm=dspy_lm)
+            # Use LenientChatAdapter - it's more forgiving than JSONAdapter
+            # and handles various response formats better
+            dspy.settings.configure(
+                lm=dspy_lm,
+                adapter=LenientChatAdapter()
+            )
+            logger.info("Using DSPy extraction pipeline with LenientChatAdapter")
 
-            elif isinstance(llm_backend, OllamaBackend):
-                logger.info(f"Configuring DSPy with Ollama: {llm_backend.model_name}")
-                # Use DSPy's native Ollama support via litellm
-                dspy_lm = dspy.LM(
-                    model=f"ollama/{llm_backend.model_name}",
-                    api_base=llm_backend.base_url,
-                    temperature=0.2,
-                    max_tokens=4096
-                )
-                dspy.settings.configure(lm=dspy_lm)
-
-            else:
-                raise ValueError(f"Unsupported backend type: {type(llm_backend)}")
-
-            logger.info("DSPy configured successfully, creating extraction module")
             return ResumeExtractionModule()
 
         except Exception as e:
             logger.warning(f"DSPy initialization failed, falling back to simplified extractor: {e}")
-            logger.exception(e)  # Log full traceback for debugging
+            logger.debug(f"Error details: {type(e).__name__}: {str(e)}")
             return SimplifiedExtractor(llm_backend)
     else:
         logger.info("Using simplified extraction pipeline")

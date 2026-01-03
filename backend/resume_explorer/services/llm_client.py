@@ -87,6 +87,7 @@ class ClaudeBackend(LLMBackend):
         system_prompt: Optional[str] = None,
         temperature: float = 0.2,
         max_tokens: int = 4096,
+        json_mode: bool = False,
         **kwargs,
     ) -> str:
         """
@@ -97,20 +98,26 @@ class ClaudeBackend(LLMBackend):
             system_prompt: Optional system prompt
             temperature: Sampling temperature (0.0 = deterministic, 1.0 = creative)
             max_tokens: Maximum tokens to generate
+            json_mode: If True, adds JSON formatting instructions
             **kwargs: Additional Claude options
 
         Returns:
             Generated text string
         """
         try:
-            logger.debug(f"Claude generate request: model={self.model_name}, prompt_len={len(prompt)}")
+            logger.debug(f"Claude generate request: model={self.model_name}, prompt_len={len(prompt)}, json_mode={json_mode}")
+
+            # Add JSON formatting instruction if needed
+            effective_prompt = prompt
+            if json_mode and "json" not in prompt.lower():
+                effective_prompt = f"{prompt}\n\nRespond with valid JSON only. Do not include markdown formatting or explanations."
 
             message = self.client.messages.create(
                 model=self.model_name,
                 max_tokens=max_tokens,
                 temperature=temperature,
                 system=system_prompt or "",
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": effective_prompt}],
                 **kwargs,
             )
 
@@ -375,95 +382,51 @@ try:
         """
         DSPy language model adapter wrapping our LLMBackend.
         Enables DSPy modules to use the same backend as production.
-
-        Compatible with DSPy 3.x which expects litellm-style responses.
         """
 
         def __init__(self, backend: LLMBackend):
             self.backend = backend
             self.history = []  # DSPy requires history for optimization
+            super().__init__(model=backend.model_name)
+            logger.info(f"DSPy adapter initialized with {type(backend).__name__}")
 
-            # Map backend to litellm-compatible model name
-            model_name = backend.model_name
-            if isinstance(backend, ClaudeBackend):
-                # Use the actual Claude model name
-                model_name = backend.model_name
-            elif isinstance(backend, OpenAIBackend):
-                # Use the actual OpenAI model name
-                model_name = backend.model_name
-            elif isinstance(backend, OllamaBackend):
-                # Prefix with ollama/ for litellm compatibility
-                model_name = f"ollama/{backend.model_name}"
-
-            super().__init__(model=model_name)
-            logger.info(f"DSPy adapter initialized with {type(backend).__name__}, model={model_name}")
-
-        def forward(self, prompt=None, messages=None, **kwargs):
+        def basic_request(self, prompt: str, **kwargs) -> str:
             """
-            Forward method called by DSPy 3.x.
-            Must return a litellm-compatible response object.
+            Core method DSPy calls for text generation.
             """
-            # Extract parameters
             temperature = kwargs.get("temperature", 0.2)
             max_tokens = kwargs.get("max_tokens", 4096)
 
-            # Convert messages to prompt if needed
-            if messages and not prompt:
+            response = self.backend.generate(prompt, temperature=temperature, max_tokens=max_tokens)
+
+            # Log raw response for debugging
+            logger.debug(f"Raw LLM response length: {len(response)}")
+            logger.debug(f"Raw LLM response preview: {response[:200]}...")
+
+            # Clean up markdown-formatted JSON responses for DSPy adapters
+            cleaned_response = self._clean_json_response(response)
+
+            logger.debug(f"Cleaned response length: {len(cleaned_response)}")
+            logger.debug(f"Cleaned response preview: {cleaned_response[:200]}...")
+
+            # Log for DSPy optimization
+            self.history.append({"prompt": prompt, "response": cleaned_response, "kwargs": kwargs})
+
+            return cleaned_response
+
+        def __call__(self, prompt=None, messages=None, **kwargs):
+            """
+            DSPy's main call interface.
+            Can receive either a prompt string or messages list.
+            """
+            if messages:
                 prompt = self._messages_to_prompt(messages)
-            elif not messages and prompt:
-                messages = [{"role": "user", "content": prompt}]
 
-            # Generate response using our backend
-            try:
-                response_text = self.backend.generate(
-                    prompt=prompt,
-                    temperature=temperature,
-                    max_tokens=max_tokens
-                )
-            except Exception as e:
-                logger.error(f"Backend generation failed: {e}")
-                raise
+            # Add JSON formatting instruction to ensure valid JSON output
+            if prompt and "```json" not in prompt.lower():
+                prompt = f"{prompt}\n\nIMPORTANT: Respond with ONLY valid JSON. Do not include any markdown formatting, code blocks, or explanatory text. Return the raw JSON object directly."
 
-            # Log for debugging
-            self.history.append({
-                "prompt": prompt,
-                "messages": messages,
-                "response": response_text,
-                "kwargs": kwargs
-            })
-
-            # Create a litellm-compatible response object
-            # This mimics the structure that litellm returns
-            from types import SimpleNamespace
-
-            message = SimpleNamespace(
-                content=response_text,
-                role='assistant'
-            )
-
-            choice = SimpleNamespace(
-                message=message,
-                index=0,
-                finish_reason='stop'
-            )
-
-            usage = SimpleNamespace(
-                prompt_tokens=len(prompt.split()) if prompt else 0,
-                completion_tokens=len(response_text.split()),
-                total_tokens=len(prompt.split()) + len(response_text.split()) if prompt else len(response_text.split())
-            )
-
-            response = SimpleNamespace(
-                choices=[choice],
-                model=self.model,
-                usage=usage,
-                cache_hit=False,
-                id=f"chatcmpl-{hash(response_text) % 10000000}",
-                created=int(__import__('time').time()),
-                object='chat.completion'
-            )
-
-            return response
+            return self.basic_request(prompt, **kwargs)
 
         def _messages_to_prompt(self, messages: List[Dict[str, str]]) -> str:
             """
@@ -473,12 +436,37 @@ try:
             for msg in messages:
                 role = msg.get("role", "user")
                 content = msg.get("content", "")
-                if role == "system":
-                    prompt_parts.insert(0, f"System: {content}")
-                else:
-                    prompt_parts.append(f"{role.capitalize()}: {content}")
+                prompt_parts.append(f"{role.capitalize()}: {content}")
 
             return "\n\n".join(prompt_parts)
+
+        def _clean_json_response(self, response: str) -> str:
+            """
+            Clean up LLM response to extract valid JSON.
+            Removes markdown code blocks and other formatting.
+            """
+            import re
+
+            cleaned = response.strip()
+
+            # Remove markdown code blocks
+            if cleaned.startswith('```json'):
+                cleaned = cleaned[7:]
+            elif cleaned.startswith('```'):
+                cleaned = cleaned[3:]
+
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+
+            cleaned = cleaned.strip()
+
+            # Try to extract JSON object if response contains extra text
+            # Look for the first { and last } to extract the JSON object
+            json_match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+            if json_match:
+                return json_match.group(0)
+
+            return cleaned
 
         def inspect_history(self, n: int = 1) -> List[Dict]:
             """

@@ -113,25 +113,19 @@ class SKOSEntity:
 
         # SKOS hierarchical relationships
         for broader_id in self.broader_concepts:
-            # URL-encode ID to handle spaces and special characters
-            encoded_id = quote(broader_id, safe='')
-            broader_uri = base_namespace[encoded_id]
+            broader_uri = base_namespace[quote(broader_id, safe='')]
             graph.add((uri, SKOS.broader, broader_uri))
 
         for narrower_id in self.narrower_concepts:
-            # URL-encode ID to handle spaces and special characters
-            encoded_id = quote(narrower_id, safe='')
-            narrower_uri = base_namespace[encoded_id]
+            narrower_uri = base_namespace[quote(narrower_id, safe='')]
             graph.add((uri, SKOS.narrower, narrower_uri))
 
         for related_id in self.related_concepts:
-            # URL-encode ID to handle spaces and special characters
-            encoded_id = quote(related_id, safe='')
-            related_uri = base_namespace[encoded_id]
+            related_uri = base_namespace[quote(related_id, safe='')]
             graph.add((uri, SKOS.related, related_uri))
 
         # Provenance metadata
-        graph.add((uri, RE.confidence, Literal(self.confidence, datatype=XSD.float)))
+        graph.add((uri, RE.confidence, Literal(self.confidence)))
         if self.source_doc:
             graph.add((uri, RE.sourceDocument, Literal(self.source_doc)))
         graph.add((uri, RE.createdAt, Literal(self.created_at, datatype=XSD.dateTime)))
