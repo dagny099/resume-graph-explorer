@@ -501,23 +501,41 @@ try:
                 if not output_fields:
                     raise
 
-                primary_field = "answer" if "answer" in signature.output_fields else output_fields[0]
+                # Try to extract partial JSON if possible
                 text = completion.strip()
-                outputs[primary_field] = text or ""
 
+                # Attempt to parse any valid JSON fragments
+                import json
+                try:
+                    # Try to parse the completion as JSON first
+                    parsed = json.loads(text)
+                    if isinstance(parsed, dict):
+                        # Use parsed data as base, fill in missing fields
+                        outputs.update(parsed)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+                # Fill in all required fields with proper type defaults
                 for field in output_fields:
-                    if field == primary_field:
-                        continue
+                    if field in outputs:
+                        continue  # Already parsed from JSON
+
                     ann = signature.output_fields[field].annotation
+
                     # Sensible defaults by type
                     if field == "reasoning":
                         outputs[field] = text or "Model returned an empty response."
-                    if ann == bool:
+                    elif ann == bool:
                         outputs[field] = False
                     elif ann in (list, tuple, set):
                         outputs[field] = []
-                    else:
+                    elif ann == dict or (hasattr(ann, '__origin__') and ann.__origin__ == dict):
+                        outputs[field] = {}
+                    elif ann == str:
                         outputs[field] = ""
+                    else:
+                        # Default fallback based on common type patterns
+                        outputs[field] = {}
 
                 return outputs
 

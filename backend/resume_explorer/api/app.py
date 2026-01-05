@@ -61,6 +61,32 @@ def create_app(config: dict = None) -> Flask:
         }
     })
 
+    # ============================================
+    # PRODUCTION: Serve frontend static files
+    # ============================================
+    from flask import send_from_directory
+
+    # Path to built frontend (dist folder)
+    frontend_dist = os.path.join(
+        os.path.dirname(__file__),
+        '../../../frontend/dist'
+    )
+
+    # Only serve static files if dist folder exists
+    if os.path.exists(frontend_dist):
+        @app.route('/', defaults={'path': ''})
+        @app.route('/<path:path>')
+        def serve_frontend(path):
+            """Serve frontend static files or index.html for SPA routing"""
+            if path and os.path.exists(os.path.join(frontend_dist, path)):
+                return send_from_directory(frontend_dist, path)
+            return send_from_directory(frontend_dist, 'index.html')
+
+        logger.info(f"Serving frontend static files from: {frontend_dist}")
+    else:
+        logger.warning(f"Frontend dist folder not found at: {frontend_dist}")
+    # ============================================
+
     # Initialize WebSocket
     socketio = init_socketio(app)
 
@@ -131,4 +157,13 @@ __all__ = ['create_app', 'run_app']
 
 
 if __name__ == '__main__':
-    run_app()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Resume Explorer API Server')
+    parser.add_argument('--host', default='0.0.0.0', help='Host to bind to (default: 0.0.0.0)')
+    parser.add_argument('--port', type=int, default=5000, help='Port to bind to (default: 5000)')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+
+    args = parser.parse_args()
+
+    run_app(host=args.host, port=args.port, debug=args.debug)

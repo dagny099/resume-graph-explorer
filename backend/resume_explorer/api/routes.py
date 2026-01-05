@@ -123,7 +123,11 @@ def delete_session(session_id):
 
 @api_bp.route('/sessions/<session_id>/documents', methods=['POST'])
 def upload_document(session_id):
-    """Upload document to session and trigger extraction."""
+    """Upload document to session and trigger extraction.
+
+    Query parameters:
+        use_dspy: 'true' or 'false' to override default extraction method
+    """
     session_store: SessionStore = current_app.session_store
 
     # Check session exists
@@ -156,6 +160,16 @@ def upload_document(session_id):
             'error': f'Unsupported file type. Allowed: {", ".join(allowed_extensions)}'
         }), 400
 
+    # Get extraction method preference (query param overrides config default)
+    use_dspy_param = request.args.get('use_dspy', '').lower()
+    if use_dspy_param in ('true', '1', 'yes'):
+        use_dspy = True
+    elif use_dspy_param in ('false', '0', 'no'):
+        use_dspy = False
+    else:
+        # Use config default if parameter not provided or invalid
+        use_dspy = current_app.config['ENABLE_DSPY']
+
     # Save document to session
     file_bytes = file.read()
     document = session_store.add_document(session_id, filename, file_bytes)
@@ -169,19 +183,28 @@ def upload_document(session_id):
 
     def extract_async():
         with app.app_context():
-            _run_extraction(session_id, document.id, filename, file_bytes)
+            _run_extraction(session_id, document.id, filename, file_bytes, use_dspy)
 
     thread = threading.Thread(target=extract_async, daemon=True)
     thread.start()
 
+    extraction_method = "DSPy" if use_dspy else "SimplifiedExtractor"
     return jsonify({
         'document': document.to_dict(),
-        'message': 'Document uploaded, extraction started'
+        'message': f'Document uploaded, extraction started using {extraction_method}'
     }), 201
 
 
-def _run_extraction(session_id: str, document_id: str, filename: str, file_bytes: bytes):
-    """Run extraction in background thread."""
+def _run_extraction(session_id: str, document_id: str, filename: str, file_bytes: bytes, use_dspy: bool = None):
+    """Run extraction in background thread.
+
+    Args:
+        session_id: Session ID
+        document_id: Document ID
+        filename: Original filename
+        file_bytes: File content as bytes
+        use_dspy: Whether to use DSPy (overrides config if provided)
+    """
     session_store: SessionStore = current_app.session_store
 
     try:
@@ -197,15 +220,21 @@ def _run_extraction(session_id: str, document_id: str, filename: str, file_bytes
         if not llm_client:
             raise ValueError("LLM client not initialized")
 
+        # Use provided parameter or fall back to config
+        if use_dspy is None:
+            use_dspy = current_app.config['ENABLE_DSPY']
+
         event_emitter = ExtractionEventEmitter()
         extractor = ResumeExtractor(
             llm_client=llm_client,
             event_emitter=event_emitter.emit,
-            use_dspy=current_app.config['ENABLE_DSPY']
+            use_dspy=use_dspy
         )
 
+        extraction_method = "DSPy" if use_dspy else "SimplifiedExtractor"
+        logger.info(f"Extracting entities from {filename} using {extraction_method}")
+
         # Extract entities
-        logger.info(f"Extracting entities from {filename}")
         entities = extractor.extract_entities(
             resume_text=resume_text,
             filename=filename,

@@ -84,8 +84,13 @@ class ResumeExtractionModule(dspy.Module):
     Uses Predict for structured extraction (reasoning is already in the signature).
     """
 
-    def __init__(self):
+    def __init__(self, llm_backend=None, adapter=None):
         super().__init__()
+        # Store backend and adapter for lazy initialization
+        self._llm_backend = llm_backend
+        self._adapter = adapter
+        self._configured = False
+
         # Use Predict instead of ChainOfThought since reasoning is already an output field
         self.extract_entities = dspy.Predict(ExtractResumeEntities)
         self.extract_hierarchy = dspy.Predict(ExtractSkillHierarchy)
@@ -100,6 +105,20 @@ class ResumeExtractionModule(dspy.Module):
         Returns:
             Dictionary with extracted entities and reasoning
         """
+        # Lazy initialization: configure DSPy in the thread that uses it
+        if not self._configured and self._llm_backend and self._adapter:
+            try:
+                import dspy
+                from .llm_client import DSPyLMAdapter
+
+                dspy_lm = DSPyLMAdapter(backend=self._llm_backend)
+                dspy.settings.configure(lm=dspy_lm, adapter=self._adapter)
+                self._configured = True
+                logger.info("DSPy configured lazily in worker thread")
+            except Exception as e:
+                logger.error(f"Lazy DSPy configuration failed: {e}")
+                raise
+
         logger.info("Starting DSPy resume extraction")
 
         try:
@@ -341,20 +360,14 @@ def create_extraction_pipeline(llm_backend, use_dspy: bool = True) -> Any:
     """
     if use_dspy:
         try:
-            # Configure DSPy with LLM backend
-            from .llm_client import DSPyLMAdapter, LenientChatAdapter
+            # Pass backend and adapter to module for lazy initialization
+            # This avoids threading issues with dspy.settings
+            from .llm_client import LenientChatAdapter
 
-            dspy_lm = DSPyLMAdapter(backend=llm_backend)
+            adapter = LenientChatAdapter()
+            logger.info("Created DSPy extraction pipeline (will configure lazily in worker thread)")
 
-            # Use LenientChatAdapter - it's more forgiving than JSONAdapter
-            # and handles various response formats better
-            dspy.settings.configure(
-                lm=dspy_lm,
-                adapter=LenientChatAdapter()
-            )
-            logger.info("Using DSPy extraction pipeline with LenientChatAdapter")
-
-            return ResumeExtractionModule()
+            return ResumeExtractionModule(llm_backend=llm_backend, adapter=adapter)
 
         except Exception as e:
             logger.warning(f"DSPy initialization failed, falling back to simplified extractor: {e}")
