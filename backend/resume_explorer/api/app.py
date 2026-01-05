@@ -16,6 +16,7 @@ from .websocket import init_socketio
 from .session_store import SessionStore
 from ..services import create_llm_client
 from ..utils.logger import logger
+from .google_services import GoogleDriveClient, GoogleOAuthService, TokenStore
 
 
 def create_app(config: dict = None) -> Flask:
@@ -46,6 +47,15 @@ def create_app(config: dict = None) -> Flask:
 
         # RDF export
         DEFAULT_RDF_FORMAT=os.getenv('DEFAULT_RDF_FORMAT', 'turtle'),
+
+        # Google OAuth
+        GOOGLE_CLIENT_ID=os.getenv('GOOGLE_CLIENT_ID', 'demo-google-client-id'),
+        GOOGLE_CLIENT_SECRET=os.getenv('GOOGLE_CLIENT_SECRET', 'demo-google-client-secret'),
+        GOOGLE_REDIRECT_URI=os.getenv('GOOGLE_REDIRECT_URI', 'http://localhost:5000/api/google/callback'),
+        GOOGLE_SCOPES=os.getenv('GOOGLE_SCOPES', 'https://www.googleapis.com/auth/drive.readonly'),
+
+        # Data storage path
+        DATA_PATH=os.getenv('DATA_PATH', 'data'),
     )
 
     # Override with provided config
@@ -65,8 +75,26 @@ def create_app(config: dict = None) -> Flask:
     socketio = init_socketio(app)
 
     # Initialize session store
-    session_store = SessionStore(base_path=os.getenv('DATA_PATH', 'data'))
+    session_store = SessionStore(base_path=app.config['DATA_PATH'])
     app.session_store = session_store
+
+    # Initialize token store and Google services
+    token_store = TokenStore(base_path=app.config['DATA_PATH'])
+    app.token_store = token_store
+
+    try:
+        app.google_oauth_service = GoogleOAuthService(
+            client_id=app.config['GOOGLE_CLIENT_ID'],
+            client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+            redirect_uri=app.config['GOOGLE_REDIRECT_URI'],
+            scopes=app.config['GOOGLE_SCOPES'],
+            token_store=token_store,
+        )
+        app.google_drive_client = GoogleDriveClient(token_store=token_store)
+    except Exception as exc:
+        logger.warning(f"Google OAuth initialization failed: {exc}")
+        app.google_oauth_service = None
+        app.google_drive_client = None
 
     # Initialize LLM client
     try:
