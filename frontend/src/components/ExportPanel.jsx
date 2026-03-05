@@ -79,9 +79,6 @@ const ExportPanel = ({ sessionId, refreshKey }) => {
                 </div>
               ))}
             </div>
-            <div className="export-note">
-              <small>Note: Unknown entities are excluded from export</small>
-            </div>
           </>
         );
       })()}

@@ -27,6 +27,17 @@
   color: #333;
 }
 
+.summary-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.summary-total {
+  font-size: 0.8rem;
+  color: #888;
+}
+
 .toggle-icon {
   color: #666;
   font-size: 0.8rem;

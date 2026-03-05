@@ -10,6 +10,7 @@ from rdflib import Graph, URIRef, Literal
 from rdflib.namespace import RDF, SKOS
 from typing import Dict, List, Any, Optional, Set
 from collections import defaultdict
+from urllib.parse import unquote
 
 from .vocabularies import SCHEMA, ESCO, RE, RESUME, EntityType
 from ..utils.logger import logger
@@ -218,14 +219,14 @@ class NetworkXAdapter:
         if label:
             return str(label)
 
-        # Use last part of URI
+        # Use last part of URI, URL-decoding any percent-encoded characters
         uri_str = str(uri)
         if '#' in uri_str:
-            return uri_str.split('#')[-1]
+            return unquote(uri_str.split('#')[-1])
         elif '/' in uri_str:
-            return uri_str.split('/')[-1]
+            return unquote(uri_str.split('/')[-1])
         else:
-            return uri_str
+            return unquote(uri_str)
 
     def _get_entity_type(self, uri: URIRef) -> str:
         """Determine entity type from RDF type."""

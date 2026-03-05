@@ -8,7 +8,7 @@
  *   - Restores the session on return visits; transparently creates a new one if it
  *     has expired (free-tier backends wipe state on restart).
  *   - Visitors land directly on the upload/graph view with zero manual setup.
- *   - A subtle "↺ New Session" button lets users start fresh.
+ *   - A subtle "↺ Clear Session" button lets users start fresh.
  *
  * VITE_AUTO_SESSION not set, or =false  (default — personal / open-source deploy)
  *   - Shows the full SessionSelector UI: create, rename, delete, and switch sessions.
@@ -158,18 +158,24 @@ function App() {
     tryLoad();
   }, [currentSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Reset to a fresh session (auto mode only) ────────────────────────────
-  // Discards the stored session ID and creates a new one, clearing the UI.
-  const handleNewSession = async () => {
-    try {
-      localStorage.removeItem(SESSION_STORAGE_KEY);
-      const data = await createSession();
-      localStorage.setItem(SESSION_STORAGE_KEY, data.session.id);
-      setCurrentSessionId(data.session.id);
-      setGraphData(null);
-      setSelectedNode(null);
-    } catch (err) {
-      console.error('Failed to create new session:', err);
+  // ─── Clear / reset the current session ───────────────────────────────────
+  // Auto mode: discards the stored session ID and creates a fresh one silently.
+  // Manual mode: deselects the current session, returning to the SessionSelector.
+  const handleClearSession = async () => {
+    if (AUTO_SESSION) {
+      try {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        const data = await createSession();
+        localStorage.setItem(SESSION_STORAGE_KEY, data.session.id);
+        setCurrentSessionId(data.session.id);
+        setGraphData(null);
+        setSelectedNode(null);
+      } catch (err) {
+        console.error('Failed to create new session:', err);
+      }
+    } else {
+      // The existing useEffect on currentSessionId already clears graphData + selectedNode
+      setCurrentSessionId(null);
     }
   };
 
@@ -215,14 +221,14 @@ function App() {
             <ExportPanel sessionId={currentSessionId} refreshKey={refreshKey} />
           )}
 
-          {/* Auto mode: reset button once user is past the welcome screen */}
-          {AUTO_SESSION && !showWelcome && (
+          {/* Clear session button — shown in both modes once a session is active */}
+          {currentSessionId && !showWelcome && (
             <button
               className="btn-reset"
-              onClick={handleNewSession}
+              onClick={handleClearSession}
               title="Clear current data and start fresh"
             >
-              ↺ New Session
+              ↺ Clear Session
             </button>
           )}
         </div>

@@ -381,11 +381,33 @@ class ResumeExtractor:
                     confidence=job_data.get('confidence', 1.0)
                 )
 
-            # Map skill names to IDs
-            skills_used = []
-            for skill_name in job_data.get('skills_used', []):
-                if skill_name in skill_id_map:
-                    skills_used.append(skill_id_map[skill_name])
+            # Map skill/technology names to entity IDs.
+            # For any name not already in the skills list, create a minimal Skill
+            # entity so the node gets a proper RDF type (avoids Unknown nodes).
+            def _resolve_or_create_skill(name: str) -> str:
+                if name in skill_id_map:
+                    return skill_id_map[name]
+                new_skill = Skill(
+                    id=str(uuid.uuid4()),
+                    label=name,
+                    category='Technical',
+                    source_doc=source_filename,
+                    confidence=1.0
+                )
+                skills.append(new_skill)
+                skill_id_map[name] = new_skill.id
+                return new_skill.id
+
+            skills_used = [
+                _resolve_or_create_skill(n)
+                for n in job_data.get('skills_used', [])
+                if n
+            ]
+            technologies_used = [
+                _resolve_or_create_skill(n)
+                for n in job_data.get('technologies_used', [])
+                if n
+            ]
 
             job = Job(
                 id=str(uuid.uuid4()),
@@ -398,7 +420,7 @@ class ResumeExtractor:
                 location=job_data.get('location'),
                 description=job_data.get('description'),
                 skills_used=skills_used,
-                technologies_used=job_data.get('technologies_used', []),
+                technologies_used=technologies_used,
                 achievements=job_data.get('achievements', []),
                 source_doc=source_filename,
                 confidence=job_data.get('confidence', 1.0)
@@ -433,9 +455,17 @@ class ResumeExtractor:
                     confidence=edu_data.get('confidence', 1.0)
                 )
 
+            degree = edu_data.get('degree_type') or ''
+            field = edu_data.get('field_of_study') or ''
+            degree_label = f"{degree} in {field}".strip(" in").strip()
+            if not degree_label:
+                inst_org = orgs_by_id.get(resolved_inst_id)
+                inst_name = inst_org.name if inst_org else ''
+                degree_label = f"Degree at {inst_name}".strip() if inst_name else "Education"
+
             education = Education(
                 id=str(uuid.uuid4()),
-                label=f"{edu_data.get('degree_type', '')} in {edu_data.get('field_of_study', '')}",
+                label=degree_label,
                 degree_type=edu_data.get('degree_type', ''),
                 field_of_study=edu_data.get('field_of_study'),
                 institution_id=resolved_inst_id or '',

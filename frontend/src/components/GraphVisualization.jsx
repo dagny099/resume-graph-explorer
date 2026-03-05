@@ -11,6 +11,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Network } from 'vis-network';
 import RelationshipStatsPanel from './RelationshipStatsPanel';
+import EntitySummaryPanel from './EntitySummaryPanel';
 import UnknownNodesTable from './UnknownNodesTable';
 import './GraphVisualization.css';
 
@@ -19,6 +20,15 @@ const GraphVisualization = ({ graphData, onNodeClick }) => {
   const networkRef = useRef(null);
   const [stats, setStats] = useState(null);
   const [hiddenNodeTypes, setHiddenNodeTypes] = useState(new Set());
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpanded = () => setIsExpanded(prev => !prev);
+
+  // Refit the graph after the CSS transition gives the container its new size
+  useEffect(() => {
+    const timer = setTimeout(() => networkRef.current?.fit(), 150);
+    return () => clearTimeout(timer);
+  }, [isExpanded]);
 
   // Toggle node type visibility
   const handleLegendToggle = (nodeType) => {
@@ -157,22 +167,51 @@ const GraphVisualization = ({ graphData, onNodeClick }) => {
   }
 
   return (
-    <div className="graph-visualization">
+    <div className={`graph-visualization${isExpanded ? ' expanded' : ''}`}>
       <div className="graph-header">
-        <h3>Knowledge Graph</h3>
-        {stats && (
-          <div className="graph-stats">
-            <span>{stats.node_count} nodes</span>
-            <span>{stats.edge_count} relationships</span>
-          </div>
-        )}
+        <h3>
+          {(() => {
+            const name = graphData?.nodes?.find(n => n.group === 'person')?.label;
+            return name
+              ? <>Knowledge Graph for <span className="graph-person-name">{name}</span></>
+              : 'Knowledge Graph';
+          })()}
+        </h3>
+        <div className="graph-header-right">
+          {stats && (
+            <div className="graph-stats">
+              <span>{stats.node_count} nodes</span>
+              <span>{stats.edge_count} relationships</span>
+            </div>
+          )}
+          <button
+            className="fullscreen-btn"
+            onClick={toggleExpanded}
+            title={isExpanded ? 'Collapse graph' : 'Expand graph'}
+            aria-label={isExpanded ? 'Collapse graph' : 'Expand graph'}
+          >
+            {isExpanded ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+              </svg>
+            )}
+            <span>{isExpanded ? 'Collapse' : 'Expand'}</span>
+          </button>
+        </div>
       </div>
 
       <div ref={containerRef} className="graph-container" />
 
       {stats && stats.entity_type_counts && (
         <div className="graph-legend">
-          <h4>Legend</h4>
+          <div className="legend-header">
+            <h4>Legend</h4>
+            <span className="legend-hint">Click a label to toggle visibility</span>
+          </div>
           <div className="legend-items">
             {Object.entries(stats.entity_type_counts).map(([type, count]) => (
               <div
@@ -196,6 +235,8 @@ const GraphVisualization = ({ graphData, onNodeClick }) => {
           </div>
         </div>
       )}
+
+      <EntitySummaryPanel nodes={graphData?.nodes} />
 
       <RelationshipStatsPanel stats={stats} />
 

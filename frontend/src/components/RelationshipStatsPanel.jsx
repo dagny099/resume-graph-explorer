@@ -42,7 +42,12 @@ const RelationshipStatsPanel = ({ stats }) => {
     <div className="relationship-stats-panel">
       <div className="stats-header" onClick={() => setIsExpanded(!isExpanded)}>
         <h4>Relationship Statistics</h4>
-        <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
+        <div className="summary-header-right">
+          <span className="summary-total">
+            {Object.values(edge_type_counts).reduce((a, b) => a + b, 0)} relationships
+          </span>
+          <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
+        </div>
       </div>
 
       {isExpanded && (
