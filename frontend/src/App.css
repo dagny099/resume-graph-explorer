@@ -60,7 +60,7 @@ body {
 }
 
 .btn-reset {
-  margin-top: auto;
+  margin-top: 12px;
   padding: 8px 12px;
   background: transparent;
   border: 1px solid #ddd;
@@ -74,6 +74,32 @@ body {
 .btn-reset:hover {
   border-color: #aaa;
   color: #555;
+}
+
+.btn-get-started {
+  padding: 10px 16px;
+  background: #4a90d9;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+}
+
+.btn-get-started:hover {
+  background: #357abd;
+}
+
+/* Larger version rendered inside the welcome screen content area */
+.btn-get-started-main {
+  margin-top: 36px;
+  padding: 14px 40px;
+  font-size: 1.1rem;
+  width: auto;
+  border-radius: 8px;
 }
 
 .loading-state {

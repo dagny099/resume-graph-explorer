@@ -16,7 +16,7 @@
  *   - Welcome screen is shown until the user creates or selects a session.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import SessionSelector from './components/SessionSelector';
 import ResumeUpload from './components/ResumeUpload';
 import GraphVisualization from './components/GraphVisualization';
@@ -52,6 +52,11 @@ function App() {
 
   // Auto mode only: true if the backend was unreachable during init.
   const [sessionError, setSessionError] = useState(false);
+
+  // Welcome screen: shown initially in both modes.
+  // Auto mode: dismissed by clicking "Get Started". Auto-dismissed if returning user has graph data.
+  // Manual mode: dismissed when user creates/selects a session (currentSessionId becomes non-null).
+  const [showWelcome, setShowWelcome] = useState(AUTO_SESSION);
 
   // ─── Auto-session initialization ──────────────────────────────────────────
   // Runs once on mount. Skipped entirely in manual mode.
@@ -105,6 +110,13 @@ function App() {
     }
   }, [currentSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto mode: if a returning user already has graph data, skip the welcome screen.
+  useEffect(() => {
+    if (AUTO_SESSION && graphData && showWelcome) {
+      setShowWelcome(false);
+    }
+  }, [graphData]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const loadGraph = async () => {
     try {
       setLoading(true);
@@ -121,13 +133,30 @@ function App() {
     }
   };
 
-  const handleUploadComplete = () => {
-    // Brief delay gives the backend time to finish writing before we re-poll
-    setTimeout(() => {
-      loadGraph();
-      setRefreshKey(prev => prev + 1); // signals ExportPanel to refresh its stats
-    }, 1000);
-  };
+  const handleUploadComplete = useCallback(() => {
+    setRefreshKey(prev => prev + 1); // signals ExportPanel to refresh its stats
+    // Poll for the graph — extraction may have just completed, so retry a few times
+    let attempts = 0;
+    const tryLoad = async () => {
+      attempts++;
+      try {
+        setLoading(true);
+        const data = await getSessionGraph(currentSessionId);
+        setGraphData(data);
+        setLoading(false);
+      } catch (error) {
+        if (attempts < 5 && (!error.response || error.response.status === 404)) {
+          setTimeout(tryLoad, 3000);
+        } else {
+          setLoading(false);
+          if (!error.response || error.response.status !== 404) {
+            console.warn('Graph loading error:', error.message);
+          }
+        }
+      }
+    };
+    tryLoad();
+  }, [currentSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Reset to a fresh session (auto mode only) ────────────────────────────
   // Discards the stored session ID and creates a new one, clearing the UI.
@@ -181,13 +210,13 @@ function App() {
             />
           )}
 
-          {/* Export controls — shown once a session is active in either mode */}
-          {currentSessionId && (
+          {/* Export controls — shown once a session is active and welcome is dismissed */}
+          {currentSessionId && !showWelcome && (
             <ExportPanel sessionId={currentSessionId} refreshKey={refreshKey} />
           )}
 
-          {/* Auto mode: unobtrusive reset button at the bottom of the sidebar */}
-          {AUTO_SESSION && (
+          {/* Auto mode: reset button once user is past the welcome screen */}
+          {AUTO_SESSION && !showWelcome && (
             <button
               className="btn-reset"
               onClick={handleNewSession}
@@ -199,7 +228,42 @@ function App() {
         </div>
 
         <div className="content">
-          {currentSessionId ? (
+          {/* Welcome screen — shown in auto mode until dismissed, in manual mode until session selected */}
+          {(AUTO_SESSION ? showWelcome : !currentSessionId) ? (
+            <div className="welcome-state">
+              <h2>Welcome to Resume Explorer</h2>
+              <p>
+                {AUTO_SESSION
+                  ? 'Upload your resume to explore it as an interactive knowledge graph'
+                  : 'Select a session or create a new one to get started'}
+              </p>
+              <div className="features">
+                <div className="feature">
+                  <span className="feature-icon">📊</span>
+                  <h3>Knowledge Graph</h3>
+                  <p>Visualize your resume as an interactive graph</p>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">🤖</span>
+                  <h3>AI Extraction</h3>
+                  <p>Powered by advanced language models</p>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">🔗</span>
+                  <h3>SKOS Compliant</h3>
+                  <p>Export to standard RDF formats</p>
+                </div>
+              </div>
+              {AUTO_SESSION && (
+                <button
+                  className="btn-get-started btn-get-started-main"
+                  onClick={() => setShowWelcome(false)}
+                >
+                  Get Started
+                </button>
+              )}
+            </div>
+          ) : currentSessionId ? (
             <>
               <ResumeUpload
                 sessionId={currentSessionId}
@@ -219,29 +283,8 @@ function App() {
               {selectedNode && <EntityPanel selectedNode={selectedNode} />}
             </>
           ) : (
-            // Manual mode only: currentSessionId is null until the user creates/selects one.
-            // Auto mode never reaches here — it either has a session or shows the error screen.
-            <div className="welcome-state">
-              <h2>Welcome to Resume Explorer</h2>
-              <p>Select a session or create a new one to get started</p>
-              <div className="features">
-                <div className="feature">
-                  <span className="feature-icon">📊</span>
-                  <h3>Knowledge Graph</h3>
-                  <p>Visualize your resume as an interactive graph</p>
-                </div>
-                <div className="feature">
-                  <span className="feature-icon">🤖</span>
-                  <h3>AI Extraction</h3>
-                  <p>Powered by advanced language models</p>
-                </div>
-                <div className="feature">
-                  <span className="feature-icon">🔗</span>
-                  <h3>SKOS Compliant</h3>
-                  <p>Export to standard RDF formats</p>
-                </div>
-              </div>
-            </div>
+            // Auto mode: session still initializing after welcome was dismissed
+            <div className="loading-state"><p>Starting up...</p></div>
           )}
         </div>
       </main>
