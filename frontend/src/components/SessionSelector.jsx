@@ -30,7 +30,7 @@ const SessionSelector = ({ onSessionSelect, currentSessionId }) => {
     try {
       setLoading(true);
       const data = await listSessions();
-      setSessions(data.sessions);
+      setSessions(data.sessions ?? []);
     } catch (error) {
       console.error('Failed to load sessions:', error);
     } finally {
