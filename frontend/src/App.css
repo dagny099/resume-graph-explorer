@@ -59,6 +59,23 @@ body {
   min-width: 0;
 }
 
+.btn-reset {
+  margin-top: auto;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #888;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.btn-reset:hover {
+  border-color: #aaa;
+  color: #555;
+}
+
 .loading-state {
   background: white;
   border-radius: 8px;
