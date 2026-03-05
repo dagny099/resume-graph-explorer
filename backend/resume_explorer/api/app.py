@@ -55,7 +55,7 @@ def create_app(config: dict = None) -> Flask:
     # Enable CORS
     CORS(app, resources={
         r"/api/*": {
-            "origins": "*",
+            "origins": "https://resume-explorer.vercel.app",
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type"]
         }
