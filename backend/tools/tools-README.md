@@ -4,12 +4,12 @@
 
 These scripts operate on JSON-LD files exported from Resume Explorer. They normalize entities, analyze graph structure, and (optionally) embed the results into ChromaDB for the Digital Twin's retrieval pipeline.
 
-They are **not** part of the deployed app. They run on localhost, after Resume Explorer has processed one or more resumes and exported the graph.
+They are **not** part of the deployed app. They run locally on your machine, after you've used Resume Explorer to process one or more resumes and exported the graph.
 
 ```
                     ┌──────────────────────┐
                     │   Resume Explorer    │
-                    │   (Koyeb + Vercel)   │
+                    │   (Railway + Vercel) │
                     └──────────┬───────────┘
                                │ Export .jsonld
                                ▼
@@ -28,6 +28,18 @@ They are **not** part of the deployed app. They run on localhost, after Resume E
 │    normalized.jsonld         └──────────┬───────────┘   │
 │                                         │               │
 │                                   insights/*.md         │
+│                                         │               │
+│                          ┌──────────────▼────────────┐  │
+│                          │ narrative_synthesizer.py  │  │
+│                          │                           │  │
+│                          │ • Reads all 6 analyses    │  │
+│                          │ • LLM cross-references    │  │
+│                          │ • Conservative + Explorato│  │
+│                          │ • Cites [source_analysis] │  │
+│                          └──────────────┬────────────┘  │
+│                                         │               │
+│                         career_narrative_conservative.md│
+│                         career_narrative_exploratory.md │
 │                                         │               │
 │                              ┌──────────▼───────────┐   │
 │                              │  embed_insights.py   │   │
@@ -73,9 +85,16 @@ python tools/graph_analyzer.py \
   --input  my-export-normalized.jsonld \
   --output insights/
 
-# 3. Read the results
-ls insights/
-cat insights/skill_gap.md
+# 3. Synthesize cross-cutting narrative (LLM-powered)
+python tools/narrative_synthesizer.py \
+  --input  insights/ \
+  --output insights/ \
+  --provider anthropic
+
+# 4. Read the results
+cat insights/skill_gap.md                        # structural finding
+cat insights/career_narrative_conservative.md    # grounded synthesis
+cat insights/career_narrative_exploratory.md     # inferential synthesis
 ```
 
 That's it. You now have 6 insight documents derived from graph topology, ready to embed into the Digital Twin or read directly.
@@ -185,7 +204,62 @@ Each file includes YAML front matter with metadata, tags, and query hints (the p
 
 ---
 
-### Step 3: Embed into Digital Twin (future)
+### Step 3: Narrative Synthesis (LLM-powered)
+
+**What it does:** Sends all 6 structural analyses to an LLM and asks it to find cross-cutting themes. Produces two versions:
+
+| Version | What it does | Embed in Digital Twin? |
+|---------|-------------|----------------------|
+| Conservative | Only claims supported by the analyses. Every observation cites its source. | Yes — safe for automated retrieval |
+| Exploratory | May infer, hypothesize, suggest positioning strategies. Still cites sources. | No — for human review only |
+
+**Run it:**
+
+```bash
+# Both versions (default)
+python tools/narrative_synthesizer.py \
+  --input  data/insights/ \
+  --output data/insights/ \
+  --provider anthropic
+
+# Conservative only (cheaper, faster)
+python tools/narrative_synthesizer.py \
+  --input  data/insights/ \
+  --output data/insights/ \
+  --provider anthropic \
+  --conservative-only
+
+# Use a different model for deeper synthesis
+python tools/narrative_synthesizer.py \
+  --input  data/insights/ \
+  --output data/insights/ \
+  --provider anthropic \
+  --model claude-opus-4-20250514
+```
+
+**Output:**
+- `data/insights/career_narrative_conservative.md`
+- `data/insights/career_narrative_exploratory.md`
+
+**Auditing citations:**
+
+Every claim in both versions should cite its source analysis in [brackets]. Verify with:
+
+```bash
+grep -oP '\[.*?\]' data/insights/career_narrative_conservative.md | sort | uniq -c | sort -rn
+```
+
+This shows which analyses were cited and how often. If you see a claim without brackets, that's an unsupported assertion — flag it.
+
+**What to look for:**
+- Conservative version should feel like a well-written research summary — no speculation, just cross-referenced findings.
+- Exploratory version should feel like a conversation with a career strategist — inferences marked with "this suggests" and "one interpretation is."
+- If either version makes a claim that contradicts one of the 6 structural analyses, that's a hallucination. Check the source analysis it cites.
+- The exploratory version may suggest positioning strategies. Evaluate these against your actual market context — the LLM doesn't know your specific job targets.
+
+---
+
+### Step 4: Embed into Digital Twin (future)
 
 This step is not yet implemented as a script. When it is, it will:
 
@@ -350,4 +424,5 @@ The downstream consumer is ChromaDB (via the Digital Twin), which embeds text do
 |------|---------|-------|--------|
 | `entity_normalizer.py` | Fix naming inconsistencies across entity types | `.jsonld` | `.jsonld` + `.report.json` |
 | `graph_analyzer.py` | Run 6 structural analyses on the graph | `.jsonld` | 6 × `.md` files |
+| `narrative_synthesizer.py` | LLM cross-referencing of all 6 analyses | 6 × `.md` files | 2 × narrative `.md` files |
 | `embed_insights.py` | Embed insight docs into ChromaDB (future) | `.md` files | ChromaDB collection |
