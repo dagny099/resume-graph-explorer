@@ -52,14 +52,12 @@ def create_app(config: dict = None) -> Flask:
     if config:
         app.config.update(config)
 
-    # Enable CORS
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": "https://resume-explorer.vercel.app",
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type"]
-        }
-    })
+    # Enable CORS for all routes.
+    # CORS_ORIGINS env var lets you restrict to specific domains in production
+    # (e.g. "https://resume-graph-explorer.vercel.app"). Defaults to "*" so the
+    # public demo works without additional configuration.
+    allowed_origins = os.getenv('CORS_ORIGINS', '*')
+    CORS(app, origins=allowed_origins)
 
     # ============================================
     # PRODUCTION: Serve frontend static files
