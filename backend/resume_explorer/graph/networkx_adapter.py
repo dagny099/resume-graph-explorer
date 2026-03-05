@@ -77,6 +77,9 @@ class NetworkXAdapter:
 
         # Process all triples
         for subj, pred, obj in self.rdf_graph:
+            # Skip external reference nodes (e.g., SKOS exactMatch to ESCO URIs)
+            if pred == SKOS.exactMatch:
+                continue
             # Create subject node
             if isinstance(subj, URIRef):
                 subj_str = str(subj)

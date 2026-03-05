@@ -1,0 +1,15 @@
+{
+  "sessions": [
+    {
+      "id": "117fb11d-1353-4710-b822-e0659fe49b69",
+      "name": "Test Local",
+      "created_at": "2026-03-04T23:01:53.081632",
+      "updated_at": "2026-03-04T23:01:53.081632",
+      "documents": [],
+      "graph_state_path": null,
+      "metadata": {}
+    }
+  ],
+  "documents": [],
+  "last_updated": "2026-03-04T23:01:53.082272"
+}

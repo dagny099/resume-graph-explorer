@@ -17,19 +17,6 @@ Resume Explorer is a complete full-stack application that extracts structured en
 - **🔄 DSPy Integration**: Advanced reasoning patterns with chain-of-thought extraction
 - **☁️ Cloud-Ready**: Local-first design with abstraction layers for cloud deployment
 
-## 🚀 Project Status
-
-✅ **COMPLETE** - All 6 development phases finished!
-
-- ✅ Phase 1: Project Setup & LLM Abstraction
-- ✅ Phase 2: SKOS-Compliant Data Models
-- ✅ Phase 3: LLM Extraction with DSPy
-- ✅ Phase 4: RDF Graph Builder
-- ✅ Phase 5: Flask API with Session Management
-- ✅ Phase 6: React Frontend with Vis.js
-
-See [IMPLEMENTATION_PLAN_2025-12-08.md](docs/IMPLEMENTATION_PLAN_2025-12-08.md) for detailed roadmap.
-
 ## 🏗️ Architecture
 
 ```
@@ -67,6 +54,7 @@ See [IMPLEMENTATION_PLAN_2025-12-08.md](docs/IMPLEMENTATION_PLAN_2025-12-08.md) 
 - **Frontend**: React 18, Vite, Vis.js, Socket.IO
 - **LLM**: Claude (Anthropic), OpenAI GPT, Ollama (local)
 - **Semantic Web**: SKOS, ESCO skill taxonomy, schema.org
+
 
 ## 🚦 Quick Start
 
@@ -136,9 +124,9 @@ source venv/bin/activate
 python -m resume_explorer.api.app
 ```
 
-Backend will be available at: **http://localhost:5000**
+Backend will be available at by default: **http://localhost:5000**
 
-or
+or for a different port
 ```bash
 python -c "from resume_explorer.api.app import run_app; run_app(port=5002)"
 ```
