@@ -77,9 +77,6 @@ class NetworkXAdapter:
 
         # Process all triples
         for subj, pred, obj in self.rdf_graph:
-            # Skip external reference nodes (e.g., SKOS exactMatch to ESCO URIs)
-            if pred == SKOS.exactMatch:
-                continue
             # Create subject node
             if isinstance(subj, URIRef):
                 subj_str = str(subj)
@@ -87,7 +84,8 @@ class NetworkXAdapter:
                     nodes_dict[subj_str] = self._create_node(subj)
 
             # Create object node if it's a URI (not a literal)
-            if isinstance(obj, URIRef):
+            # Only visualize object nodes/edges for relationship triples
+            if isinstance(obj, URIRef) and pred not in {SKOS.exactMatch, RDF.type}:
                 obj_str = str(obj)
                 if obj_str not in nodes_dict:
                     nodes_dict[obj_str] = self._create_node(obj)
