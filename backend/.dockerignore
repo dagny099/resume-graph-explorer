@@ -1,0 +1,16 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+data/
+.env
+.env.*
+tests/
+*.md
+*.txt
+!requirements-prod.txt
+Dockerfile
+.dockerignore

@@ -1,6 +1,11 @@
-.DS_STORE
+.DS_Store
 .env
-.venv
+.env.*
+venv/
+.venv/
 backend/data/
-__pycache__
-frontend/node_modules
+__pycache__/
+*.pyc
+*.pyo
+frontend/node_modules/
+frontend/dist/
