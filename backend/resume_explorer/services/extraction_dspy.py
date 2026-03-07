@@ -86,10 +86,9 @@ class ResumeExtractionModule(dspy.Module):
 
     def __init__(self, llm_backend=None, adapter=None):
         super().__init__()
-        # Store backend and adapter for lazy initialization
+        # Store backend and adapter for thread-safe context creation
         self._llm_backend = llm_backend
         self._adapter = adapter
-        self._configured = False
 
         # Use Predict instead of ChainOfThought since reasoning is already an output field
         self.extract_entities = dspy.Predict(ExtractResumeEntities)
@@ -105,48 +104,43 @@ class ResumeExtractionModule(dspy.Module):
         Returns:
             Dictionary with extracted entities and reasoning
         """
-        # Lazy initialization: configure DSPy in the thread that uses it
-        if not self._configured and self._llm_backend and self._adapter:
-            try:
-                import dspy
-                from .llm_client import DSPyLMAdapter
+        import dspy
+        from .llm_client import DSPyLMAdapter
 
-                dspy_lm = DSPyLMAdapter(backend=self._llm_backend)
-                dspy.settings.configure(lm=dspy_lm, adapter=self._adapter)
-                self._configured = True
-                logger.info("DSPy configured lazily in worker thread")
+        # Use dspy.context() for thread-safe configuration
+        # This creates a context-local configuration instead of global state
+        dspy_lm = DSPyLMAdapter(backend=self._llm_backend) if self._llm_backend else None
+
+        # Create context with settings for this thread
+        with dspy.context(lm=dspy_lm, adapter=self._adapter):
+            logger.info("Starting DSPy resume extraction (thread-safe context)")
+
+            try:
+                # Step 1: Extract base entities
+                extraction_result = self.extract_entities(resume_text=resume_text)
             except Exception as e:
-                logger.error(f"Lazy DSPy configuration failed: {e}")
+                logger.error(f"DSPy extraction failed: {e}")
+                logger.debug(f"Error details: {type(e).__name__}: {str(e)}")
                 raise
 
-        logger.info("Starting DSPy resume extraction")
+            # Step 2: Build skill hierarchy
+            skills = extraction_result.skills
+            if skills:
+                skill_labels = [s.get('label', s.get('name', '')) for s in skills if isinstance(s, dict)]
+                if skill_labels:
+                    hierarchy_result = self.extract_hierarchy(skills=skill_labels)
 
-        try:
-            # Step 1: Extract base entities
-            extraction_result = self.extract_entities(resume_text=resume_text)
-        except Exception as e:
-            logger.error(f"DSPy extraction failed: {e}")
-            logger.debug(f"Error details: {type(e).__name__}: {str(e)}")
-            raise
+                    # Enrich skills with hierarchy and ESCO mappings
+                    for skill in skills:
+                        if isinstance(skill, dict):
+                            skill_label = skill.get('label', skill.get('name', ''))
+                            if skill_label in hierarchy_result.skill_hierarchy:
+                                skill.update(hierarchy_result.skill_hierarchy[skill_label])
+                            if skill_label in hierarchy_result.esco_mappings:
+                                skill['skos_uri'] = hierarchy_result.esco_mappings[skill_label]
 
-        # Step 2: Build skill hierarchy
-        skills = extraction_result.skills
-        if skills:
-            skill_labels = [s.get('label', s.get('name', '')) for s in skills if isinstance(s, dict)]
-            if skill_labels:
-                hierarchy_result = self.extract_hierarchy(skills=skill_labels)
-
-                # Enrich skills with hierarchy and ESCO mappings
-                for skill in skills:
-                    if isinstance(skill, dict):
-                        skill_label = skill.get('label', skill.get('name', ''))
-                        if skill_label in hierarchy_result.skill_hierarchy:
-                            skill.update(hierarchy_result.skill_hierarchy[skill_label])
-                        if skill_label in hierarchy_result.esco_mappings:
-                            skill['skos_uri'] = hierarchy_result.esco_mappings[skill_label]
-
-        return {
-            'person': extraction_result.person,
+            return {
+                'person': extraction_result.person,
             'jobs': extraction_result.jobs,
             'skills': skills,
             'education': extraction_result.education,

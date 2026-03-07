@@ -40,6 +40,9 @@ def create_app(config: dict = None) -> Flask:
         LLM_PROVIDER=os.getenv('LLM_PROVIDER', 'claude'),
         ENABLE_DSPY=os.getenv('ENABLE_DSPY', 'true').lower() == 'true',
 
+        # Entity normalization configuration
+        NORMALIZATION_PROVIDER=os.getenv('NORMALIZATION_PROVIDER', 'mock'),
+
         # Session configuration
         SESSION_AUTO_SAVE=os.getenv('SESSION_AUTO_SAVE', 'true').lower() == 'true',
         SESSION_MAX_DOCUMENTS=int(os.getenv('SESSION_MAX_DOCUMENTS', '10')),

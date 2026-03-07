@@ -46,6 +46,18 @@ class RDFGraphBuilder:
         # Bind all standard namespaces
         bind_namespaces(self.graph)
 
+        # Deduplication caches - map content keys to URIs
+        self._org_cache = {}  # org_name.lower() -> URIRef
+        self._org_id_to_uri = {}  # org_id -> URIRef (for institution/job lookup)
+        self._education_cache = {}  # (degree, field, institution_uri) -> URIRef
+        self._edu_id_to_uri = {}  # edu_id -> URIRef (for person references)
+        self._skill_cache = {}  # skill_name.lower() -> URIRef
+        self._skill_id_to_uri = {}  # skill_id -> URIRef (for job skill references)
+        self._job_cache = {}  # (title, org_uri, start_date) -> URIRef
+        self._job_id_to_uri = {}  # job_id -> URIRef (for person references)
+        self._cert_cache = {}  # (name, issuing_org) -> URIRef
+        self._cert_id_to_uri = {}  # cert_id -> URIRef (for person references)
+
         logger.info("RDFGraphBuilder initialized")
 
     def add_person(self, person: Person) -> URIRef:
@@ -76,24 +88,36 @@ class RDFGraphBuilder:
         if person.summary:
             self.graph.add((uri, SCHEMA.description, Literal(person.summary)))
 
-        # Add relationships to jobs
+        # Add relationships to jobs (use canonical URIs from deduplication)
         for job_id in person.jobs:
-            job_uri = self.base_namespace[quote(job_id, safe='')]
+            job_uri = self._job_id_to_uri.get(
+                job_id,
+                self.base_namespace[quote(job_id, safe='')]
+            )
             self.graph.add((uri, RE.hasJob, job_uri))
 
-        # Add relationships to skills
+        # Add relationships to skills (use canonical URIs from deduplication)
         for skill_id in person.skills:
-            skill_uri = self.base_namespace[quote(skill_id, safe='')]
+            skill_uri = self._skill_id_to_uri.get(
+                skill_id,
+                self.base_namespace[quote(skill_id, safe='')]
+            )
             self.graph.add((uri, RE.hasSkill, skill_uri))
 
-        # Add relationships to education
+        # Add relationships to education (use canonical URIs from deduplication)
         for edu_id in person.education:
-            edu_uri = self.base_namespace[quote(edu_id, safe='')]
+            edu_uri = self._edu_id_to_uri.get(
+                edu_id,
+                self.base_namespace[quote(edu_id, safe='')]
+            )
             self.graph.add((uri, SCHEMA.alumniOf, edu_uri))
 
-        # Add relationships to certifications
+        # Add relationships to certifications (use canonical URIs from deduplication)
         for cert_id in person.certifications:
-            cert_uri = self.base_namespace[quote(cert_id, safe='')]
+            cert_uri = self._cert_id_to_uri.get(
+                cert_id,
+                self.base_namespace[quote(cert_id, safe='')]
+            )
             self.graph.add((uri, RE.hasCertification, cert_uri))
 
         # Add provenance
@@ -104,14 +128,40 @@ class RDFGraphBuilder:
 
     def add_job(self, job: Job) -> URIRef:
         """
-        Add Job entity to RDF graph.
+        Add Job entity to RDF graph with deduplication.
+
+        Deduplicates jobs by (title, organization, start_date).
+        If an identical job already exists, returns existing URI.
 
         Args:
             job: Job entity
 
         Returns:
-            URIRef of the job entity
+            URIRef of the job entity (existing or new)
         """
+        # Get canonical organization URI (after org deduplication)
+        org_uri = None
+        if job.organization_id:
+            org_uri = self._org_id_to_uri.get(
+                job.organization_id,
+                self.base_namespace[quote(job.organization_id, safe='')]
+            )
+
+        # Check for duplicate by (title, org, start_date)
+        cache_key = (
+            (job.title or "").strip().lower(),
+            str(org_uri) if org_uri else "",
+            str(job.start_date) if job.start_date else ""
+        )
+        if cache_key in self._job_cache:
+            existing_uri = self._job_cache[cache_key]
+            logger.debug(f"Deduplicated Job: {job.title} -> {existing_uri}")
+            # Map this job's ID to the canonical URI for person references
+            if job.id:
+                self._job_id_to_uri[job.id] = existing_uri
+            return existing_uri
+
+        # No duplicate found, create new job
         uri = job.to_rdf(self.graph, self.base_namespace)
 
         # Add RDF type
@@ -134,14 +184,17 @@ class RDFGraphBuilder:
         # Add custom properties
         self.graph.add((uri, RE.isCurrent, Literal(job.is_current, datatype=XSD.boolean)))
 
-        # Add relationship to organization
-        if job.organization_id:
-            org_uri = self.base_namespace[quote(job.organization_id, safe='')]
+        # Add relationship to organization (use canonical org_uri)
+        if org_uri:
             self.graph.add((uri, SCHEMA.hiringOrganization, org_uri))
 
-        # Add relationships to skills used
+        # Add relationships to skills used (use canonical skill URIs after deduplication)
         for skill_id in job.skills_used:
-            skill_uri = self.base_namespace[quote(skill_id, safe='')]
+            # Look up canonical skill URI (handles deduplication)
+            skill_uri = self._skill_id_to_uri.get(
+                skill_id,
+                self.base_namespace[quote(skill_id, safe='')]
+            )
             self.graph.add((uri, RE.usedSkill, skill_uri))
 
         # Add technologies used
@@ -155,19 +208,41 @@ class RDFGraphBuilder:
         # Add provenance
         self._add_provenance(uri, job)
 
+        # Cache for deduplication
+        self._job_cache[cache_key] = uri
+
+        # Cache job ID to URI mapping for person references
+        if job.id:
+            self._job_id_to_uri[job.id] = uri
+
         logger.debug(f"Added Job: {job.title}")
         return uri
 
     def add_skill(self, skill: Skill) -> URIRef:
         """
-        Add Skill entity to RDF graph with SKOS properties.
+        Add Skill entity to RDF graph with SKOS properties and deduplication.
+
+        Deduplicates skills by name (case-insensitive).
+        If a skill with the same name already exists, returns existing URI.
 
         Args:
             skill: Skill entity
 
         Returns:
-            URIRef of the skill entity
+            URIRef of the skill entity (existing or new)
         """
+        # Check for duplicate by label (case-insensitive)
+        if skill.label:
+            cache_key = skill.label.strip().lower()
+            if cache_key in self._skill_cache:
+                existing_uri = self._skill_cache[cache_key]
+                logger.debug(f"Deduplicated Skill: {skill.label} -> {existing_uri}")
+                # Map this skill ID to the canonical URI to fix job references
+                if skill.id:
+                    self._skill_id_to_uri[skill.id] = existing_uri
+                return existing_uri
+
+        # No duplicate found, create new skill
         uri = skill.to_rdf(self.graph, self.base_namespace)
 
         # Add RDF type
@@ -184,19 +259,54 @@ class RDFGraphBuilder:
         # Add provenance
         self._add_provenance(uri, skill)
 
+        # Cache for deduplication
+        if skill.label:
+            cache_key = skill.label.strip().lower()
+            self._skill_cache[cache_key] = uri
+
+        # Cache skill ID to URI mapping for job references
+        if skill.id:
+            self._skill_id_to_uri[skill.id] = uri
+
         logger.debug(f"Added Skill: {skill.label}")
         return uri
 
     def add_education(self, education: Education) -> URIRef:
         """
-        Add Education entity to RDF graph.
+        Add Education entity to RDF graph with deduplication.
+
+        Deduplicates education by (degree_type, field_of_study, institution).
+        If an identical education entry already exists, returns existing URI.
 
         Args:
             education: Education entity
 
         Returns:
-            URIRef of the education entity
+            URIRef of the education entity (existing or new)
         """
+        # Get canonical institution URI (after org deduplication)
+        inst_uri = None
+        if education.institution_id:
+            inst_uri = self._org_id_to_uri.get(
+                education.institution_id,
+                self.base_namespace[quote(education.institution_id, safe='')]
+            )
+
+        # Check for duplicate by (degree, field, institution)
+        cache_key = (
+            (education.degree_type or "").strip().lower(),
+            (education.field_of_study or "").strip().lower(),
+            str(inst_uri) if inst_uri else ""
+        )
+        if cache_key in self._education_cache:
+            existing_uri = self._education_cache[cache_key]
+            logger.debug(f"Deduplicated Education: {education.degree_type} {education.field_of_study} -> {existing_uri}")
+            # Map this education's ID to the canonical URI for person references
+            if education.id:
+                self._edu_id_to_uri[education.id] = existing_uri
+            return existing_uri
+
+        # No duplicate found, create new education entity
         uri = education.to_rdf(self.graph, self.base_namespace)
 
         # Add RDF type
@@ -219,27 +329,50 @@ class RDFGraphBuilder:
         if education.gpa:
             self.graph.add((uri, RE.gpa, Literal(education.gpa, datatype=XSD.float)))
 
-        # Add relationship to institution
-        if education.institution_id:
-            inst_uri = self.base_namespace[quote(education.institution_id, safe='')]
+        # Add relationship to institution (use canonical inst_uri)
+        if inst_uri:
             self.graph.add((uri, SCHEMA.recognizedBy, inst_uri))
 
         # Add provenance
         self._add_provenance(uri, education)
+
+        # Cache for deduplication
+        self._education_cache[cache_key] = uri
+
+        # Cache education ID to URI mapping for person references
+        if education.id:
+            self._edu_id_to_uri[education.id] = uri
 
         logger.debug(f"Added Education: {education.degree_type}")
         return uri
 
     def add_certification(self, certification: Certification) -> URIRef:
         """
-        Add Certification entity to RDF graph.
+        Add Certification entity to RDF graph with deduplication.
+
+        Deduplicates certifications by (name, issuing_organization).
+        If an identical certification already exists, returns existing URI.
 
         Args:
             certification: Certification entity
 
         Returns:
-            URIRef of the certification entity
+            URIRef of the certification entity (existing or new)
         """
+        # Check for duplicate by (name, issuing_org)
+        cache_key = (
+            (certification.name or "").strip().lower(),
+            (certification.issuing_organization or "").strip().lower()
+        )
+        if cache_key[0] and cache_key in self._cert_cache:
+            existing_uri = self._cert_cache[cache_key]
+            logger.debug(f"Deduplicated Certification: {certification.name} -> {existing_uri}")
+            # Map this certification's ID to the canonical URI for person references
+            if certification.id:
+                self._cert_id_to_uri[certification.id] = existing_uri
+            return existing_uri
+
+        # No duplicate found, create new certification
         uri = certification.to_rdf(self.graph, self.base_namespace)
 
         # Add RDF type
@@ -267,19 +400,72 @@ class RDFGraphBuilder:
         # Add provenance
         self._add_provenance(uri, certification)
 
+        # Cache for deduplication
+        if cache_key[0]:
+            self._cert_cache[cache_key] = uri
+
+        # Cache certification ID to URI mapping for person references
+        if certification.id:
+            self._cert_id_to_uri[certification.id] = uri
+
         logger.debug(f"Added Certification: {certification.name}")
         return uri
 
+    def _normalize_org_name(self, name: str) -> str:
+        """
+        Normalize organization name for fuzzy matching.
+
+        Handles common variations:
+        - "Company, Inc." → "Company"
+        - "The University of X" → "University of X"
+        - "MIT" stays "MIT" (we don't expand abbreviations)
+        """
+        normalized = name.strip().lower()
+
+        # Remove common suffixes
+        suffixes_to_remove = [
+            ', inc.', ', inc', ' inc.', ' inc',
+            ', llc', ', llc.', ' llc', ' llc.',
+            ', ltd', ', ltd.', ' ltd', ' ltd.',
+            ', corp', ', corp.', ' corp', ' corp.',
+            ', co', ', co.', ' co', ' co.',
+        ]
+        for suffix in suffixes_to_remove:
+            if normalized.endswith(suffix):
+                normalized = normalized[:-len(suffix)].strip()
+                break
+
+        # Remove leading "the "
+        if normalized.startswith('the '):
+            normalized = normalized[4:].strip()
+
+        return normalized
+
     def add_organization(self, organization: Organization) -> URIRef:
         """
-        Add Organization entity to RDF graph.
+        Add Organization entity to RDF graph with deduplication.
+
+        Deduplicates organizations by normalized name (fuzzy matching).
+        Handles variations like "Company, Inc." vs "Company" and "The University" vs "University".
 
         Args:
             organization: Organization entity
 
         Returns:
-            URIRef of the organization entity
+            URIRef of the organization entity (existing or new)
         """
+        # Check for duplicate by normalized name
+        if organization.name:
+            cache_key = self._normalize_org_name(organization.name)
+            if cache_key in self._org_cache:
+                existing_uri = self._org_cache[cache_key]
+                logger.debug(f"Deduplicated Organization: {organization.name} -> {existing_uri} (fuzzy match)")
+                # CRITICAL: Map this org's ID to the canonical URI for downstream references
+                if organization.id:
+                    self._org_id_to_uri[organization.id] = existing_uri
+                return existing_uri
+
+        # No duplicate found, create new organization
         uri = organization.to_rdf(self.graph, self.base_namespace)
 
         # Add RDF type
@@ -303,6 +489,15 @@ class RDFGraphBuilder:
 
         # Add provenance
         self._add_provenance(uri, organization)
+
+        # Cache for deduplication (use normalized name)
+        if organization.name:
+            cache_key = self._normalize_org_name(organization.name)
+            self._org_cache[cache_key] = uri
+
+        # Cache ID mapping for education deduplication
+        if organization.id:
+            self._org_id_to_uri[organization.id] = uri
 
         logger.debug(f"Added Organization: {organization.name}")
         return uri

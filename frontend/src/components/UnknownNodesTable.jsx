@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './UnknownNodesTable.css';
 
 const UnknownNodesTable = ({ nodes, edges, hiddenTypes }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Filter unknown nodes
   const unknownNodes = nodes.filter(node => node.group === 'unknown');

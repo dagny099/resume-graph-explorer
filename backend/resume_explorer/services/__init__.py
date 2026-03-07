@@ -27,6 +27,10 @@ from .resume_extractor import (
     ExtractionEvent
 )
 
+from .entity_normalizer import (
+    EntityNormalizer
+)
+
 __all__ = [
     # LLM backends
     'LLMBackend',
@@ -46,5 +50,8 @@ __all__ = [
 
     # Resume extractor
     'ResumeExtractor',
-    'ExtractionEvent'
+    'ExtractionEvent',
+
+    # Entity normalizer
+    'EntityNormalizer'
 ]

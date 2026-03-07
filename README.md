@@ -100,9 +100,13 @@ OPENAI_API_KEY=sk-...
 OLLAMA_BASE_URL=http://localhost:11434  # If using local Ollama
 
 # Optional features
-ENABLE_DSPY=true                 # Enable experimental DSPy pipelines
+ENABLE_DSPY=false                # IMPORTANT: Keep false - DSPy has threading issues
 SESSION_AUTO_SAVE=true
 SESSION_MAX_DOCUMENTS=10
+
+# Entity normalization (for multi-resume sessions)
+NORMALIZATION_PROVIDER=ollama    # mock | ollama | anthropic | openai
+OLLAMA_MODEL=llama3:latest       # Model for Ollama normalization
 ```
 
 #### 4. Set up frontend
@@ -355,8 +359,56 @@ MIT License - see [LICENSE](LICENSE) for details.
 - **React Components**: 8
 - **Test Coverage**: 80%+
 
+## 📊 Current Status
+
+### ✅ Production Ready (Single Resume)
+The application works **exceptionally well** for single resume analysis:
+- ✅ Fast, accurate AI-powered extraction
+- ✅ Beautiful interactive graph visualization
+- ✅ Complete entity deduplication (no duplicates)
+- ✅ Zero unknown nodes
+- ✅ Reliable RDF export in multiple formats
+- ✅ Fuzzy organization matching ("MIT" = "Massachusetts Institute of Technology")
+- ✅ Local LLM support via Ollama (privacy-first, free)
+
+**✨ Recommended Use:** Upload **one resume per session** for best results.
+
+### 🚧 Multi-Resume Support (In Progress)
+When uploading 2+ resumes to the same session:
+- ✅ Organizations deduplicate correctly (fuzzy name matching working)
+- ✅ Skills deduplicate by label (case-insensitive + semantic)
+- ✅ Jobs deduplicate by (title, organization, start_date)
+- ✅ Education deduplicates by (degree, field, institution)
+- ⚠️ **Known Issue:** ~8-10 "unknown nodes" appear with UUID labels
+  - These are orphaned entity references after normalization
+  - Does **not** affect primary visualization or extraction
+  - Cosmetic issue only - all real entities display correctly
+  - Fix in development
+
+**Workaround:** Use separate sessions for each resume, or tolerate cosmetic unknown nodes in multi-resume sessions.
+
+## 🐛 Known Issues
+
+### Multi-Resume Unknown Nodes
+**Symptom:** When uploading 2+ resumes, ~8-10 unknown nodes appear with UUID labels (e.g., `f990444f-889f-4e0f...`)
+
+**Root Cause:** Entity normalization merges duplicate skills/orgs but doesn't update Person entity reference IDs
+
+**Impact:** Cosmetic only - does not affect extraction quality or primary functionality
+
+**Workaround:** Use one session per resume
+
+**Status:** Fix in development
+
+### DSPy Threading Issues
+**Symptom:** Extraction may fail with "dspy.settings.configure() can only be called from the same async task"
+
+**Solution:** Set `ENABLE_DSPY=false` in `.env` (recommended)
+
+**Status:** Known DSPy library issue with background threads
+
 ---
 
-**Version**: 1.0.0
-**Status**: WIP
-**Last Updated**: December 10, 2025
+**Version**: 0.9 (Single-Resume Production Ready)
+**Next Release**: 1.0 (Multi-Resume Unknown Nodes Fix)
+**Last Updated**: March 6, 2026

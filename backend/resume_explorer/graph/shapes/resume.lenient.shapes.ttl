@@ -1,0 +1,212 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <http://schema.org/> .
+@prefix esco:   <http://data.europa.eu/esco/> .
+@prefix re:     <http://resumeexplorer.org/ontology#> .
+
+#####################################################################
+# Lenient Resume Explorer SHACL Shapes
+#
+# Philosophy:
+# - Catch "real interop breakers" as Violations (file loads but is unusable)
+# - Everything else is a Warning (quality nudges, not blockers)
+#####################################################################
+
+########################
+# Reusable property checks
+########################
+
+re:NumericConfidencePropertyShape
+  a sh:PropertyShape ;
+  sh:path re:confidence ;
+  sh:maxCount 1 ;
+  sh:or (
+    [ sh:datatype xsd:double ]
+    [ sh:datatype xsd:float ]
+    [ sh:datatype xsd:decimal ]
+  ) ;
+  sh:severity sh:Warning ;
+  sh:message "Recommended: re:confidence should appear at most once and be numeric (float/double/decimal)." .
+
+re:NumericYearsExperiencePropertyShape
+  a sh:PropertyShape ;
+  sh:path re:yearsExperience ;
+  sh:maxCount 1 ;
+  sh:or (
+    [ sh:datatype xsd:double ]
+    [ sh:datatype xsd:float ]
+    [ sh:datatype xsd:decimal ]
+  ) ;
+  sh:severity sh:Warning ;
+  sh:message "Recommended: re:yearsExperience should appear at most once and be numeric (float/double/decimal)." .
+
+########################
+# Person (schema:Person)
+########################
+
+re:PersonShape
+  a sh:NodeShape ;
+  sh:targetClass schema:Person ;
+
+  sh:property [
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "Person should have schema:name (string)." ;
+  ] ;
+
+  sh:property [
+    sh:path skos:prefLabel ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Warning ;
+    sh:message "Recommended: Person should have skos:prefLabel for UI-friendly labeling." ;
+  ] ;
+
+  # Links should be IRIs (not literals)
+  sh:property [
+    sh:path re:hasSkill ;
+    sh:nodeKind sh:IRI ;
+    sh:minCount 1 ;
+    sh:message "Person should link to skills via re:hasSkill (IRIs)." ;
+  ] ;
+
+  sh:property [
+    sh:path re:hasJob ;
+    sh:nodeKind sh:IRI ;
+    sh:minCount 1 ;
+    sh:message "Person should link to jobs via re:hasJob (IRIs)." ;
+  ] ;
+
+  # If present, these should still be IRIs
+  sh:property [
+    sh:path re:hasCertification ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Warning ;
+    sh:message "Recommended: certifications should be IRIs and ideally described with a label." ;
+  ] ;
+
+  sh:property [
+    sh:path schema:alumniOf ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Warning ;
+    sh:message "Recommended: alumniOf should be IRIs and ideally described with a label." ;
+  ] ;
+
+  sh:property re:NumericConfidencePropertyShape .
+
+########################
+# Job (schema:JobPosting)
+########################
+
+re:JobPostingShape
+  a sh:NodeShape ;
+  sh:targetClass schema:JobPosting ;
+
+  sh:property [
+    sh:path schema:title ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "JobPosting should have schema:title (string)." ;
+  ] ;
+
+  sh:property [
+    sh:path schema:startDate ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:date ;
+    sh:severity sh:Warning ;
+    sh:message "Recommended: schema:startDate should be xsd:date (YYYY-MM-DD)." ;
+  ] ;
+
+  sh:property [
+    sh:path schema:endDate ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:date ;
+    sh:severity sh:Warning ;
+    sh:message "Recommended: schema:endDate should be xsd:date (YYYY-MM-DD) when present." ;
+  ] ;
+
+  sh:property [
+    sh:path schema:hiringOrganization ;
+    sh:nodeKind sh:IRI ;
+    sh:minCount 1 ;
+    sh:message "JobPosting should link to schema:hiringOrganization (IRI)." ;
+  ] ;
+
+  # Technologies used — this one often bites interoperability.
+  # In lenient mode: warn (not fail), but you WILL see it flagged.
+  sh:property [
+    sh:path re:usedTechnology ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Warning ;
+    sh:message "Recommended: re:usedTechnology values should be IRIs (not literal strings). Literal values reduce interoperability." ;
+  ] ;
+
+  sh:property re:NumericConfidencePropertyShape .
+
+########################
+# Skills (esco:Skill)
+########################
+
+re:SkillShape
+  a sh:NodeShape ;
+  sh:targetClass esco:Skill ;
+
+  sh:property [
+    sh:path skos:prefLabel ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "Skill should have skos:prefLabel (string)." ;
+  ] ;
+
+  sh:property [
+    sh:path re:skillCategory ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Warning ;
+    sh:message "If present, re:skillCategory should be a string (e.g., Technical/Domain/Soft)." ;
+  ] ;
+
+  sh:property [
+    sh:path re:proficiencyLevel ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:severity sh:Warning ;
+    sh:message "If present, re:proficiencyLevel should be a string (e.g., Beginner/Intermediate/Expert)." ;
+  ] ;
+
+  sh:property re:NumericYearsExperiencePropertyShape ;
+  sh:property re:NumericConfidencePropertyShape .
+
+########################
+# Quality nudges: referenced nodes should have labels
+########################
+
+re:OrgOrInstitutionNodesShouldHaveALabelShape
+  a sh:NodeShape ;
+  sh:targetObjectsOf schema:hiringOrganization, schema:alumniOf ;
+  sh:severity sh:Warning ;
+
+  sh:or (
+    [ sh:property [ sh:path schema:name ; sh:minCount 1 ; sh:datatype xsd:string ] ]
+    [ sh:property [ sh:path skos:prefLabel ; sh:minCount 1 ; sh:datatype xsd:string ] ]
+    [ sh:property [ sh:path rdfs:label ; sh:minCount 1 ; sh:datatype xsd:string ] ]
+  ) ;
+
+  sh:message "Recommended: Org/Institution nodes should have a human-readable label (schema:name or skos:prefLabel or rdfs:label)." .
+
+re:CertificationNodesShouldHaveALabelShape
+  a sh:NodeShape ;
+  sh:targetObjectsOf re:hasCertification ;
+  sh:severity sh:Warning ;
+
+  sh:or (
+    [ sh:property [ sh:path schema:name ; sh:minCount 1 ; sh:datatype xsd:string ] ]
+    [ sh:property [ sh:path skos:prefLabel ; sh:minCount 1 ; sh:datatype xsd:string ] ]
+    [ sh:property [ sh:path rdfs:label ; sh:minCount 1 ; sh:datatype xsd:string ] ]
+  ) ;
+
+  sh:message "Recommended: Certification nodes should have a human-readable label (schema:name or skos:prefLabel or rdfs:label)." .

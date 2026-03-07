@@ -16,7 +16,7 @@ import threading
 
 from .session_store import SessionStore
 from .websocket import ExtractionEventEmitter
-from ..services import ResumeExtractor
+from ..services import ResumeExtractor, EntityNormalizer
 from ..utils import DocumentProcessor, logger
 from ..graph import RDFGraphBuilder, NetworkXAdapter
 from ..models import Person, Job, Skill, Education, Certification, Organization
@@ -249,9 +249,106 @@ def _run_extraction(session_id: str, document_id: str, filename: str, file_bytes
 
         logger.info(f"Extraction complete for document {document_id}")
 
+        # Run entity normalization if session has 2+ completed documents
+        _maybe_normalize_session_entities(session_id)
+
     except Exception as e:
         logger.error(f"Extraction failed for document {document_id}: {e}", exc_info=True)
         session_store.update_document_status(document_id, 'error', str(e))
+
+
+def _maybe_normalize_session_entities(session_id: str):
+    """
+    Check if session has 2+ completed documents and run normalization if so.
+
+    This automatically deduplicates entity names across multiple resume documents
+    to ensure consistent naming (e.g., "Python" vs "python", "GA4" vs "Google Analytics 4").
+    """
+    try:
+        session_store: SessionStore = current_app.session_store
+
+        # Get all documents in session
+        documents = session_store.get_session_documents(session_id)
+        completed_docs = [d for d in documents if d.status == 'complete']
+
+        # Only normalize if we have 2+ completed documents
+        if len(completed_docs) < 2:
+            logger.info(
+                f"Session {session_id} has {len(completed_docs)} completed documents. "
+                f"Normalization requires 2+. Skipping."
+            )
+            return
+        logger.info(f"Starting entity normalization for session {session_id} ({len(completed_docs)} documents)")
+
+        # Collect all entities from completed documents
+        all_entities = []
+        for doc in completed_docs:
+            entities = session_store.load_extracted_entities(doc.id)
+            if entities:
+                all_entities.append(entities)
+
+        if not all_entities:
+            logger.warning(f"No entities found for session {session_id}")
+            return
+
+        # Get normalization provider from config
+        normalization_provider = current_app.config.get('NORMALIZATION_PROVIDER', 'mock')
+
+        # Create normalizer with appropriate LLM client
+        if normalization_provider == 'mock':
+            llm_client = None
+        elif normalization_provider == current_app.config.get('LLM_PROVIDER', 'claude'):
+            # Use existing LLM client if providers match
+            llm_client = current_app.llm_client
+        else:
+            # Create separate LLM client for normalization if provider differs
+            from ..services import create_llm_client
+            try:
+                # Build provider-specific kwargs
+                client_kwargs = {}
+                if normalization_provider == 'ollama':
+                    ollama_model = current_app.config.get('OLLAMA_MODEL', 'llama3:latest')
+                    client_kwargs['model'] = ollama_model
+                    logger.info(f"Creating Ollama client with model: {ollama_model}")
+
+                llm_client = create_llm_client(provider=normalization_provider, **client_kwargs)
+                logger.info(f"Created separate LLM client for normalization: {normalization_provider}")
+            except Exception as e:
+                logger.warning(f"Failed to create {normalization_provider} client for normalization: {e}")
+                logger.warning("Falling back to mock normalization")
+                normalization_provider = 'mock'
+                llm_client = None
+
+        normalizer = EntityNormalizer(provider=normalization_provider, llm_client=llm_client)
+
+        # Run normalization
+        result = normalizer.normalize_session_entities(all_entities)
+        normalized_entities = result["normalized_entities"]
+        label_map = result["label_map"]
+        report = result["report"]
+
+        # Log normalization results
+        merges = report["summary"]["total_merges"]
+        if merges > 0:
+            logger.info(
+                f"Normalization found {merges} entity name merges. "
+                f"{report['summary']['original_labels']} labels → "
+                f"{report['summary']['final_unique_labels']} unique labels"
+            )
+        else:
+            logger.info("Normalization found no duplicates - all entity names are already unique")
+
+        # Update all documents with normalized entities
+        for i, doc in enumerate(completed_docs):
+            if i < len(normalized_entities):
+                session_store.save_extracted_entities(doc.id, normalized_entities[i])
+                logger.info(f"Updated document {doc.id} with normalized entities")
+
+        logger.info(f"Entity normalization complete for session {session_id}")
+
+    except Exception as e:
+        logger.error(f"Entity normalization failed for session {session_id}: {e}", exc_info=True)
+        # Don't fail the extraction if normalization fails - just log and continue
 
 
 @api_bp.route('/documents/<document_id>', methods=['GET'])
@@ -427,7 +524,7 @@ def export_session_graph(session_id, format):
 
 @api_bp.route('/sessions/<session_id>/stats', methods=['GET'])
 def get_session_stats(session_id):
-    """Get statistics for session graph."""
+    """Get statistics for session graph (deduplicated counts from RDF graph)."""
     session_store: SessionStore = current_app.session_store
 
     session = session_store.get_session(session_id)
@@ -435,6 +532,7 @@ def get_session_stats(session_id):
         return jsonify({'error': 'Session not found'}), 404
 
     documents = session_store.get_session_documents(session_id)
+    complete_docs = [d for d in documents if d.status == 'complete']
 
     stats = {
         'session_id': session_id,
@@ -456,18 +554,68 @@ def get_session_stats(session_id):
         status = doc.status
         stats['documents_by_status'][status] = stats['documents_by_status'].get(status, 0) + 1
 
-        # Count entities from complete documents
-        if doc.status == 'complete':
+    # Count entities from deduplicated graph (not raw storage)
+    if complete_docs:
+        # Build graph with deduplication (same logic as get_session_graph)
+        builder = RDFGraphBuilder()
+
+        all_persons = []
+        all_jobs = []
+        all_skills = []
+        all_education = []
+        all_certifications = []
+        all_organizations = []
+
+        for doc in complete_docs:
             entities = session_store.load_extracted_entities(doc.id)
-            if entities:
-                stats['total_entities']['jobs'] += len(entities.get('jobs', []))
-                stats['total_entities']['skills'] += len(entities.get('skills', []))
-                stats['total_entities']['education'] += len(entities.get('education', []))
-                stats['total_entities']['certifications'] += len(entities.get('certifications', []))
-                stats['total_entities']['organizations'] += len(entities.get('organizations', []))
-                # Count person entity (0 or 1 per document)
-                if entities.get('person'):
-                    stats['total_entities']['persons'] += 1
+            if not entities:
+                continue
+
+            person = entities.get('person')
+            if person and isinstance(person, dict):
+                all_persons.append(Person.from_dict(person))
+
+            jobs = entities.get('jobs', [])
+            all_jobs.extend([Job.from_dict(j) if isinstance(j, dict) else j for j in jobs])
+
+            skills = entities.get('skills', [])
+            all_skills.extend([Skill.from_dict(s) if isinstance(s, dict) else s for s in skills])
+
+            education = entities.get('education', [])
+            all_education.extend([Education.from_dict(e) if isinstance(e, dict) else e for e in education])
+
+            certifications = entities.get('certifications', [])
+            all_certifications.extend([Certification.from_dict(c) if isinstance(c, dict) else c for c in certifications])
+
+            organizations = entities.get('organizations', [])
+            all_organizations.extend([Organization.from_dict(o) if isinstance(o, dict) else o for o in organizations])
+
+        # Build graph (deduplication happens here)
+        person = all_persons[0] if all_persons else Person(name="Unknown")
+        for org in all_organizations:
+            builder.add_organization(org)
+        for skill in all_skills:
+            builder.add_skill(skill)
+        for job in all_jobs:
+            builder.add_job(job)
+        for edu in all_education:
+            builder.add_education(edu)
+        for cert in all_certifications:
+            builder.add_certification(cert)
+
+        # Get deduplicated counts from graph
+        graph_stats = builder.get_graph_stats()
+        entity_counts = graph_stats['entity_counts']
+
+        # Map field names to match frontend expectations (plural forms)
+        stats['total_entities'] = {
+            'persons': entity_counts.get('person', 0),
+            'jobs': entity_counts.get('job', 0),
+            'skills': entity_counts.get('skill', 0),
+            'education': entity_counts.get('education', 0),
+            'certifications': entity_counts.get('certification', 0),
+            'organizations': entity_counts.get('organization', 0)
+        }
 
     return jsonify(stats)
 
