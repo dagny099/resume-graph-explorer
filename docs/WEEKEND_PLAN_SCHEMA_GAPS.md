@@ -365,3 +365,93 @@ Task 3 should come before Task 4 since the docs update reflects code changes.
 | `docs/SCHEMA_AT_A_GLANCE.md` | 1d, 4a |
 | `docs/SKOS_SCHEMA.md` | 1d, 2c, 4b |
 | `docs/EDGE_TYPE_CLASSIFICATION.md` | 4c |
+
+---
+
+## Appendix A: ESCO URI Lookup Reference
+
+This section saves you time on Task 1 by providing confirmed URIs, API
+patterns, and practical tips from researching the ESCO taxonomy.
+
+### Confirmed Real URIs
+
+These were verified against the ESCO portal (esco.ec.europa.eu):
+
+**Skills:**
+
+| Skill | Real ESCO URI |
+|-------|---------------|
+| Python | `http://data.europa.eu/esco/skill/ccd0a1d9-afda-43d9-b901-96344886e14d` |
+| Computer programming (parent of languages) | `http://data.europa.eu/esco/skill/21d2f96d-35f7-4e3f-9745-c533d2dd6e97` |
+| Statistical analysis system software | `http://data.europa.eu/esco/skill/ad59afe4-6f8a-4bc4-acfd-0f228277508a` |
+| Analyse big data | `http://data.europa.eu/esco/skill/47a49cd6-097d-457a-9f7b-c290c14930d5` |
+| Leadership (exemplary role) | `http://data.europa.eu/esco/skill/5be1c5fb-3833-4983-949c-b77fbfad26d9` |
+
+**Occupations:**
+
+| Occupation | Real ESCO URI |
+|-----------|---------------|
+| Data scientist | `http://data.europa.eu/esco/occupation/258e46f9-0075-4a2e-adae-1ff0477e0f30` |
+| Software developer | `http://data.europa.eu/esco/occupation/f2b15a0e-e65a-438a-affb-29b9d50b77d1` |
+| ICT application developer | `http://data.europa.eu/esco/occupation/bd272aee-adc9-4a06-a15c-a73b4b4a46a7` |
+
+### Skills That Need API/CSV Lookup
+
+These were **not found** via web search and require the API or CSV download:
+
+- **JavaScript** — listed as a narrower concept under "computer programming"
+  (URI `21d2f96d...`), but its individual URI needs API lookup
+- **Java, SQL, R** — same situation, narrower concepts under programming
+- **Machine learning** — likely classified as a "knowledge concept" in ESCO;
+  try `type=skill` and `type=knowledgeConcept` in the API
+- **Data visualization, Statistical analysis** — ESCO uses different labels;
+  try searching "data visualisation" (British spelling)
+- **AWS, Azure, Docker, Kubernetes** — vendor-specific products may not have
+  dedicated ESCO entries; may need to map to broader concepts like
+  "cloud computing" or "containerisation"
+- **Communication, Problem solving, Teamwork** — ESCO uses action phrases
+  (e.g., "work in teams", "solve problems"); search with verb forms
+
+### Recommended Lookup Strategy
+
+**Fastest approach: Download the CSV** (5 minutes of setup, then instant lookups)
+
+1. Go to https://esco.ec.europa.eu/en/use-esco/download
+2. Download the **ESCO v1.2.1** dataset in **CSV** format (English)
+3. Open `skills_en.csv` — it has ~13,900 rows with columns:
+   `conceptUri`, `preferredLabel`, `description`, etc.
+4. Search/filter by `preferredLabel` for each skill name
+
+**Alternative: Use the REST API** (no download needed)
+
+```bash
+# Search for a skill
+curl "https://ec.europa.eu/esco/api/search?text=JavaScript&type=skill&language=en"
+
+# Search for an occupation
+curl "https://ec.europa.eu/esco/api/search?text=data+scientist&type=occupation&language=en"
+
+# Verify a URI resolves
+curl "https://ec.europa.eu/esco/api/resource/skill?uri=http://data.europa.eu/esco/skill/ccd0a1d9-afda-43d9-b901-96344886e14d&language=en"
+```
+
+Response format is HAL JSON. The `conceptUri` field in each result is what you
+need for `vocabularies.py`.
+
+### ESCO Naming Gotchas
+
+- ESCO uses **British English** spelling ("visualisation" not "visualization")
+- Skill labels are often **verb phrases** ("use Python programming language")
+  not nouns ("Python")
+- Soft skills use action forms ("show leadership", "work in teams")
+- Vendor products (AWS, Docker) may not exist — map to broader ESCO concepts
+  and document the decision
+
+### Key ESCO Resources
+
+- **Search UI:** https://esco.ec.europa.eu/en/classification/skill_main
+- **REST API docs:** https://ec.europa.eu/esco/api/doc/esco_api_doc.html
+- **Further API docs:** https://ec.europa.eu/esco/api/doc/esco-api-further-doc.html
+- **Bulk download:** https://esco.ec.europa.eu/en/use-esco/download
+- **Dataset structure:** https://esco.ec.europa.eu/en/structure-esco-downloadable-datasets
+- **Current version:** ESCO v1.2.1
