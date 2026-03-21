@@ -1,6 +1,11 @@
-##  Where Edge Types Come From
+## Where Edge Types Come From
 
-This document describes the custom classification scheme for EDGE TYPES that I created for this application. 
+> **Context:** This document covers how relationships are *visually grouped* in
+> the graph UI. For the full list of entity types and relationship definitions,
+> see [Schema at a Glance](SCHEMA_AT_A_GLANCE.md) or the
+> [SKOS Schema Reference](SKOS_SCHEMA.md).
+
+This document describes the custom classification scheme for EDGE TYPES that I created for this application.
 
 The edge types are categories assigned by the code to organize relationships. They're a custom organizational scheme designed to make the graph easier to understand visually by semantically grouping relationships that have similar meanings. The result should be a sense of "understanding" the structure of a resume at-a-glance.
 
@@ -75,4 +80,8 @@ The classification is purely for visualization purposes ("for styling"):
   These categories were chosen to:
   - Visually distinguish different types of relationships in the graph (different colors)
   - Semantically group relationships that have similar meanings
-  - Help understandabilit of the resume at a glance
+  - Help understandability of the resume at a glance
+
+---
+
+*See also: [Schema at a Glance](SCHEMA_AT_A_GLANCE.md) | [SKOS Schema Reference](SKOS_SCHEMA.md)*
