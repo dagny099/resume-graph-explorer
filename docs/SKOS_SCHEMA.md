@@ -1,8 +1,11 @@
 # SKOS Schema Documentation - Resume Explorer
 
-**Version**: 1.0
-**Date**: December 8, 2025
+**Version**: 1.1
+**Date**: March 2026
 **Status**: Stable
+
+> **New here?** Start with the [Schema at a Glance](SCHEMA_AT_A_GLANCE.md) for a
+> plain-language walkthrough before diving into the formal reference below.
 
 ## Overview
 
@@ -139,35 +142,44 @@ Represents companies, institutions, etc.
 
 ## Relationship Types (RDF Properties)
 
+> **Active vs. Defined:** The vocabulary file (`vocabularies.py`) defines more
+> relationship types than the graph builder currently emits. The table below
+> marks each relationship as **Active** (emitted by the graph builder / model
+> `to_rdf()`) or **Defined-only** (available in the vocabulary for future use
+> but not currently produced).
+
 ### Employment Relationships
-- `schema:worksFor` - Person works for Organization
-- `re:employedBy` - Employment relationship
-- `re:holdsPosition` - Holds job position
+- `re:hasJob` - Person has job position — **Active** (Person → Job)
+- `schema:hiringOrganization` - Job belongs to organization — **Active** (Job → Organization)
+- `schema:worksFor` - Person works for Organization — *Defined-only*
+- `re:employedBy` - Employment relationship — *Defined-only*
+- `re:holdsPosition` - Holds job position — *Defined-only*
 
 ### Skill Relationships
-- `re:hasSkill` - Person has skill
-- `re:usedSkill` - Skill used in job
-- `schema:skills` - Job requires skill
+- `re:hasSkill` - Person has skill — **Active** (Person → Skill)
+- `re:usedSkill` - Skill used in job — **Active** (Job → Skill)
+- `schema:skills` - Job requires skill — *Defined-only*
 
 ### Education Relationships
-- `schema:alumniOf` - Person is alumni of institution
-- `schema:hasCredential` - Person has educational credential
-- `re:hasCertification` - Person has certification
+- `schema:alumniOf` - Person is alumni of institution — **Active** (Person → Education)
+- `schema:recognizedBy` - Education recognized by institution — **Active** (Education → Organization)
+- `schema:hasCredential` - Person has educational credential — *Defined-only*
+- `re:hasCertification` - Person has certification — **Active** (Person → Certification)
 
 ### Technology Relationships
-- `re:usedTechnology` - Technology used in job
-- `re:knowsTechnology` - Person knows technology
+- `re:usedTechnology` - Technology used in job — **Active** (Job → literal string)
+- `re:knowsTechnology` - Person knows technology — *Defined-only*
 
 ### SKOS Hierarchical Relationships
-- `skos:broader` - Broader concept
-- `skos:narrower` - Narrower concept
-- `skos:related` - Related concept
-- `skos:exactMatch` - Exact match to external vocabulary
+- `skos:broader` - Broader concept — **Active** (Skill → Skill)
+- `skos:narrower` - Narrower concept — **Active** (Skill → Skill)
+- `skos:related` - Related concept — **Active** (Skill → Skill)
+- `skos:exactMatch` - Exact match to external vocabulary — **Active** (Skill → ESCO URI)
 
 ### Temporal Relationships
-- `schema:startDate` - Start date (jobs, education)
-- `schema:endDate` - End date
-- `schema:duration` - Duration
+- `schema:startDate` - Start date (jobs, education) — **Active**
+- `schema:endDate` - End date — **Active**
+- `schema:duration` - Duration — *Defined-only*
 
 ---
 
@@ -177,22 +189,29 @@ Represents companies, institutions, etc.
 
 ESCO provides standardized URIs for skills used across Europe. Resume Explorer maps extracted skills to ESCO concepts when possible.
 
-**Example ESCO Skills**:
+> **Caveat: Placeholder URIs.** Most ESCO URIs in the codebase are **fabricated
+> UUIDs** used for development/testing (recognizable by their uniform
+> `x8b1b3e4-92c5-4e8a-...` pattern). Only the Python skill URI appears to be a
+> real ESCO identifier. For production use, these should be resolved against the
+> [ESCO API](https://esco.ec.europa.eu/en/use-esco/developer-resources) or a
+> downloaded taxonomy file.
+
+**Example ESCO Skills** *(mostly placeholder URIs — see caveat above)*:
 ```python
 {
-    "python": "http://data.europa.eu/esco/skill/c3b1499e-77e4-42e8-be6f-676e9f1b7c91",
-    "machine_learning": "http://data.europa.eu/esco/skill/f8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4e",
-    "data_analysis": "http://data.europa.eu/esco/skill/g8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4f",
+    "python": "http://data.europa.eu/esco/skill/c3b1499e-77e4-42e8-be6f-676e9f1b7c91",  # likely real
+    "machine_learning": "http://data.europa.eu/esco/skill/f8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4e",  # placeholder
+    "data_analysis": "http://data.europa.eu/esco/skill/g8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4f",  # placeholder
 }
 ```
 
 ### ESCO Occupation Taxonomy
 
-**Example ESCO Occupations**:
+**Example ESCO Occupations** *(placeholder URIs)*:
 ```python
 {
-    "data_scientist": "http://data.europa.eu/esco/occupation/8b1b3e4a-92c5-4e8a-8c5e-7c5e8b1b3e4q",
-    "software_engineer": "http://data.europa.eu/esco/occupation/9b1b3e4a-92c5-4e8a-8c5e-7c5e8b1b3e4r",
+    "data_scientist": "http://data.europa.eu/esco/occupation/8b1b3e4a-92c5-4e8a-8c5e-7c5e8b1b3e4q",  # placeholder
+    "software_engineer": "http://data.europa.eu/esco/occupation/9b1b3e4a-92c5-4e8a-8c5e-7c5e8b1b3e4r",  # placeholder
 }
 ```
 
@@ -355,5 +374,9 @@ For questions or contributions to the vocabulary:
 
 ---
 
-*Last Updated: December 8, 2025*
+*See also: [Schema at a Glance](SCHEMA_AT_A_GLANCE.md) | [Edge Type Classification](EDGE_TYPE_CLASSIFICATION.md)*
+
+---
+
+*Last Updated: March 2026*
 *License: CC BY 4.0*
