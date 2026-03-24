@@ -84,11 +84,7 @@ pip install -r requirements.txt
 
 #### 3. Configure environment
 
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and add your API keys:
+Create a `.env` file in the `backend/` directory and add your API keys:
 
 ```bash
 # Choose your LLM provider
@@ -100,13 +96,14 @@ OPENAI_API_KEY=sk-...
 OLLAMA_BASE_URL=http://localhost:11434  # If using local Ollama
 
 # Optional features
-ENABLE_DSPY=false                # IMPORTANT: Keep false - DSPy has threading issues
+ENABLE_DSPY=false                # Keep false — DSPy has threading issues in this setup
 SESSION_AUTO_SAVE=true
 SESSION_MAX_DOCUMENTS=10
 
-# Entity normalization (for multi-resume sessions)
-NORMALIZATION_PROVIDER=ollama    # mock | ollama | anthropic | openai
-OLLAMA_MODEL=llama3:latest       # Model for Ollama normalization
+# Entity normalization
+NORMALIZATION_PROVIDER=mock      # mock | ollama | anthropic | openai
+OLLAMA_MODEL=llama3:latest       # Model for Ollama normalization (if using ollama)
+NORMALIZE_SINGLE_RESUME=false    # true = run LLM alias resolution even for single-resume sessions
 ```
 
 #### 4. Set up frontend
@@ -162,6 +159,8 @@ See [GETTING_STARTED.md](docs/GETTING_STARTED.md) for a detailed walkthrough.
 - **[SKOS Schema](docs/SKOS_SCHEMA.md)** - Vocabulary and ontology specification
 - **[Implementation Plan](docs/IMPLEMENTATION_PLAN_2025-12-08.md)** - 6-phase development roadmap
 - **[Frontend README](frontend/README.md)** - React app documentation
+- **[Graph Analysis Pipeline](docs/GRAPH_ANALYSIS_PIPELINE.md)** - Why the offline analysis pipeline was built, what it reveals, and the 3-phase roadmap toward a graph-aware Digital Twin
+- **[Post-Export Tools (Operational)](backend/tools/tools-README.md)** - How to run `entity_normalizer.py`, `graph_analyzer.py`, and `narrative_synthesizer.py`
 
 ## 🎯 Features in Detail
 
@@ -201,6 +200,34 @@ Export your knowledge graph in standard formats:
 - **RDF/XML (.rdf)**: Standard XML-based RDF
 - **JSON-LD (.jsonld)**: Web-friendly JSON format
 
+### Post-Export Analysis Pipeline
+
+Once you've exported a graph, a separate offline pipeline turns the structural data into natural language insight documents — optimized for embedding in a vector database (ChromaDB) or reading directly.
+
+```
+Resume Explorer (export .jsonld)
+    ↓
+entity_normalizer.py   ← fix naming inconsistencies (GA4 vs Google Analytics 4)
+    ↓
+graph_analyzer.py      ← 6 structural analyses → 6 markdown insight files
+    ↓
+narrative_synthesizer.py  ← LLM cross-references all 6 → 2 career narrative docs
+    ↓
+embed into Digital Twin's ChromaDB  (future: embed_insights.py)
+```
+
+The 6 analyses cover: skill gap (claimed vs. used), career topology (bridge skills), technology evolution (chronological toolkit), SKOS hierarchy map, ESCO interoperability, and role progression. Each output is a natural language document written for RAG retrieval — not a data dump, but an analyst's briefing with semantic hooks for multiple query phrasings.
+
+**Quick start (from `backend/` directory):**
+
+```bash
+python tools/entity_normalizer.py --input my-export.jsonld --output my-export-normalized.jsonld --provider anthropic
+python tools/graph_analyzer.py    --input my-export-normalized.jsonld --output data/insights/
+python tools/narrative_synthesizer.py --input data/insights/ --output data/insights/ --provider anthropic
+```
+
+See [`backend/tools/tools-README.md`](backend/tools/tools-README.md) for the full operational guide, and [`docs/GRAPH_ANALYSIS_PIPELINE.md`](docs/GRAPH_ANALYSIS_PIPELINE.md) for the architectural rationale and 3-phase roadmap.
+
 ## 📁 Project Structure
 
 ```
@@ -231,7 +258,15 @@ resume_explorer/
 │   │   └── utils/                 # Utilities
 │   │       ├── logger.py
 │   │       └── document_processor.py
-│   ├── data/sessions/             # Session storage
+│   ├── tools/                     # Post-export analysis pipeline (offline)
+│   │   ├── tools-README.md       # Full operational guide
+│   │   ├── entity_normalizer.py  # Fix naming inconsistencies (3-phase)
+│   │   ├── graph_analyzer.py     # 6 structural analyses → markdown docs
+│   │   └── narrative_synthesizer.py # LLM cross-reference synthesis
+│   ├── data/
+│   │   ├── sessions/             # Session storage
+│   │   ├── exports/              # Exported JSON-LD files
+│   │   └── insights/             # Graph analysis output
 │   ├── tests/                     # Unit tests
 │   └── requirements.txt
 │
@@ -269,11 +304,14 @@ pytest tests/ -v
 ```
 
 Test coverage includes:
-- ✅ Data models (RDF serialization, JSON export)
+- ✅ Data models (creation, JSON export, SKOS relationships)
+- ✅ RDF serialization for all entity types (Person, Job, Skill, Education, Certification, Organization)
+- ✅ Entity normalization pipeline: type-pool separation, alt_labels tracking, phase gating
+- ✅ RDF graph builder: `skos:altLabel` triple generation, dedup cache behavior
 - ✅ LLM extraction pipeline
-- ✅ RDF graph builder
-- ✅ API endpoints
 - ✅ Session persistence
+- ⚠️ DSPy pipeline test skipped/failing — known DSPy threading issue; set `ENABLE_DSPY=false`
+- ⚠️ API endpoint tests require a running app instance
 
 ## 🔧 Configuration
 
@@ -288,13 +326,17 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_CHAT_MODEL=llama3.1:8b
 
 # === Features ===
-ENABLE_DSPY=true                 # Use DSPy for extraction
+ENABLE_DSPY=false                # Keep false — DSPy has threading issues in this setup
 ENABLE_MLFLOW=false              # Track experiments
 
 # === Session Settings ===
 SESSION_AUTO_SAVE=true
 SESSION_MAX_DOCUMENTS=10         # Max documents per session
 DATA_PATH=backend/data           # Storage location
+
+# === Entity Normalization ===
+NORMALIZATION_PROVIDER=mock      # mock | ollama | anthropic | openai
+NORMALIZE_SINGLE_RESUME=false    # true = run LLM alias resolution for single-resume sessions too
 
 # === RDF Export ===
 DEFAULT_RDF_FORMAT=turtle        # turtle | rdfxml | jsonld
@@ -370,13 +412,14 @@ The application works **exceptionally well** for single resume analysis:
 - ✅ Reliable RDF export in multiple formats
 - ✅ Fuzzy organization matching ("MIT" = "Massachusetts Institute of Technology")
 - ✅ Local LLM support via Ollama (privacy-first, free)
+- ✅ Skill alias resolution: variant names (e.g. "ML" / "machine learning") are merged to a canonical label and preserved as `skos:altLabel` triples in the export
 
 **✨ Recommended Use:** Upload **one resume per session** for best results.
 
 ### 🚧 Multi-Resume Support (In Progress)
 When uploading 2+ resumes to the same session:
 - ✅ Organizations deduplicate correctly (fuzzy name matching working)
-- ✅ Skills deduplicate by label (case-insensitive + semantic)
+- ✅ Skills deduplicate by label (case-insensitive + semantic), with alias normalization across declared skills and job technology strings
 - ✅ Jobs deduplicate by (title, organization, start_date)
 - ✅ Education deduplicates by (degree, field, institution)
 - ⚠️ **Known Issue:** ~8-10 "unknown nodes" appear with UUID labels
@@ -411,4 +454,4 @@ When uploading 2+ resumes to the same session:
 
 **Version**: 0.9 (Single-Resume Production Ready)
 **Next Release**: 1.0 (Multi-Resume Unknown Nodes Fix)
-**Last Updated**: March 6, 2026
+**Last Updated**: March 24, 2026

@@ -1,195 +1,86 @@
-You are the **coding agent** for an early-stage experimental project called **Resume Explorer**. The repository currently contains an outline of the concept and a sample resume document. The goal is to progressively develop a functioning prototype through iterative clarification, architectural proposals, and incremental code.
+You are the **coding agent** for **Resume Explorer**, a full-stack application that transforms resumes into interactive SKOS-compliant knowledge graphs. The project is **deployed and functional** — you are working on an evolving codebase, not starting from scratch.
 
-You are not expected to complete the full system immediately. Instead, you will:
+## Current State (as of March 2026)
 
-1. interpret available materials (outline \+ sample file)
+The app is production-ready for single-resume sessions and deployed on Render/Koyeb. The codebase has ~10k+ lines across a Flask backend and React frontend.
 
-2. propose realistic next steps
+**What exists and works:**
+- Flask backend with REST API + WebSocket streaming for real-time extraction progress
+- React + Vis.js interactive graph visualization
+- LLM-powered entity extraction (Claude, OpenAI, Ollama) → SKOS-compliant RDF graph
+- RDF export in Turtle, RDF/XML, JSON-LD
+- Multi-document session management with file-based persistence (`backend/data/sessions/`)
+- Entity normalization: 3-phase pipeline (deterministic → ESCO-anchored → LLM batch), runs automatically on upload. As of March 2026, includes separate type-pool normalization and `skos:altLabel` preservation for merged skill aliases.
+- Post-export offline analysis pipeline (`backend/tools/`): entity_normalizer → graph_analyzer (6 structural analyses → markdown docs) → narrative_synthesizer
 
-3. implement **minimal working components**
+**Known issues to preserve/not regress:**
+- DSPy threading issues: `ENABLE_DSPY` must stay `false` in deployed config
+- ~8-10 "unknown nodes" in multi-resume sessions (orphaned Person references after normalization — cosmetic only, fix in progress)
+- Single-resume sessions are recommended; multi-resume is functional but has the above cosmetic issue
 
-4. ask clarifying questions when needed
+## Architecture Decisions to Know
 
-5. document assumptions as you go
+**Two normalizers, two jobs:**
+- `backend/resume_explorer/services/entity_normalizer.py` — LIVE, runs during upload, prevents duplicate entity nodes across multi-doc sessions. Phase 3 (LLM) only runs for 2+ docs unless `NORMALIZE_SINGLE_RESUME=true`.
+- `backend/tools/entity_normalizer.py` — OFFLINE, runs post-export on JSON-LD files, reconciles skill prefLabels against job `usedTechnology` strings for clean graph analysis output. See `docs/GRAPH_ANALYSIS_PIPELINE.md`.
 
-6. focus on simplicity and forward progress
+**RDF graph builder dedup caches** (first-defense before the normalizer):
+- Skills: case-insensitive label (`_skill_cache`)
+- Orgs: fuzzy-normalized name, strips "Inc.", "The " prefix (`_normalize_org_name`)
+- Jobs: (title, org, start_date) tuple
+- Education: (degree, field, institution) tuple
 
-## **Project Intent (High-level)**
+**`alt_labels` on Skill** (added March 2026): When the normalizer merges a variant label (e.g. "ML" → "Machine Learning"), the original is stored in `skill.alt_labels` and written as `skos:altLabel` triples in the RDF export. Adding new optional fields with defaults to `SKOSEntity` subclasses is backward-compatible: `from_dict` filters to `__dataclass_fields__`, so old sessions without the field load safely.
 
-Build a small, local, interactive app that:
+**WebSocket + Flask-SocketIO**: Uses eventlet. In deployment, gunicorn must use `--worker-class eventlet -w 1`. Nginx needs `Upgrade`/`Connection` headers for WebSocket proxying.
 
-* ingests a resume
+**Offline pipeline (Avenue 3 / Phase 1)**: `backend/tools/` scripts are standalone — they operate on exported JSON-LD, need different API keys, and produce files for a downstream Digital Twin. They are not part of the deployed app. See `docs/GRAPH_ANALYSIS_PIPELINE.md` for the 3-phase roadmap.
 
-* extracts skills, jobs, education
+## Document Processing Architecture
 
-* creates a lightweight knowledge graph
+Resume Explorer supports multiple document formats with a robust extraction pipeline.
 
-* visualizes that graph interactively
-
-Think of this as a pedagogical exploration—not production software.
-
-## **What Exists Right Now**
-
-* an outline describing the concept and possible architecture
-
-* one sample resume file
-
-* no fully implemented code
-
-* no enforced architecture yet
-
-Assume you are starting from a blank implementation.
-
-## **Core Objectives (Initial)**
-
-* set up a minimal repo structure
-
-* propose a simple data flow
-
-* extract 3–5 useful entities from the sample resume
-
-* store these entities in a minimal graph representation (even a dict or JSON first)
-
-* render a tiny prototype visualization (even static) or stub the UI
-
-Initially, choose the simplest implementation that demonstrates the idea.
-
-## **Document Processing Architecture**
-
-Resume Explorer supports multiple document formats with a robust extraction pipeline. Understanding this architecture is crucial for future development.
-
-### **Supported Formats**
+### Supported Formats
 - **PDF**: Dual-library approach (PyMuPDF primary, pdfplumber fallback)
 - **DOCX/DOC**: Microsoft Word via python-docx
 - **TXT**: Plain text (direct read)
 - **MD**: Markdown (direct read)
 
-### **PDF Extraction Strategy**
+### PDF Extraction Strategy
 
-We use a **dual-library fallback approach** for PDFs to ensure maximum compatibility:
+**1. Primary: PyMuPDF (fitz)** — fast, handles standard PDFs page-by-page
 
-**1. Primary: PyMuPDF (fitz)**
-- Fast, efficient
-- Handles standard PDFs well
-- Extracts text page-by-page
+**2. Fallback: pdfplumber** — slower but handles complex layouts, tables, forms
 
-**2. Fallback: pdfplumber**
-- Better for complex layouts
-- Handles tables and forms
-- Used when PyMuPDF returns empty/fails
-
-**Why Two Libraries?**
-- Different PDFs require different extraction strategies
-- PyMuPDF is faster but may miss complex layouts
-- pdfplumber is slower but more comprehensive
-- Fallback ensures maximum compatibility
-
-### **Implementation Location**
+### Implementation Location
 - File: `backend/resume_explorer/utils/document_processor.py`
 - Class: `DocumentProcessor`
 - Byte stream processing for file uploads supported
 
-### **Fallback Flow**
-```
-PDF Upload
-    ↓
-Try PyMuPDF extraction
-    ↓
-Success? → Use extracted text
-    ↓ No
-Try pdfplumber extraction
-    ↓
-Success? → Use extracted text
-    ↓ No
-Return error
+If adding new file formats, follow the pattern in `DocumentProcessor`. Always provide fallback mechanisms. See `docs/DOCUMENT_PROCESSING.md`.
+
+## Key Configuration
+
+```bash
+LLM_PROVIDER=claude              # claude | openai | ollama
+ENABLE_DSPY=false                # MUST stay false — threading issues
+NORMALIZATION_PROVIDER=mock      # mock | ollama | anthropic | openai
+NORMALIZE_SINGLE_RESUME=false    # true = run LLM Phase 3 for single-resume sessions
 ```
 
-### **Future Developers**
-- If adding new file formats, follow the pattern in `DocumentProcessor`
-- Always provide fallback mechanisms for reliability
-- Test with complex/edge-case documents (scanned PDFs, forms, tables)
-- Log extraction failures for debugging
-- See `docs/DOCUMENT_PROCESSING.md` for complete technical details
+## Working Model
 
-## **Tasks for the First Iterations**
+- Prioritize simplicity and not breaking existing functionality
+- The hardest-won features are org fuzzy dedup and skill normalization — be cautious in those areas
+- When modifying entity models, check `from_dict` and `to_dict` for both the model and its base class (`SKOSEntity`)
+- When modifying normalization, run `pytest tests/test_normalizer.py` to verify no regressions
+- Tests live in `backend/tests/` — run with `cd backend && pytest tests/ -v`
 
-1. Read the outline and summarize the minimal viable architecture.
+## Style
 
-2. Suggest a directory structure and filenames.
+Code should be:
+- Clean, modular, documented
+- Pythonic and readable
+- Minimal — avoid adding abstraction layers or error handling for scenarios that can't happen
 
-3. Build a Python module that can:
-
-   * read resume text
-
-   * extract entities using simple heuristics
-
-   * return structured JSON
-
-4. Set up a placeholder graph model in Python
-
-5. Propose next steps based on what’s possible
-
-## **Constraints**
-
-* prioritize simplicity over completeness
-
-* avoid premature optimization
-
-* use standard, well-supported libraries
-
-* keep everything local, transparent, and modular
-
-* default to Python unless instructed otherwise
-
-## **Expectations of the Agent**
-
-At each step:
-
-* provide runnable code
-
-* explain assumptions
-
-* propose follow-up questions
-
-* offer options (“Option A simplest / Option B scalable…”)
-
-### **If anything is unclear:**
-
-Ask questions rather than guessing.
-
-## **Style**
-
-You should write code that is:
-
-* clean, modular, documented
-
-* Pythonic and readable
-
-* incremental (build step by step)
-
-Outputs must be clearly structured and easy for a human developer to follow.
-
-## **What Success Looks Like**
-
-Short-term success \= a working minimal toy demo.  
- Long-term success \= a locally running knowledge-graph visualization app.
-
-## **Example Questions You Should Ask Me**
-
-* Should we use SpaCy or just regex initially?
-
-* Should the first version persist graph data or only keep it in memory?
-
-* Should the visualization happen in a notebook or browser UI?
-
-## **Working Model**
-
-Treat this as **“learning through building small increments.”**  
- Avoid overly complex NLP or knowledge-graph abstractions at first.
-
----
-
-# **Usage**
-
-This file is meant to be used as a system-level prompt for a coding agent (Claude, ChatGPT, SWE-agent, etc.). The agent should read this file automatically and treat it as its working instructions going forward.
-
+When something is unclear, ask rather than guessing.

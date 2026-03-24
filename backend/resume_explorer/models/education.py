@@ -13,7 +13,7 @@ from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, XSD
 
 from .base import SKOSEntity
-from ..graph.vocabularies import SCHEMA, EntityType, RE, RelationType
+from ..graph.vocabularies import RESUME, SCHEMA, EntityType, RE, RelationType
 
 
 @dataclass
@@ -46,7 +46,7 @@ class Education(SKOSEntity):
     description: Optional[str] = None
     gpa: Optional[float] = None
 
-    def to_rdf(self, graph: Graph, base_namespace: Namespace) -> URIRef:
+    def to_rdf(self, graph: Graph, base_namespace: Namespace = RESUME) -> URIRef:
         """
         Add Education to RDF graph with schema.org properties.
 

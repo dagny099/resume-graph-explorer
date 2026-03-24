@@ -11,7 +11,7 @@ from rdflib import Graph, Literal, Namespace
 from rdflib.namespace import RDF
 
 from .base import SKOSEntity
-from ..graph.vocabularies import SCHEMA, EntityType, RE
+from ..graph.vocabularies import RESUME, SCHEMA, EntityType, RE
 
 
 @dataclass
@@ -45,7 +45,7 @@ class Person(SKOSEntity):
     education: List[str] = field(default_factory=list)
     certifications: List[str] = field(default_factory=list)
 
-    def to_rdf(self, graph: Graph, base_namespace: Namespace) -> "URIRef":
+    def to_rdf(self, graph: Graph, base_namespace: Namespace = RESUME) -> "URIRef":
         """
         Add Person to RDF graph with schema.org properties.
 

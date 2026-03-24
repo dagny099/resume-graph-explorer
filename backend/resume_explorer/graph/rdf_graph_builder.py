@@ -240,6 +240,10 @@ class RDFGraphBuilder:
                 # Map this skill ID to the canonical URI to fix job references
                 if skill.id:
                     self._skill_id_to_uri[skill.id] = existing_uri
+                # Add any new altLabels from this variant to the canonical node.
+                # (Multiple docs may contribute different alias labels for the same skill.)
+                for alt in getattr(skill, "alt_labels", []):
+                    self.graph.add((existing_uri, SKOS.altLabel, Literal(alt)))
                 return existing_uri
 
         # No duplicate found, create new skill
@@ -255,6 +259,10 @@ class RDFGraphBuilder:
             self.graph.add((uri, RE.proficiencyLevel, Literal(skill.proficiency_level)))
         if skill.years_experience:
             self.graph.add((uri, RE.yearsExperience, Literal(skill.years_experience, datatype=XSD.float)))
+
+        # Write variant names as skos:altLabel triples so aliases remain in the graph.
+        for alt in getattr(skill, "alt_labels", []):
+            self.graph.add((uri, SKOS.altLabel, Literal(alt)))
 
         # Add provenance
         self._add_provenance(uri, skill)

@@ -11,6 +11,51 @@ and ensure consistent naming. Uses a three-phase approach:
 Usage:
     normalizer = EntityNormalizer(provider="mock")  # or "anthropic", "openai"
     normalized_entities = normalizer.normalize_session_entities(all_entities)
+
+─── ROLE IN THE NORMALIZATION ARCHITECTURE ────────────────────────────────────
+
+This is the LIVE SESSION NORMALIZER. It runs automatically during upload
+(triggered from routes.py:_maybe_normalize_session_entities), operating on
+Python dict objects before they are serialized to RDF. Its job is to prevent
+duplicate entity NODES in the knowledge graph when multiple resume variants
+are uploaded to the same session.
+
+Examples of what this handles:
+  - "python" (resume A) and "Python" (resume B) → one canonical Skill node
+  - "ML" (resume A) and "Machine Learning" (resume B) → one Skill node
+  - "UT-Austin" (resume A) and "University of Texas at Austin" (resume B)
+    → one Organization node (also backed by RDF builder fuzzy matching)
+
+IMPORTANT — WHEN THIS RUNS:
+  Currently triggered only when a session has 2+ completed documents
+  (see routes.py). Single-resume sessions receive NO in-app normalization;
+  they rely entirely on the RDF graph builder's own dedup caches
+  (case-insensitive for skills, fuzzy-normalized for orgs).
+
+─── COMPANION: backend/tools/entity_normalizer.py ─────────────────────────────
+
+A separate normalizer exists for post-export offline use. It is NOT the same
+job. The tools normalizer reconciles cross-namespace label inconsistencies
+between Skill node prefLabels and usedTechnology free-text strings in job
+records — a problem this service doesn't address because those two sets come
+from separate LLM extraction paths and must be compared at the graph level.
+
+  THIS FILE (services/entity_normalizer.py)
+    Purpose:  prevent duplicate entity NODES across uploads
+    When:     live, automatic, during upload
+    Input:    Python dict objects (pre-RDF)
+    Trigger:  session has 2+ completed documents
+
+  backend/tools/entity_normalizer.py
+    Purpose:  reconcile Skill prefLabels against usedTechnology strings
+              for accurate skill_gap.md analysis; adds skos:altLabel entries
+    When:     offline, manual, after JSON-LD export
+    Input:    exported JSON-LD file
+    Trigger:  user runs the script explicitly
+
+Both normalizers use the same three-phase approach (deterministic → ESCO →
+LLM batch), but they solve different problems at different pipeline stages.
+────────────────────────────────────────────────────────────────────────────────
 """
 
 from urllib.parse import unquote
@@ -44,7 +89,8 @@ class EntityNormalizer:
 
     def normalize_session_entities(
         self,
-        all_entities: List[Dict[str, Any]]
+        all_entities: List[Dict[str, Any]],
+        run_llm_phase: bool = True,
     ) -> Dict[str, Any]:
         """
         Normalize entities from multiple documents in a session.
@@ -52,6 +98,9 @@ class EntityNormalizer:
         Args:
             all_entities: List of entity dicts from all documents in session
                 Each dict should have: {person, jobs, skills, education, etc.}
+            run_llm_phase: Whether to run Phase 3 (LLM semantic normalization).
+                Set to False for single-resume sessions where only cheap
+                deterministic + ESCO phases are needed.
 
         Returns:
             {
@@ -62,81 +111,109 @@ class EntityNormalizer:
         """
         logger.info(f"Starting entity normalization with {self.provider} provider")
 
-        # Extract all labels from all documents
-        skill_labels = set()
-        tech_labels = set()
-        org_labels = set()
-        degree_labels = set()
-        skill_to_esco = {}  # skill_label -> esco_uri
+        # Extract all labels from all documents, keeping type pools separate so
+        # Phase 3 can send type-annotated prompts and avoid cross-type contamination
+        # (e.g., "MS" as an org abbreviation should never merge with "MS" as a degree).
+        declared_skill_labels: set = set()  # from skill entities (curated prefLabels)
+        tech_labels: set = set()            # from job.technologies_used (free-text)
+        org_labels: set = set()
+        degree_labels: set = set()
+        skill_to_esco: Dict[str, str] = {}  # skill_label -> esco_uri
 
         for entities in all_entities:
-            # Collect skill labels
             for skill in entities.get("skills", []):
                 label = skill.get("name") or skill.get("label")
                 if label:
                     decoded_label = self._url_decode(label)
-                    skill_labels.add(decoded_label)
-
-                    # Track ESCO mappings
+                    declared_skill_labels.add(decoded_label)
                     esco = skill.get("esco_uri")
                     if esco:
                         skill_to_esco[decoded_label] = esco
 
-            # Collect technology labels from jobs
             for job in entities.get("jobs", []):
                 for tech in job.get("technologies_used", []):
                     decoded = self._url_decode(tech)
                     tech_labels.add(decoded)
 
-            # Collect organization labels
             for org in entities.get("organizations", []):
                 name = org.get("name")
                 if name:
                     decoded = self._url_decode(name)
                     org_labels.add(decoded)
 
-            # Collect degree labels from education
             for edu in entities.get("education", []):
                 degree = edu.get("degree")
                 if degree:
                     decoded = self._url_decode(degree)
                     degree_labels.add(decoded)
 
-        all_labels = skill_labels | tech_labels | org_labels | degree_labels
+        # Skills and technologies share the same real-world concept space, so they
+        # are treated as a single pool for dedup. Orgs and degrees are separate pools.
+        skill_tech_labels = declared_skill_labels | tech_labels
+        all_labels = skill_tech_labels | org_labels | degree_labels
+
         logger.info(
-            f"Found {len(skill_labels)} skill labels, "
+            f"Found {len(declared_skill_labels)} declared skill labels, "
             f"{len(tech_labels)} technology labels, "
             f"{len(org_labels)} organization labels, "
             f"{len(degree_labels)} degree labels "
             f"({len(all_labels)} unique total)"
         )
 
-        # Phase 1: Deterministic normalization
-        phase1_map = self._phase1_deterministic(all_labels)
+        # Phase 1: Deterministic normalization — run per type pool to prevent
+        # cross-type case merges (e.g., "MS" org vs "MS" degree stay separate).
+        phase1_skill_tech = self._phase1_deterministic(skill_tech_labels)
+        phase1_org = self._phase1_deterministic(org_labels)
+        phase1_degree = self._phase1_deterministic(degree_labels)
+        phase1_map = {**phase1_skill_tech, **phase1_org, **phase1_degree}
         logger.info(f"Phase 1 (deterministic): {len(phase1_map)} merges")
 
-        # Apply Phase 1
-        remaining_labels = set()
-        for label in all_labels:
-            remaining_labels.add(phase1_map.get(label, label))
+        # Apply Phase 1 per pool, preserving per-type membership for Phase 3
+        def _apply_m(labels: set, m: dict) -> set:
+            return {m.get(l, l) for l in labels}
 
-        # Phase 2: ESCO-anchored merge
-        phase2_map = self._phase2_esco_anchored(remaining_labels, skill_to_esco)
+        remaining_declared = _apply_m(declared_skill_labels, phase1_skill_tech)
+        remaining_techs = _apply_m(tech_labels, phase1_skill_tech)
+        remaining_skill_tech = remaining_declared | remaining_techs
+        remaining_orgs = _apply_m(org_labels, phase1_org)
+        remaining_degrees = _apply_m(degree_labels, phase1_degree)
+
+        # Phase 2: ESCO-anchored merge (skill+tech pool only — ESCO URIs are for skills)
+        phase2_map = self._phase2_esco_anchored(remaining_skill_tech, skill_to_esco)
         logger.info(f"Phase 2 (ESCO-anchored): {len(phase2_map)} merges")
 
-        # Apply Phase 2
-        for old, new in phase2_map.items():
-            remaining_labels.discard(old)
+        # Apply Phase 2 to skill+tech subsets
+        remaining_declared = _apply_m(remaining_declared, phase2_map)
+        remaining_techs = _apply_m(remaining_techs, phase2_map)
 
-        # Phase 3: LLM batch normalization
-        phase3_map, groups = self._phase3_llm_batch(remaining_labels)
-        logger.info(f"Phase 3 (LLM batch): {len(phase3_map)} merges")
+        # Phase 3: LLM — three separate calls, each with a type-specific prompt.
+        # Separation prevents "ML" (tech) from being confused with "ML" (org abbrev).
+        # The skill+tech prompt annotates which labels are declared vs used-in-job,
+        # helping the LLM confidently merge "ML" [used] ↔ "Machine Learning" [declared].
+        if run_llm_phase:
+            phase3_skill_tech, groups_st = self._phase3_skill_tech_batch(
+                remaining_declared, remaining_techs
+            )
+            phase3_org, groups_org = self._phase3_labeled_batch(
+                sorted(remaining_orgs), "organization name"
+            )
+            phase3_degree, groups_deg = self._phase3_labeled_batch(
+                sorted(remaining_degrees), "academic degree or field of study"
+            )
+            phase3_map = {**phase3_skill_tech, **phase3_org, **phase3_degree}
+            groups = groups_st + groups_org + groups_deg
+        else:
+            phase3_map, groups = {}, []
+
+        logger.info(f"Phase 3 (LLM batch): {len(phase3_map)} merges (ran={run_llm_phase})")
 
         # Build final label map (chain all phases)
         label_map = self._build_final_map(all_labels, phase1_map, phase2_map, phase3_map)
 
-        # Apply normalization to entities
-        normalized_entities = self._apply_normalization(all_entities, label_map)
+        # Apply normalization to entities; track alt_labels on skills whose labels changed
+        normalized_entities = self._apply_normalization(
+            all_entities, label_map, declared_skill_labels
+        )
 
         # Build report
         report = {
@@ -144,7 +221,11 @@ class EntityNormalizer:
             "phases": {
                 "deterministic": {"merges": len(phase1_map)},
                 "esco_anchored": {"merges": len(phase2_map)},
-                "llm_batch": {"merges": len(phase3_map), "groups": groups},
+                "llm_batch": {
+                    "merges": len(phase3_map),
+                    "groups": groups,
+                    "ran": run_llm_phase,
+                },
             },
             "summary": {
                 "original_labels": len(all_labels),
@@ -260,7 +341,7 @@ class EntityNormalizer:
             return self._mock_normalization(labels_list)
 
     def _build_normalization_prompt(self, labels: List[str]) -> str:
-        """Build prompt for LLM batch normalization."""
+        """Build prompt for LLM batch normalization (legacy — mixed pool)."""
         return f"""You are an entity resolution expert. Below is a list of skills and technologies
 extracted from resume documents. Some of these refer to the same real-world concept
 but are written differently (abbreviations, case variants, alternative names).
@@ -288,9 +369,146 @@ Respond with ONLY valid JSON, no markdown fences, no explanation:
 Include ALL names — even unique ones should appear as single-member groups.
 """
 
+    def _build_skill_tech_prompt(
+        self, declared_skills: set, tech_labels: set
+    ) -> str:
+        """
+        Build a type-annotated prompt for the skill+tech pool.
+
+        Annotating which labels are declared skills vs used-in-job technologies
+        helps the LLM confidently merge e.g. "ML" [used] ↔ "Machine Learning" [declared]
+        and prefer the more formal declared name as canonical.
+        """
+        items = (
+            [f'  - "{l}" [declared skill]' for l in sorted(declared_skills)] +
+            [f'  - "{l}" [used in job]' for l in sorted(tech_labels)]
+        )
+        return f"""You are an entity resolution expert reviewing a resume knowledge graph.
+Below are skill/technology labels extracted from resume documents.
+Labels marked [declared skill] come from the skills section (curated names).
+Labels marked [used in job] come from job descriptions (free-text, may use abbreviations).
+
+TASK: Identify groups that refer to the SAME real-world skill or technology.
+Be CONSERVATIVE — only group things you are highly confident are the same concept.
+When merging, PREFER the [declared skill] label as canonical (it is more authoritative).
+Leave unique items as singleton groups.
+
+ENTITY LIST:
+{chr(10).join(items)}
+
+Respond with ONLY valid JSON, no markdown fences, no explanation:
+{{
+  "groups": [
+    {{
+      "canonical": "the best/most complete name",
+      "members": ["name1", "name2"],
+      "reasoning": "brief explanation"
+    }}
+  ]
+}}
+
+Include ALL names — even unique ones should appear as single-member groups.
+"""
+
+    def _build_pool_prompt(self, labels: List[str], entity_type: str) -> str:
+        """Build a prompt for a homogeneous entity pool (org names, degree names, etc.)."""
+        return f"""You are an entity resolution expert reviewing a resume knowledge graph.
+Below is a list of {entity_type}s extracted from resume documents.
+Some may refer to the same real-world entity written differently
+(abbreviations, punctuation variants, alternate official names).
+
+TASK: Identify groups that refer to the SAME real-world {entity_type}.
+Be CONSERVATIVE — only group things you are highly confident are the same.
+Leave unique items as singleton groups.
+
+ENTITY LIST:
+{chr(10).join(f'  - "{label}"' for label in labels)}
+
+Respond with ONLY valid JSON, no markdown fences, no explanation:
+{{
+  "groups": [
+    {{
+      "canonical": "the most complete/official name",
+      "members": ["name1", "name2"],
+      "reasoning": "brief explanation"
+    }}
+  ]
+}}
+
+Include ALL names — even unique ones should appear as single-member groups.
+"""
+
     def _mock_normalization(self, labels: List[str]) -> tuple[Dict[str, str], List[Dict]]:
         """Mock provider: identity mapping (no actual normalization)."""
         return {}, []
+
+    # =========================================================================
+    # Phase 3: Type-pool helpers (used by normalize_session_entities)
+    # =========================================================================
+
+    def _call_llm(self, prompt: str, max_tokens: int = 2000) -> Optional[str]:
+        """
+        Call the configured LLM and return raw text. Returns None on failure.
+        Centralizes provider dispatch so pool helpers stay DRY.
+        """
+        if self.provider == "mock":
+            return None
+        try:
+            if self.provider == "anthropic":
+                return self.llm_client.generate(prompt, max_tokens=max_tokens)
+            elif self.provider == "openai":
+                import openai
+                client = openai.OpenAI()
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=max_tokens,
+                )
+                return response.choices[0].message.content
+            elif self.provider == "ollama":
+                return self.llm_client.generate(prompt, max_tokens=3000, temperature=0.1)
+        except Exception as e:
+            logger.error(f"LLM call failed ({self.provider}): {e}")
+        return None
+
+    def _phase3_skill_tech_batch(
+        self, declared_skills: set, tech_labels: set
+    ) -> tuple[Dict[str, str], List[Dict]]:
+        """
+        Phase 3 for the skill+tech pool.
+        Uses a type-annotated prompt so the LLM knows which labels are curated
+        skill names vs free-text job description strings.
+        """
+        if not declared_skills and not tech_labels:
+            return {}, []
+        if self.provider == "mock":
+            return {}, []
+        prompt = self._build_skill_tech_prompt(declared_skills, tech_labels)
+        raw = self._call_llm(prompt)
+        if raw:
+            return self._parse_llm_response(raw)
+        return {}, []
+
+    def _phase3_labeled_batch(
+        self, labels: List[str], entity_type: str
+    ) -> tuple[Dict[str, str], List[Dict]]:
+        """
+        Phase 3 for a homogeneous entity pool (org names, degree names, etc.).
+        Uses a type-specific prompt to avoid cross-type confusion.
+        """
+        if not labels:
+            return {}, []
+        if self.provider == "mock":
+            return {}, []
+        prompt = self._build_pool_prompt(labels, entity_type)
+        raw = self._call_llm(prompt)
+        if raw:
+            return self._parse_llm_response(raw)
+        return {}, []
+
+    # =========================================================================
+    # Phase 3: Per-provider implementations (legacy — used by _phase3_llm_batch)
+    # =========================================================================
 
     def _anthropic_normalization(self, labels: List[str]) -> tuple[Dict[str, str], List[Dict]]:
         """Use Anthropic Claude for normalization."""
@@ -410,9 +628,16 @@ Include ALL names — even unique ones should appear as single-member groups.
     def _apply_normalization(
         self,
         all_entities: List[Dict[str, Any]],
-        label_map: Dict[str, str]
+        label_map: Dict[str, str],
+        declared_skill_labels: Optional[set] = None,
     ) -> List[Dict[str, Any]]:
-        """Apply label_map to all entities."""
+        """
+        Apply label_map to all entities.
+
+        When a skill's label is remapped to a canonical (e.g. "ML" → "Machine Learning"),
+        the original label is stored in skill["alt_labels"] so the RDF builder can write
+        it as a skos:altLabel triple, keeping variant names discoverable in the graph.
+        """
         normalized = []
 
         for entities in all_entities:
@@ -422,7 +647,7 @@ Include ALL names — even unique ones should appear as single-member groups.
             if "person" in entities:
                 normalized_doc["person"] = entities["person"]
 
-            # Normalize skills
+            # Normalize skills, tracking alt_labels when the label changes
             normalized_skills = []
             for skill in entities.get("skills", []):
                 skill_copy = skill.copy()
@@ -434,6 +659,13 @@ Include ALL names — even unique ones should appear as single-member groups.
                         skill_copy["name"] = new_label
                     if "label" in skill_copy:
                         skill_copy["label"] = new_label
+                    # If the label was remapped, preserve the original as an alt_label
+                    # so it ends up as skos:altLabel on the canonical Skill node in RDF.
+                    if new_label != decoded:
+                        alt_labels = list(skill_copy.get("alt_labels", []))
+                        if decoded not in alt_labels:
+                            alt_labels.append(decoded)
+                        skill_copy["alt_labels"] = alt_labels
                 normalized_skills.append(skill_copy)
             normalized_doc["skills"] = normalized_skills
 

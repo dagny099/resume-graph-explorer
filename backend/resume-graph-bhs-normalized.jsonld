@@ -1,0 +1,3030 @@
+[
+  {
+    "@id": "http://resumeexplorer.org/resource/cdc88827-29ab-4344-b3e4-4b9bea41321b",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567075"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Intermediate"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "LangChain"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/edd20f13-3e56-422a-aece-515f130e5426",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567370"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Stakeholder Communication"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/3f8868ab-3918-4d6a-9c93-b5180b119763",
+    "@type": [
+      "http://schema.org/Person"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.568115"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#hasCertification": [
+      {
+        "@id": "http://resumeexplorer.org/resource/b1f3c2b1-c631-4539-94fd-4b801b601949"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/bed3df7d-5bc2-4a6e-a7ce-650baeaf30d3"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/802c183b-0280-4d93-a22b-37d390ab046b"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/81dee6f6-39be-4a85-9bd3-8227fb0f6835"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#hasJob": [
+      {
+        "@id": "http://resumeexplorer.org/resource/99321b62-0b3a-4518-bedd-7aac2fd4d9a8"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/2a36e4b0-2a80-4efe-9fe5-80be120c6517"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/69039fcb-abd1-4ca5-a9e1-768d221610ae"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/9d7fe57b-b1d8-4acc-88bb-46fee4f07ff7"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/1d657fd5-2fc0-4c80-9d7c-5eeabb171420"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/4301345c-7906-4af5-b9ce-5724f0ea3b80"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/f41e0065-26db-451e-b9ef-9885da0d1377"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#hasSkill": [
+      {
+        "@id": "http://resumeexplorer.org/resource/5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/1d226581-dd62-451e-8dec-c1ad46f65e04"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/f3d11f9f-e8ed-4a89-8f2b-0413e7505be4"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/cdc88827-29ab-4344-b3e4-4b9bea41321b"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/b511bcb7-f726-4578-980d-7d2feecd93bf"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/60f684da-75b8-4b2a-9aa3-fce014f26607"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/ca384c13-ae31-4dfc-8e42-6e8f41e0fcf3"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/68c87914-91b6-4b6d-af8a-ff92f345a73d"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/61980c05-1856-41e7-aaad-3d344725baff"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/00f71da6-1a46-402d-a172-cec77b6ec602"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/16a2d740-a192-4a56-9127-ceadd45fdd41"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/b5cb8767-bb62-44a1-9665-71cb4f83778d"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/2982cdf2-5ea4-4394-a7ac-312cca950f9a"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/756285ec-575c-44f9-a4bf-7ce8a82d8510"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/000c78ff-1aea-4a29-b84f-fba211ba1da3"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/63457df8-3045-49e1-87ae-76f60e5a70df"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/2fb1f05e-e41d-4261-80cf-cd37183948f6"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/562e67e5-3a92-430c-8425-79175158fd2f"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/46477a35-dc30-4526-a2cc-ac5092d13d71"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/654895c8-3de6-43f8-9a02-5dad54606b52"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/daff3eb4-62f8-472a-be80-66cebdce16f6"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/22b55c9a-24a0-4379-a48f-43b26299ce7c"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/bfd4b969-1f3e-495a-af5e-bf8f9bc52fb4"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/edd20f13-3e56-422a-aece-515f130e5426"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/d98f91de-ef47-4cb9-a917-a34f187dc9a6"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/e1265d40-87ee-419d-b98d-047386681341"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/87208d7e-2a20-49a9-9e22-29905230b5dc"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/178647e5-877b-4470-915d-d478d455c968"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/9826486c-1399-45a8-adf6-ad7c90194331"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/c6a46d17-8563-46ab-80bc-7cad0d13d552"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/e435bc8b-6e31-4e44-ac1e-f2a35f40faab"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/1c9eb410-8e5c-464d-bc75-cc0cb0dee1f3"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/95f18e09-d8a1-4ae0-93ce-1b83b76eb4d5"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/8377df80-f2fa-4585-bdce-174ea8fb9ec8"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/ca5ffc0f-4eee-4f74-9b08-f0a3b328b093"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/bf29d4c6-b2d5-4244-9802-a9c7d278704f"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/04b0ab75-3976-460d-867b-230ecb25755f"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/8a208d03-b3fd-4b80-8ff8-06a35f81d11a"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/ae3d10be-d27c-429c-ba21-e0ada704cc94"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/f952b534-bfd5-4d0d-b8f7-4447fdd25013"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/e60b2fca-61d8-47d3-bf8f-fa5c8d855fa9"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/c9d0137e-116b-48f3-9cec-034f39f3421c"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/ed89050f-02eb-4e80-a69b-1213084acbd7"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/2273dfef-bfea-4c56-affb-96752ae3cf26"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/d6de7686-9f7b-47bf-bcc8-1ffaaf7289e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/74d9d0f1-b8f4-480d-b86a-3e0b0fefc8ba"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/e31ba471-6ada-437f-9ec7-8d7f5b18cad3"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/b1869042-02fa-4f49-9789-66cbc652e5c9"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/baaa1aae-1bf9-43cc-a72f-75e21cd2bc9c"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://schema.org/address": [
+      {
+        "@value": "Austin, TX"
+      }
+    ],
+    "http://schema.org/alumniOf": [
+      {
+        "@id": "http://resumeexplorer.org/resource/587e08b0-3953-4562-bd17-aa88852eee48"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/e1b643cd-e4fe-48ce-80e6-88ad168f3720"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/77529152-58b1-4c7f-9033-27b2647a9f6b"
+      }
+    ],
+    "http://schema.org/description": [
+      {
+        "@value": "AI engineering consultant and data scientist with 6+ years delivering end-to-end machine learning and data products across professional services, public sector, and healthcare. Build Python-based ML and generative AI applications (LangChain/LlamaIndex; RAG patterns) and partner closely with engineers and stakeholders to translate business needs into reliable, well-documented solutions. Strong foundation in data engineering (SQL/ETL, data quality), cloud platforms (AWS/Azure/GCP), and pragmatic MLOps practices (Git, automated testing, CI/CD exposure)."
+      }
+    ],
+    "http://schema.org/email": [
+      {
+        "@value": "barbs@balex.com"
+      }
+    ],
+    "http://schema.org/name": [
+      {
+        "@value": "Barbara Hidalgo-Sotelo"
+      }
+    ],
+    "http://schema.org/telephone": [
+      {
+        "@value": "512.804.9995"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Barbara Hidalgo-Sotelo"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/60f684da-75b8-4b2a-9aa3-fce014f26607",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567098"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Expert"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#exactMatch": [
+      {
+        "@id": "http://data.europa.eu/esco/skill/d8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4c"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "SQL"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/1d226581-dd62-451e-8dec-c1ad46f65e04",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567037"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Expert"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Domain"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#yearsExperience": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 6.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "6.0"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#exactMatch": [
+      {
+        "@id": "http://data.europa.eu/esco/skill/f8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4e"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Machine Learning"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/654895c8-3de6-43f8-9a02-5dad54606b52",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567252"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "GitHub"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/562e67e5-3a92-430c-8425-79175158fd2f",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567231"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "RAG"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/5b63f789-36b3-4ff0-a612-b98432dee0e1",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.566965"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Expert"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#yearsExperience": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 6.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "6.0"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#exactMatch": [
+      {
+        "@id": "http://data.europa.eu/esco/skill/c3b1499e-77e4-42e8-be6f-676e9f1b7c91"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Python"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/2a36e4b0-2a80-4efe-9fe5-80be120c6517",
+    "@type": [
+      "http://schema.org/JobPosting"
+    ],
+    "http://resumeexplorer.org/ontology#achievement": [
+      {
+        "@value": "Resolved cross-functional delivery issues"
+      },
+      {
+        "@value": "Supported on-time execution"
+      },
+      {
+        "@value": "Improved program delivery efficiency"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567426"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#isCurrent": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#boolean",
+        "@value": false
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedSkill": [
+      {
+        "@id": "http://resumeexplorer.org/resource/22b55c9a-24a0-4379-a48f-43b26299ce7c"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/bfd4b969-1f3e-495a-af5e-bf8f9bc52fb4"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/edd20f13-3e56-422a-aece-515f130e5426"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/d98f91de-ef47-4cb9-a917-a34f187dc9a6"
+      }
+    ],
+    "http://schema.org/description": [
+      {
+        "@value": "Partnered with client stakeholders to assess program status, risks, and quality; communicated progress and blockers to keep delivery moving. Resolved cross-functional delivery issues across business and technical teams, reducing friction and supporting on-time execution. Supported change-management planning and execution using internal methods and software"
+      }
+    ],
+    "http://schema.org/endDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2025-05-01"
+      }
+    ],
+    "http://schema.org/hiringOrganization": [
+      {
+        "@id": "http://resumeexplorer.org/resource/org-inflective-inc"
+      }
+    ],
+    "http://schema.org/jobLocation": [
+      {
+        "@value": "Remote"
+      }
+    ],
+    "http://schema.org/startDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2024-01-01"
+      }
+    ],
+    "http://schema.org/title": [
+      {
+        "@value": "Technical Consultant (Program Delivery / Change Management)"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Technical Consultant (Program Delivery / Change Management)"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedTechnology": []
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/9d7fe57b-b1d8-4acc-88bb-46fee4f07ff7",
+    "@type": [
+      "http://schema.org/JobPosting"
+    ],
+    "http://resumeexplorer.org/ontology#achievement": [
+      {
+        "@value": "Achieved 30% faster processing time"
+      },
+      {
+        "@value": "Reduced error rates by 25%"
+      },
+      {
+        "@value": "Built classification model with human-comparable performance"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567611"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#isCurrent": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#boolean",
+        "@value": false
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedSkill": [
+      {
+        "@id": "http://resumeexplorer.org/resource/5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/1d226581-dd62-451e-8dec-c1ad46f65e04"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/00f71da6-1a46-402d-a172-cec77b6ec602"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/2fb1f05e-e41d-4261-80cf-cd37183948f6"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/e435bc8b-6e31-4e44-ac1e-f2a35f40faab"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/1c9eb410-8e5c-464d-bc75-cc0cb0dee1f3"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/95f18e09-d8a1-4ae0-93ce-1b83b76eb4d5"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedTechnology": [
+      {
+        "@id": "http://resumeexplorer.org/resource/5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/00f71da6-1a46-402d-a172-cec77b6ec602"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/8377df80-f2fa-4585-bdce-174ea8fb9ec8"
+      },
+      {
+        "@value": "5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@value": "00f71da6-1a46-402d-a172-cec77b6ec602"
+      },
+      {
+        "@value": "8377df80-f2fa-4585-bdce-174ea8fb9ec8"
+      }
+    ],
+    "http://schema.org/description": [
+      {
+        "@value": "Designed a Python / scikit-learn classification model to automate medical bill categorization with performance comparable to human coders. Led a digital transformation effort improving adjudication & analytics workflows, achieving ~30% faster processing time, meaningful cost saving. Co-led Lean Six Sigma workshops to identify process inefficiencies and operational improvements, reducing error rates by ~25%. Delivered in an Agile environment (Jira), presenting analysis and recommendations to executive stakeholders"
+      }
+    ],
+    "http://schema.org/endDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2019-05-01"
+      }
+    ],
+    "http://schema.org/hiringOrganization": [
+      {
+        "@id": "http://resumeexplorer.org/resource/org-inflective-inc"
+      }
+    ],
+    "http://schema.org/jobLocation": [
+      {
+        "@value": "Remote"
+      }
+    ],
+    "http://schema.org/startDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2017-08-01"
+      }
+    ],
+    "http://schema.org/title": [
+      {
+        "@value": "Technical Consultant & Project Manager (Risk management / Healthcare analytics)"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Technical Consultant & Project Manager (Risk management / Healthcare analytics)"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/f3d11f9f-e8ed-4a89-8f2b-0413e7505be4",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567063"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Expert"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Domain"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "GenAI"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/b511bcb7-f726-4578-980d-7d2feecd93bf",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567087"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Intermediate"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "LlamaIndex"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/68c87914-91b6-4b6d-af8a-ff92f345a73d",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567121"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Intermediate"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#exactMatch": [
+      {
+        "@id": "http://data.europa.eu/esco/skill/k8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4j"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Azure"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/87208d7e-2a20-49a9-9e22-29905230b5dc",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567452"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Metadata Management"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/4301345c-7906-4af5-b9ce-5724f0ea3b80",
+    "@type": [
+      "http://schema.org/JobPosting"
+    ],
+    "http://resumeexplorer.org/ontology#achievement": [
+      {
+        "@value": "Delivered client-ready insights from multimodal biometric data"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567829"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#isCurrent": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#boolean",
+        "@value": false
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedSkill": [
+      {
+        "@id": "http://resumeexplorer.org/resource/f952b534-bfd5-4d0d-b8f7-4447fdd25013"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/e60b2fca-61d8-47d3-bf8f-fa5c8d855fa9"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/c9d0137e-116b-48f3-9cec-034f39f3421c"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/ed89050f-02eb-4e80-a69b-1213084acbd7"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedTechnology": [
+      {
+        "@id": "http://resumeexplorer.org/resource/2273dfef-bfea-4c56-affb-96752ae3cf26"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/d6de7686-9f7b-47bf-bcc8-1ffaaf7289e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/74d9d0f1-b8f4-480d-b86a-3e0b0fefc8ba"
+      },
+      {
+        "@value": "2273dfef-bfea-4c56-affb-96752ae3cf26"
+      },
+      {
+        "@value": "d6de7686-9f7b-47bf-bcc8-1ffaaf7289e1"
+      },
+      {
+        "@value": "74d9d0f1-b8f4-480d-b86a-3e0b0fefc8ba"
+      }
+    ],
+    "http://schema.org/description": [
+      {
+        "@value": "Ran hypothesis and A/B testing using multimodal biometric data (eye tracking, GSR, facial expression signals) and delivered client-ready insights"
+      }
+    ],
+    "http://schema.org/endDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2017-07-01"
+      }
+    ],
+    "http://schema.org/hiringOrganization": [
+      {
+        "@id": "http://resumeexplorer.org/resource/org-mediascience"
+      }
+    ],
+    "http://schema.org/jobLocation": [
+      {
+        "@value": "Austin, TX"
+      }
+    ],
+    "http://schema.org/startDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2017-02-01"
+      }
+    ],
+    "http://schema.org/title": [
+      {
+        "@value": "Research Project Manager (Biometrics & Marketing Effectiveness)"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Research Project Manager (Biometrics & Marketing Effectiveness)"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/baaa1aae-1bf9-43cc-a72f-75e21cd2bc9c",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567864"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Supervision"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/99321b62-0b3a-4518-bedd-7aac2fd4d9a8",
+    "@type": [
+      "http://schema.org/JobPosting"
+    ],
+    "http://resumeexplorer.org/ontology#achievement": [
+      {
+        "@value": "Built Python-based GenAI applications with RAG/GraphRAG patterns"
+      },
+      {
+        "@value": "Developed local-first systems with clear deployment path"
+      },
+      {
+        "@value": "Strengthened engineering fundamentals"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567329"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#isCurrent": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#boolean",
+        "@value": true
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedSkill": [
+      {
+        "@id": "http://resumeexplorer.org/resource/5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/f3d11f9f-e8ed-4a89-8f2b-0413e7505be4"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/562e67e5-3a92-430c-8425-79175158fd2f"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/46477a35-dc30-4526-a2cc-ac5092d13d71"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/756285ec-575c-44f9-a4bf-7ce8a82d8510"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/654895c8-3de6-43f8-9a02-5dad54606b52"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/daff3eb4-62f8-472a-be80-66cebdce16f6"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedTechnology": [
+      {
+        "@id": "http://resumeexplorer.org/resource/5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/562e67e5-3a92-430c-8425-79175158fd2f"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/46477a35-dc30-4526-a2cc-ac5092d13d71"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/756285ec-575c-44f9-a4bf-7ce8a82d8510"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/654895c8-3de6-43f8-9a02-5dad54606b52"
+      },
+      {
+        "@value": "5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@value": "562e67e5-3a92-430c-8425-79175158fd2f"
+      },
+      {
+        "@value": "46477a35-dc30-4526-a2cc-ac5092d13d71"
+      },
+      {
+        "@value": "756285ec-575c-44f9-a4bf-7ce8a82d8510"
+      },
+      {
+        "@value": "654895c8-3de6-43f8-9a02-5dad54606b52"
+      }
+    ],
+    "http://schema.org/description": [
+      {
+        "@value": "Built and iterated on Python-based GenAI applications using RAG/GraphRAG patterns, focusing on retrieval quality, traceability (citations/provenance), and reproducible workflows. Developed local-first systems with a clear deployment path (environment configuration, modular services, provider abstraction) to support rapid iteration and future productionization. Strengthened engineering fundamentals: Git/GitHub workflows, documentation, structured evaluation mindset, and repeatable pipelines"
+      }
+    ],
+    "http://schema.org/hiringOrganization": [
+      {
+        "@id": "http://resumeexplorer.org/resource/org-self-directed"
+      }
+    ],
+    "http://schema.org/jobLocation": [
+      {
+        "@value": "Remote"
+      }
+    ],
+    "http://schema.org/startDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2025-05-01"
+      }
+    ],
+    "http://schema.org/title": [
+      {
+        "@value": "Independent AI Engineering (Project-Based)"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Independent AI Engineering (Project-Based)"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/8a208d03-b3fd-4b80-8ff8-06a35f81d11a",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567668"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "EMR"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/69039fcb-abd1-4ca5-a9e1-768d221610ae",
+    "@type": [
+      "http://schema.org/JobPosting"
+    ],
+    "http://resumeexplorer.org/ontology#achievement": [
+      {
+        "@value": "Built Python utilities for metadata export and reporting"
+      },
+      {
+        "@value": "Developed POC reporting utility integrating multiple systems"
+      },
+      {
+        "@value": "Improved data access request handling"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567522"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#isCurrent": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#boolean",
+        "@value": false
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedSkill": [
+      {
+        "@id": "http://resumeexplorer.org/resource/5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/e1265d40-87ee-419d-b98d-047386681341"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/87208d7e-2a20-49a9-9e22-29905230b5dc"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/daff3eb4-62f8-472a-be80-66cebdce16f6"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/178647e5-877b-4470-915d-d478d455c968"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/9826486c-1399-45a8-adf6-ad7c90194331"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedTechnology": [
+      {
+        "@id": "http://resumeexplorer.org/resource/5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/c6a46d17-8563-46ab-80bc-7cad0d13d552"
+      },
+      {
+        "@value": "5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@value": "c6a46d17-8563-46ab-80bc-7cad0d13d552"
+      }
+    ],
+    "http://schema.org/description": [
+      {
+        "@value": "Built Python utilities to streamline metadata export and reporting workflows; produced documentation to support adoption & knowledge transfer. Developed POC reporting utility integrating ServiceNow, enterprise data catalog & analytics outputs to improve handling of data access requests. Collaborated with technical teams in a standards-driven environment; supported version control and automated testing pipelines"
+      }
+    ],
+    "http://schema.org/endDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2023-01-01"
+      }
+    ],
+    "http://schema.org/hiringOrganization": [
+      {
+        "@id": "http://resumeexplorer.org/resource/org-metric5-consulting"
+      }
+    ],
+    "http://schema.org/jobLocation": [
+      {
+        "@value": "Remote"
+      }
+    ],
+    "http://schema.org/startDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2021-04-01"
+      }
+    ],
+    "http://schema.org/title": [
+      {
+        "@value": "Data Scientist (Federal Client — Financial Markets & Data Governance)"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Data Scientist (Federal Client — Financial Markets & Data Governance)"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/f952b534-bfd5-4d0d-b8f7-4447fdd25013",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567732"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "A/B Testing"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/04b0ab75-3976-460d-867b-230ecb25755f",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567658"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Training"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/2982cdf2-5ea4-4394-a7ac-312cca950f9a",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567172"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Intermediate"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "ChromaDB"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/b5cb8767-bb62-44a1-9665-71cb4f83778d",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567162"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Intermediate"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Neo4j"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/46477a35-dc30-4526-a2cc-ac5092d13d71",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567241"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "GraphRAG"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/daff3eb4-62f8-472a-be80-66cebdce16f6",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567261"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Documentation"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/ca5ffc0f-4eee-4f74-9b08-f0a3b328b093",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567627"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Requirements Documentation"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/1d657fd5-2fc0-4c80-9d7c-5eeabb171420",
+    "@type": [
+      "http://schema.org/JobPosting"
+    ],
+    "http://resumeexplorer.org/ontology#achievement": [
+      {
+        "@value": "Improved software reliability and adoption"
+      },
+      {
+        "@value": "Aligned technical implementation to business needs"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567717"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#isCurrent": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#boolean",
+        "@value": false
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedSkill": [
+      {
+        "@id": "http://resumeexplorer.org/resource/ca5ffc0f-4eee-4f74-9b08-f0a3b328b093"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/bf29d4c6-b2d5-4244-9802-a9c7d278704f"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/1c9eb410-8e5c-464d-bc75-cc0cb0dee1f3"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/04b0ab75-3976-460d-867b-230ecb25755f"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/8a208d03-b3fd-4b80-8ff8-06a35f81d11a"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedTechnology": [
+      {
+        "@id": "http://resumeexplorer.org/resource/ae3d10be-d27c-429c-ba21-e0ada704cc94"
+      },
+      {
+        "@value": "ae3d10be-d27c-429c-ba21-e0ada704cc94"
+      }
+    ],
+    "http://schema.org/description": [
+      {
+        "@value": "Documented software requirements & supported Agile delivery for healthcare & private-sector clients, aligning technical implementation to business needs. Managed QA/QC testing and created end-user training materials to improve reliability and adoption of EMR software"
+      }
+    ],
+    "http://schema.org/endDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2017-01-01"
+      }
+    ],
+    "http://schema.org/hiringOrganization": [
+      {
+        "@id": "http://resumeexplorer.org/resource/org-persis-consulting"
+      }
+    ],
+    "http://schema.org/jobLocation": [
+      {
+        "@value": "Remote"
+      }
+    ],
+    "http://schema.org/startDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2014-01-01"
+      }
+    ],
+    "http://schema.org/title": [
+      {
+        "@value": "Technical Consultant (Requirements, QA/QC, Enablement)"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Technical Consultant (Requirements, QA/QC, Enablement)"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/178647e5-877b-4470-915d-d478d455c968",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567462"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Version Control"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/74d9d0f1-b8f4-480d-b86a-3e0b0fefc8ba",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567790"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Facial Expression Analysis"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/ca384c13-ae31-4dfc-8e42-6e8f41e0fcf3",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567111"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Intermediate"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#exactMatch": [
+      {
+        "@id": "http://data.europa.eu/esco/skill/j8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4i"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "AWS"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/61980c05-1856-41e7-aaad-3d344725baff",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567131"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Intermediate"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "GCP"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/8377df80-f2fa-4585-bdce-174ea8fb9ec8",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567571"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Jira"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/e60b2fca-61d8-47d3-bf8f-fa5c8d855fa9",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567742"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Biometrics"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/bfd4b969-1f3e-495a-af5e-bf8f9bc52fb4",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567361"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Change Management"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/e435bc8b-6e31-4e44-ac1e-f2a35f40faab",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567539"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Lean Six Sigma"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/ed89050f-02eb-4e80-a69b-1213084acbd7",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567761"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Research Management"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/2fb1f05e-e41d-4261-80cf-cd37183948f6",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567212"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Expert"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Soft"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#yearsExperience": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 6.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "6.0"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Project Management"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/d98f91de-ef47-4cb9-a917-a34f187dc9a6",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567379"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Risk Assessment"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/c9d0137e-116b-48f3-9cec-034f39f3421c",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567752"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#exactMatch": [
+      {
+        "@id": "http://data.europa.eu/esco/skill/g8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4f"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Data Analysis"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/f41e0065-26db-451e-b9ef-9885da0d1377",
+    "@type": [
+      "http://schema.org/JobPosting"
+    ],
+    "http://resumeexplorer.org/ontology#achievement": [
+      {
+        "@value": "Engineered secure data collection workflows"
+      },
+      {
+        "@value": "Supervised research staff and undergraduates"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567903"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#isCurrent": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#boolean",
+        "@value": false
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedSkill": [
+      {
+        "@id": "http://resumeexplorer.org/resource/5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/e31ba471-6ada-437f-9ec7-8d7f5b18cad3"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/b1869042-02fa-4f49-9789-66cbc652e5c9"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/ed89050f-02eb-4e80-a69b-1213084acbd7"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/baaa1aae-1bf9-43cc-a72f-75e21cd2bc9c"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#usedTechnology": [
+      {
+        "@id": "http://resumeexplorer.org/resource/5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@id": "http://resumeexplorer.org/resource/e31ba471-6ada-437f-9ec7-8d7f5b18cad3"
+      },
+      {
+        "@value": "5b63f789-36b3-4ff0-a612-b98432dee0e1"
+      },
+      {
+        "@value": "e31ba471-6ada-437f-9ec7-8d7f5b18cad3"
+      }
+    ],
+    "http://schema.org/description": [
+      {
+        "@value": "Engineered secure data collection and automated analysis workflows (Python/MATLAB) for longitudinal studies; supervised research staff and undergraduates contributing to the data pipelines"
+      }
+    ],
+    "http://schema.org/endDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2016-06-01"
+      }
+    ],
+    "http://schema.org/hiringOrganization": [
+      {
+        "@id": "http://resumeexplorer.org/resource/org-university-of-texas-at-austin"
+      }
+    ],
+    "http://schema.org/jobLocation": [
+      {
+        "@value": "Austin, TX"
+      }
+    ],
+    "http://schema.org/startDate": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2013-01-01"
+      }
+    ],
+    "http://schema.org/title": [
+      {
+        "@value": "Research Engineer/Scientist"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Research Engineer/Scientist"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/9826486c-1399-45a8-adf6-ad7c90194331",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567471"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Automated Testing"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/1c9eb410-8e5c-464d-bc75-cc0cb0dee1f3",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567549"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Agile"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/e31ba471-6ada-437f-9ec7-8d7f5b18cad3",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567844"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "MATLAB"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/00f71da6-1a46-402d-a172-cec77b6ec602",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567142"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Expert"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "scikit-learn"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/22b55c9a-24a0-4379-a48f-43b26299ce7c",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567349"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Program Management"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/d6de7686-9f7b-47bf-bcc8-1ffaaf7289e1",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567781"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "GSR"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/e1265d40-87ee-419d-b98d-047386681341",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567442"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Data Governance"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/95f18e09-d8a1-4ae0-93ce-1b83b76eb4d5",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567559"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Healthcare Analytics"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/ae3d10be-d27c-429c-ba21-e0ada704cc94",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567677"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "EMR Software"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/16a2d740-a192-4a56-9127-ceadd45fdd41",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567152"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Intermediate"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "FastAPI"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/b1869042-02fa-4f49-9789-66cbc652e5c9",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567854"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Data Collection"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/63457df8-3045-49e1-87ae-76f60e5a70df",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567202"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Expert"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Soft"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#yearsExperience": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 6.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "6.0"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#exactMatch": [
+      {
+        "@id": "http://data.europa.eu/esco/skill/o8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4n"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Communication"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/c6a46d17-8563-46ab-80bc-7cad0d13d552",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567481"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "ServiceNow"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/000c78ff-1aea-4a29-b84f-fba211ba1da3",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567192"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Expert"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Soft"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#yearsExperience": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 6.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "6.0"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#exactMatch": [
+      {
+        "@id": "http://data.europa.eu/esco/skill/n8b1b3e4-92c5-4e8a-8c5e-7c5e8b1b3e4m"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Leadership"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/2273dfef-bfea-4c56-affb-96752ae3cf26",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567771"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Eye Tracking"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/bf29d4c6-b2d5-4244-9802-a9c7d278704f",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567638"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "QA/QC"
+      }
+    ]
+  },
+  {
+    "@id": "http://resumeexplorer.org/resource/756285ec-575c-44f9-a4bf-7ce8a82d8510",
+    "@type": [
+      "http://data.europa.eu/esco/Skill"
+    ],
+    "http://resumeexplorer.org/ontology#confidence": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#double",
+        "@value": 1.0
+      },
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#float",
+        "@value": "1.0"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#createdAt": [
+      {
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+        "@value": "2026-03-05T07:45:40.567181"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#proficiencyLevel": [
+      {
+        "@value": "Expert"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#skillCategory": [
+      {
+        "@value": "Technical"
+      }
+    ],
+    "http://resumeexplorer.org/ontology#sourceDocument": [
+      {
+        "@value": "Hidalgo-Sotelo_Barbara_RESUME.pdf"
+      }
+    ],
+    "http://www.w3.org/2004/02/skos/core#prefLabel": [
+      {
+        "@value": "Git"
+      }
+    ]
+  }
+]

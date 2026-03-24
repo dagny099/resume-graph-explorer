@@ -51,6 +51,45 @@ PIPELINE POSITION:
     → insight documents
     → ChromaDB
 
+─── ROLE IN THE NORMALIZATION ARCHITECTURE ────────────────────────────────────
+
+This is the POST-EXPORT AUDIT NORMALIZER. It runs offline, manually, on an
+exported JSON-LD file. Its job is distinct from the live in-app normalizer.
+
+The core problem it solves: Skill node prefLabels and usedTechnology strings
+in job records are extracted by SEPARATE LLM calls (one for the skill list,
+one for each job description). Even from a single resume, these two sets can
+use different names for the same concept ("ML" in a job description, "Machine
+Learning" as the declared skill). The skill_gap.md analysis compares these
+two sets — inconsistent naming produces false gaps.
+
+  THIS FILE (tools/entity_normalizer.py)
+    Purpose:  reconcile Skill prefLabels against usedTechnology strings
+              for accurate skill_gap.md analysis; adds skos:altLabel entries
+              to preserve all variant names for retrieval
+    When:     offline, manual, after JSON-LD export
+    Input:    exported JSON-LD file
+    Trigger:  user runs the script explicitly with chosen provider
+
+  backend/resume_explorer/services/entity_normalizer.py
+    Purpose:  prevent duplicate entity NODES across multiple resume uploads
+              in the same session (Skills, Orgs, Education, etc.)
+    When:     live, automatic, during upload
+    Input:    Python dict objects (pre-RDF)
+    Trigger:  session has 2+ completed documents
+
+WHEN THIS SCRIPT FINDS 0 MERGES:
+  That means the in-app normalizer (if it ran with a real LLM provider) already
+  reconciled the labels before export, OR the single-resume extraction was
+  consistent. Zero merges is a GOOD outcome — it means the export is already
+  clean. You can still proceed to graph_analyzer.py directly.
+
+WHEN THIS SCRIPT IS MOST VALUABLE:
+  - When the app was configured with NORMALIZATION_PROVIDER=mock (no LLM ran)
+  - Multi-resume sessions where label drift accumulated across variants
+  - As a verification/audit step regardless of in-app normalization quality
+────────────────────────────────────────────────────────────────────────────────
+
 USAGE:
   python entity_normalizer.py --input resume-graph.jsonld --output normalized.jsonld
   python entity_normalizer.py --input resume-graph.jsonld --output normalized.jsonld --dry-run

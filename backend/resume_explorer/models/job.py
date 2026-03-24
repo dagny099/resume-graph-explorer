@@ -13,7 +13,7 @@ from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, XSD
 
 from .base import SKOSEntity
-from ..graph.vocabularies import SCHEMA, EntityType, RE, RelationType
+from ..graph.vocabularies import RESUME, SCHEMA, EntityType, RE, RelationType
 
 
 @dataclass
@@ -73,7 +73,7 @@ class Job(SKOSEntity):
         months = self.duration_months()
         return round(months / 12, 1) if months is not None else None
 
-    def to_rdf(self, graph: Graph, base_namespace: Namespace) -> URIRef:
+    def to_rdf(self, graph: Graph, base_namespace: Namespace = RESUME) -> URIRef:
         """
         Add Job to RDF graph with schema.org properties.
 

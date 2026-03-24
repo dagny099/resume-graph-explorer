@@ -12,7 +12,7 @@ from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, XSD
 
 from .base import SKOSEntity
-from ..graph.vocabularies import SCHEMA, EntityType, RE
+from ..graph.vocabularies import RESUME, SCHEMA, EntityType, RE
 
 
 @dataclass
@@ -51,7 +51,7 @@ class Certification(SKOSEntity):
             return False  # No expiration means always valid
         return self.expiration_date < date.today()
 
-    def to_rdf(self, graph: Graph, base_namespace: Namespace) -> URIRef:
+    def to_rdf(self, graph: Graph, base_namespace: Namespace = RESUME) -> URIRef:
         """
         Add Certification to RDF graph.
 

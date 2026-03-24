@@ -271,14 +271,23 @@ def _maybe_normalize_session_entities(session_id: str):
         documents = session_store.get_session_documents(session_id)
         completed_docs = [d for d in documents if d.status == 'complete']
 
-        # Only normalize if we have 2+ completed documents
-        if len(completed_docs) < 2:
-            logger.info(
-                f"Session {session_id} has {len(completed_docs)} completed documents. "
-                f"Normalization requires 2+. Skipping."
-            )
+        if not completed_docs:
+            logger.warning(f"No completed documents found for session {session_id}")
             return
-        logger.info(f"Starting entity normalization for session {session_id} ({len(completed_docs)} documents)")
+
+        # Tiered normalization gate:
+        #   Phase 1 (deterministic) + Phase 2 (ESCO) always run — they are cheap,
+        #   correct URL-encoded labels, and fix obvious case variants.
+        #   Phase 3 (LLM semantic) only runs for multi-resume sessions OR when
+        #   NORMALIZE_SINGLE_RESUME=true is set in config (opt-in for single-resume
+        #   sessions where you want alias resolution at ingestion time).
+        is_multi_doc = len(completed_docs) >= 2
+        run_llm_phase = is_multi_doc or current_app.config.get('NORMALIZE_SINGLE_RESUME', False)
+
+        logger.info(
+            f"Starting entity normalization for session {session_id} "
+            f"({len(completed_docs)} documents, llm_phase={run_llm_phase})"
+        )
 
         # Collect all entities from completed documents
         all_entities = []
@@ -322,7 +331,7 @@ def _maybe_normalize_session_entities(session_id: str):
         normalizer = EntityNormalizer(provider=normalization_provider, llm_client=llm_client)
 
         # Run normalization
-        result = normalizer.normalize_session_entities(all_entities)
+        result = normalizer.normalize_session_entities(all_entities, run_llm_phase=run_llm_phase)
         normalized_entities = result["normalized_entities"]
         label_map = result["label_map"]
         report = result["report"]

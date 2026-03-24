@@ -11,7 +11,7 @@ from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF
 
 from .base import SKOSEntity
-from ..graph.vocabularies import SCHEMA, EntityType, RE
+from ..graph.vocabularies import RESUME, SCHEMA, EntityType, RE
 
 
 @dataclass
@@ -42,7 +42,7 @@ class Organization(SKOSEntity):
     website: Optional[str] = None
     description: Optional[str] = None
 
-    def to_rdf(self, graph: Graph, base_namespace: Namespace) -> URIRef:
+    def to_rdf(self, graph: Graph, base_namespace: Namespace = RESUME) -> URIRef:
         """
         Add Organization to RDF graph with schema.org properties.
 

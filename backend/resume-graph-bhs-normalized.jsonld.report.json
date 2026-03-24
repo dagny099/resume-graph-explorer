@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-03-05T01:50:57.903830",
+  "provider": "anthropic",
+  "phases": {
+    "deterministic": {
+      "merges": 0,
+      "examples": {}
+    },
+    "esco_anchored": {
+      "merges": 0,
+      "examples": {}
+    },
+    "llm_batch": {
+      "merges": 0,
+      "groups": []
+    }
+  },
+  "summary": {
+    "original_labels": 62,
+    "final_unique_labels": 62,
+    "total_merges": 0,
+    "reduction_pct": 0.0
+  }
+}

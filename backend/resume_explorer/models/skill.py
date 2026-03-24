@@ -4,14 +4,14 @@ Skill Entity - Represents a skill or competency
 Maps to esco:Skill from ESCO taxonomy
 """
 
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF
 
 from .base import SKOSEntity
-from ..graph.vocabularies import ESCO, EntityType, RE, get_esco_skill_uri, get_skill_hierarchy
+from ..graph.vocabularies import ESCO, RESUME, EntityType, RE, get_esco_skill_uri, get_skill_hierarchy
 
 
 @dataclass
@@ -36,6 +36,10 @@ class Skill(SKOSEntity):
     category: Optional[str] = None  # e.g., "Technical", "Soft Skill"
     proficiency_level: Optional[str] = None  # e.g., "Expert", "Intermediate"
     years_experience: Optional[float] = None
+    # Variant/alias names for this skill (e.g., ["ML"] if canonical is "Machine Learning").
+    # Populated by the entity normalizer when two labels are merged; written as
+    # skos:altLabel triples in the RDF graph so variant names remain discoverable.
+    alt_labels: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         """
@@ -63,7 +67,7 @@ class Skill(SKOSEntity):
                     if narrower not in self.narrower_concepts:
                         self.narrower_concepts.append(narrower)
 
-    def to_rdf(self, graph: Graph, base_namespace: Namespace) -> URIRef:
+    def to_rdf(self, graph: Graph, base_namespace: Namespace = RESUME) -> URIRef:
         """
         Add Skill to RDF graph with ESCO properties.
 
@@ -97,6 +101,7 @@ class Skill(SKOSEntity):
             "category": self.category,
             "proficiency_level": self.proficiency_level,
             "years_experience": self.years_experience,
+            "alt_labels": self.alt_labels,
         })
         return data
 
