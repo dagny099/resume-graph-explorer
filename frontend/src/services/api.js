@@ -122,6 +122,40 @@ export const exportSessionGraph = async (sessionId, format = 'turtle') => {
 };
 
 // ============================================================================
+// Analysis Pipeline
+// ============================================================================
+
+export const getPipelineStatus = async (sessionId) => {
+  const response = await api.get(`/sessions/${sessionId}/pipeline/status`);
+  return response.data;
+};
+
+export const runGraphAnalysis = async (sessionId, options = {}) => {
+  const response = await api.post(`/sessions/${sessionId}/pipeline/analyze`, options);
+  return response.data;
+};
+
+export const runSynthesis = async (sessionId, options = {}) => {
+  const response = await api.post(`/sessions/${sessionId}/pipeline/synthesize`, options);
+  return response.data;
+};
+
+export const getInsights = async (sessionId) => {
+  const response = await api.get(`/sessions/${sessionId}/insights`);
+  return response.data;
+};
+
+export const getInsight = async (sessionId, analysisType) => {
+  const response = await api.get(`/sessions/${sessionId}/insights/${analysisType}`);
+  return response.data;
+};
+
+export const getNarratives = async (sessionId) => {
+  const response = await api.get(`/sessions/${sessionId}/narratives`);
+  return response.data;
+};
+
+// ============================================================================
 // Statistics
 // ============================================================================
 
