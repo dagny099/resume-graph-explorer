@@ -106,6 +106,16 @@ def create_app(config: dict = None) -> Flask:
         logger.warning(f"LLM client initialization failed: {e}")
         app.llm_client = None
 
+    # Initialize pipeline service (wraps offline graph analysis tools)
+    from ..services.pipeline_service import PipelineService
+    data_path = os.getenv('DATA_PATH', 'data')
+    app.pipeline_service = PipelineService(
+        session_store=session_store,
+        data_path=data_path,
+        llm_client=app.llm_client,
+    )
+    logger.info("Pipeline service initialized")
+
     # Register blueprints
     from .routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
