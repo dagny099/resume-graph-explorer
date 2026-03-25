@@ -24,6 +24,7 @@ from typing import Callable, Optional
 from ..models import Person, Job, Skill, Education, Certification, Organization
 from ..graph import RDFGraphBuilder
 from ..utils.logger import logger
+from . import create_llm_client
 
 
 class PipelineService:
@@ -297,8 +298,19 @@ class PipelineService:
                 "No insight files found. Run graph analysis (Step 1) first."
             )
 
-        if self.llm_client is None:
-            raise ValueError("No LLM client configured. Check LLM_PROVIDER in .env.")
+        # Instantiate a client for the requested provider (may differ from the app default).
+        # Falls back to self.llm_client only if provider matches or creation fails.
+        try:
+            synthesis_client = create_llm_client(provider=provider)
+        except Exception as e:
+            if self.llm_client is None:
+                raise ValueError(
+                    f"Could not create LLM client for provider '{provider}': {e}"
+                )
+            logger.warning(
+                f"Could not create '{provider}' client ({e}), falling back to default"
+            )
+            synthesis_client = self.llm_client
 
         # Load helper functions from narrative_synthesizer (not call_llm — it uses sys.exit)
         try:
@@ -344,7 +356,7 @@ class PipelineService:
             user_prompt = prompt_template.format(analyses=formatted)
 
             try:
-                narrative = self.llm_client.generate(
+                narrative = synthesis_client.generate(
                     prompt=user_prompt,
                     system_prompt=ns.SYSTEM_PROMPT,
                     max_tokens=4000,

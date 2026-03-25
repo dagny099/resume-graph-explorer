@@ -37,76 +37,76 @@ const AnalysisPipelinePanel = ({
   useEffect(() => {
     if (!sessionId) return;
 
-    const onAnalysisStarted = (data) => {
+    const handleAnalysisStarted = (data) => {
       if (data.session_id !== sessionId) return;
       setAnalyzing(true);
       setAnalysisError('');
       setAnalysisMessage('Starting analysis…');
     };
 
-    const onAnalysisProgress = (data) => {
+    const handleAnalysisProgress = (data) => {
       if (data.session_id !== sessionId) return;
       setAnalysisMessage(data.message || '');
     };
 
-    const onAnalysisComplete = (data) => {
+    const handleAnalysisComplete = (data) => {
       if (data.session_id !== sessionId) return;
       setAnalyzing(false);
       setAnalysisMessage(`✓ ${data.insights_count || 6} insights ready`);
-      onAnalysisComplete?.();
+      onAnalysisComplete?.();  // calls the prop (App's loadPipelineStatus)
     };
 
-    const onAnalysisError = (data) => {
+    const handleAnalysisError = (data) => {
       if (data.session_id !== sessionId) return;
       setAnalyzing(false);
       setAnalysisError(data.error || 'Analysis failed');
       setAnalysisMessage('');
     };
 
-    const onSynthesisStarted = (data) => {
+    const handleSynthesisStarted = (data) => {
       if (data.session_id !== sessionId) return;
       setSynthesizing(true);
       setSynthesisError('');
       setSynthesisMessage('Starting synthesis…');
     };
 
-    const onSynthesisProgress = (data) => {
+    const handleSynthesisProgress = (data) => {
       if (data.session_id !== sessionId) return;
       setSynthesisMessage(data.message || '');
     };
 
-    const onSynthesisComplete = (data) => {
+    const handleSynthesisComplete = (data) => {
       if (data.session_id !== sessionId) return;
       setSynthesizing(false);
       setSynthesisMessage('✓ Both narratives ready');
-      onSynthesisComplete?.();
+      onSynthesisComplete?.();  // calls the prop (App's loadPipelineStatus)
     };
 
-    const onSynthesisError = (data) => {
+    const handleSynthesisError = (data) => {
       if (data.session_id !== sessionId) return;
       setSynthesizing(false);
       setSynthesisError(data.error || 'Synthesis failed');
       setSynthesisMessage('');
     };
 
-    wsClient.on('pipeline_analysis_started',  onAnalysisStarted);
-    wsClient.on('pipeline_analysis_progress', onAnalysisProgress);
-    wsClient.on('pipeline_analysis_complete', onAnalysisComplete);
-    wsClient.on('pipeline_analysis_error',    onAnalysisError);
-    wsClient.on('pipeline_synthesis_started',  onSynthesisStarted);
-    wsClient.on('pipeline_synthesis_progress', onSynthesisProgress);
-    wsClient.on('pipeline_synthesis_complete', onSynthesisComplete);
-    wsClient.on('pipeline_synthesis_error',    onSynthesisError);
+    wsClient.on('pipeline_analysis_started',  handleAnalysisStarted);
+    wsClient.on('pipeline_analysis_progress', handleAnalysisProgress);
+    wsClient.on('pipeline_analysis_complete', handleAnalysisComplete);
+    wsClient.on('pipeline_analysis_error',    handleAnalysisError);
+    wsClient.on('pipeline_synthesis_started',  handleSynthesisStarted);
+    wsClient.on('pipeline_synthesis_progress', handleSynthesisProgress);
+    wsClient.on('pipeline_synthesis_complete', handleSynthesisComplete);
+    wsClient.on('pipeline_synthesis_error',    handleSynthesisError);
 
     return () => {
-      wsClient.off('pipeline_analysis_started',  onAnalysisStarted);
-      wsClient.off('pipeline_analysis_progress', onAnalysisProgress);
-      wsClient.off('pipeline_analysis_complete', onAnalysisComplete);
-      wsClient.off('pipeline_analysis_error',    onAnalysisError);
-      wsClient.off('pipeline_synthesis_started',  onSynthesisStarted);
-      wsClient.off('pipeline_synthesis_progress', onSynthesisProgress);
-      wsClient.off('pipeline_synthesis_complete', onSynthesisComplete);
-      wsClient.off('pipeline_synthesis_error',    onSynthesisError);
+      wsClient.off('pipeline_analysis_started',  handleAnalysisStarted);
+      wsClient.off('pipeline_analysis_progress', handleAnalysisProgress);
+      wsClient.off('pipeline_analysis_complete', handleAnalysisComplete);
+      wsClient.off('pipeline_analysis_error',    handleAnalysisError);
+      wsClient.off('pipeline_synthesis_started',  handleSynthesisStarted);
+      wsClient.off('pipeline_synthesis_progress', handleSynthesisProgress);
+      wsClient.off('pipeline_synthesis_complete', handleSynthesisComplete);
+      wsClient.off('pipeline_synthesis_error',    handleSynthesisError);
     };
   }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
