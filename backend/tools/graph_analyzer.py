@@ -197,6 +197,31 @@ class ResumeGraph:
         # Sort jobs chronologically
         graph.jobs.sort(key=lambda j: j.get("start") or "0000")
 
+        # Resolve tech references to skill labels.
+        # usedTechnology triples are stored as URI references in the JSON-LD
+        # (e.g. http://resumeexplorer.org/resource/{uuid}), not as string literals.
+        # They land in tech_refs (filtered by startswith("http")) while techs_used
+        # catches only literal strings. Build a label lookup and resolve both cases.
+        skill_by_id = {}
+        for s in graph.skills:
+            if s["label"]:
+                skill_by_id[s["id"]] = s["label"]           # full URI key
+                skill_by_id[s["id"].split("/")[-1]] = s["label"]  # bare UUID key
+
+        for job in graph.jobs:
+            resolved = []
+            # Resolve URI references (new export format)
+            for ref in job.get("tech_refs", []):
+                label = skill_by_id.get(ref) or skill_by_id.get(ref.split("/")[-1])
+                if label:
+                    resolved.append(label)
+            # Replace any bare UUID strings in techs_used (old export format)
+            real_techs = []
+            for tech in job.get("techs_used", []):
+                label = skill_by_id.get(tech)
+                real_techs.append(label if label else tech)
+            job["techs_used"] = real_techs + resolved
+
         return graph
 
 
@@ -267,6 +292,52 @@ class GraphAnalyzer(ABC):
 # ═══════════════════════════════════════════════════════════════════
 
 
+# ─── Skill Cluster Inference ──────────────────────────────────────
+# Used by HierarchyMapAnalyzer to group skills when no explicit
+# skos:broader/narrower triples exist (the common case for LLM-extracted graphs).
+
+_CLUSTER_HINTS = [
+    ("Cloud Platforms",      ["aws", "azure", "gcp", "google cloud", "cloud computing", "cloud "]),
+    ("ML / AI",              ["tensorflow", "pytorch", "xgboost", "machine learning", "deep learning",
+                               "algorithm development", "neural network", "scikit", "keras", "ai/ml"]),
+    ("Data & Analytics",     ["sql", "powerbi", "power bi", "tableau", "looker", "data analysis",
+                               "analytics", "data engineering", "data integration", "pipeline development",
+                               "etl", "spark", "hadoop", "bigquery", "databricks"]),
+    ("Programming",          ["python", "matlab", "java", "scala", " c++", "r programming",
+                               "javascript", "typescript", "golang", ".net", "ruby"]),
+    ("Domain Systems",       ["emr", "ehr", "healthcare technology", "servicenow", "salesforce",
+                               "sap", "workday", "mainframe"]),
+    ("Research Methods",     ["research", "a/b testing", "experiment", "statistics", "statistical",
+                               "workshop facilitation"]),
+    ("Leadership & Process", ["stakeholder management", "leadership", "project management",
+                               "technical consulting", "regulatory compliance", "software development",
+                               "vendor management", "team management", "service level"]),
+]
+
+
+def _infer_skill_clusters(skills: list) -> dict:
+    """Group skills into named clusters using keyword matching on labels.
+    Returns an ordered dict: cluster_name → list of skill dicts.
+    Skills that match no pattern land in 'Other'.
+    """
+    assigned = set()
+    clusters: dict = {}
+    for cluster_name, keywords in _CLUSTER_HINTS:
+        matched = []
+        for s in skills:
+            if s["id"] not in assigned:
+                label_lower = (s["label"] or "").lower()
+                if any(kw in label_lower for kw in keywords):
+                    matched.append(s)
+                    assigned.add(s["id"])
+        if matched:
+            clusters[cluster_name] = matched
+    other = [s for s in skills if s["id"] not in assigned]
+    if other:
+        clusters["Other"] = other
+    return clusters
+
+
 class SkillGapAnalyzer(GraphAnalyzer):
     """Compares declared skills (hasSkill) against used technologies (usedTechnology)."""
 
@@ -324,57 +395,51 @@ class SkillGapAnalyzer(GraphAnalyzer):
         name = graph.person_name.split()[0]
         lines = []
 
-        # Lead with the headline finding
+        overlap_str = ", ".join(results["overlap"]) if results["overlap"] else "none"
         lines.append(
-            f"{name}'s resume declares {results['claimed_count']} skills, "
-            f"but job history references {results['used_count']} distinct "
-            f"technologies — with only {results['overlap_count']} appearing "
-            f"in both lists ({', '.join(results['overlap'])}). "
-            f"This reveals a significant gap between professional identity "
-            f"and documented experience."
+            f"{name}'s resume declares **{results['claimed_count']} skills**, "
+            f"but job history references **{results['used_count']} distinct technologies** "
+            f"— with only **{results['overlap_count']}** appearing in both lists "
+            f"({overlap_str}). "
+            f"This reveals a gap between professional identity and documented experience."
         )
         lines.append("")
 
-        # Undersold capabilities
         if results["used_not_claimed"]:
-            lines.append("UNDERSOLD CAPABILITIES — Technologies used in roles but never claimed as skills:")
+            lines.append("## Undersold Capabilities")
             lines.append("")
             lines.append(
-                "These represent hidden or undersold capabilities — technologies "
-                f"{name} has professional experience with but doesn't list on "
-                "the resume. They may indicate expertise that has been "
-                "dropped from the current professional identity, or skills "
-                "so embedded in practice that they're taken for granted."
+                f"Technologies {name} has hands-on experience with but doesn't claim as skills. "
+                "They may represent expertise taken for granted, or capabilities deliberately "
+                "dropped from the current professional identity."
             )
             lines.append("")
 
-            # Group by role for narrative flow
-            by_role = {}
+            by_role: dict = {}
             for item in results["used_not_claimed"]:
                 for role in item["roles"]:
                     key = f"{role['title']} ({role['start']}–{role['end']})"
                     by_role.setdefault(key, []).append(item["tech"])
 
             for role_str, techs in by_role.items():
-                lines.append(f"  {role_str}:")
-                lines.append(f"    {', '.join(techs)}")
-            lines.append("")
+                lines.append(f"**{role_str}**")
+                for tech in techs:
+                    lines.append(f"- {tech}")
+                lines.append("")
 
-        # Ungrounded claims
         if results["claimed_not_used"]:
-            lines.append("UNGROUNDED CLAIMS — Skills declared but not linked to any role:")
+            lines.append("## Ungrounded Claims")
             lines.append("")
             lines.append(
-                "These skills appear in the declared skill list but never "
-                "as a technology used in a specific job. They may be "
-                "cross-cutting competencies used everywhere, soft skills, "
-                "or skills that need stronger grounding in role descriptions."
+                "Skills declared on the resume but never linked to a specific role. "
+                "They may be cross-cutting competencies used everywhere, soft skills, "
+                "or areas that need stronger grounding in concrete job descriptions."
             )
             lines.append("")
             for skill in results["claimed_not_used"]:
-                cat = skill.get("category", "uncategorized")
+                cat = skill.get("category", "?")
                 prof = skill.get("proficiency", "unrated")
-                lines.append(f"  • {skill['label']} — {cat}, {prof}")
+                lines.append(f"- **{skill['label']}** — {cat}, {prof}")
 
         return "\n".join(lines)
 
@@ -442,48 +507,50 @@ class CareerTopologyAnalyzer(GraphAnalyzer):
         bridge_count = len(results["bridges"])
         if bridge_count == 0:
             lines.append(
-                f"Across {results['job_count']} roles and {results['total_techs']} "
-                f"technologies, {name}'s career graph has NO bridge technologies — "
-                f"no single technology appears in more than one role. Each career "
-                f"chapter used an entirely different toolkit."
+                f"Across **{results['job_count']} roles** and **{results['total_techs']} technologies**, "
+                f"{name}'s career graph has **no bridge technologies** — no single technology "
+                f"appears in more than one role. Each career chapter used an entirely different toolkit."
             )
         elif bridge_count <= 2:
             bridge_names = [v["tech"] for v in results["bridges"].values()]
             lines.append(
-                f"Out of {results['total_techs']} technologies used across "
-                f"{results['job_count']} roles, only {bridge_count} "
+                f"Out of **{results['total_techs']} technologies** used across "
+                f"**{results['job_count']} roles**, only **{bridge_count}** "
                 f"({', '.join(bridge_names)}) appear in more than one job. "
-                f"This means career continuity is NOT at the tooling level — "
-                f"each role transition involved a near-complete technology "
-                f"stack change."
+                f"Career continuity is **not** at the tooling level — each transition "
+                f"involved a near-complete technology stack change."
             )
         else:
             bridge_names = [v["tech"] for v in results["bridges"].values()]
             lines.append(
-                f"{name}'s career shows {bridge_count} bridge technologies "
+                f"{name}'s career shows **{bridge_count} bridge technologies** "
                 f"({', '.join(bridge_names)}) connecting roles across "
-                f"{results['job_count']} positions."
+                f"**{results['job_count']} positions**."
             )
-
         lines.append("")
 
         if results["bridges"]:
-            lines.append("BRIDGE TECHNOLOGIES (appear in multiple roles):")
+            lines.append("## Bridge Technologies")
+            lines.append("")
+            lines.append("Technologies appearing in multiple roles — the connective tissue of the career:")
+            lines.append("")
             for key, info in results["bridges"].items():
                 roles_str = " and ".join(info["roles"])
-                lines.append(f"  • {info['tech']} — connects: {roles_str}")
+                lines.append(f"- **{info['tech']}** — connects: {roles_str}")
             lines.append("")
 
         if results["isolated_roles"]:
-            lines.append("ISOLATED ROLES (no shared technology with any other role):")
+            lines.append("## Isolated Roles")
+            lines.append("")
+            lines.append("Roles with no shared technology with any other position:")
+            lines.append("")
             for role in results["isolated_roles"]:
-                lines.append(f"  • {role}")
+                lines.append(f"- {role}")
             lines.append("")
             lines.append(
-                f"The implication: {name}'s value proposition is methodological "
-                f"and analytical, not tool-specific. The career demonstrates "
-                f"adaptability — picking up whatever tools each domain requires "
-                f"rather than building identity around a single technology stack."
+                f"**The implication:** {name}'s value proposition is methodological and analytical, "
+                f"not tool-specific. The career demonstrates adaptability — picking up whatever tools "
+                f"each domain requires rather than building identity around a single technology stack."
             )
 
         return "\n".join(lines)
@@ -534,34 +601,35 @@ class TechEvolutionAnalyzer(GraphAnalyzer):
         lines = []
 
         lines.append(
-            f"{name}'s technology toolkit has evolved significantly across "
-            f"{len(results['timeline'])} roles, with major shifts at each "
-            f"career transition."
+            f"{name}'s technology toolkit has evolved across **{len(results['timeline'])} roles**, "
+            f"with major shifts at each career transition."
         )
         lines.append("")
 
-        lines.append("CHRONOLOGICAL TECHNOLOGY TIMELINE:")
+        lines.append("## Chronological Technology Timeline")
         lines.append("")
         for entry in results["timeline"]:
-            current_marker = " ← CURRENT" if entry["is_current"] else ""
-            techs_str = ", ".join(entry["techs"]) if entry["techs"] else "(no technologies listed)"
-            lines.append(f"  {entry['period']}: {entry['title']}{current_marker}")
-            lines.append(f"    Tools: {techs_str}")
+            current_marker = " ← **CURRENT**" if entry["is_current"] else ""
+            techs_str = ", ".join(entry["techs"]) if entry["techs"] else "*(no technologies listed)*"
+            lines.append(f"### {entry['title']} ({entry['period']}){current_marker}")
+            lines.append(f"**Tools:** {techs_str}")
             if entry["achievements"]:
-                lines.append(f"    Key achievements: {'; '.join(entry['achievements'])}")
+                lines.append("")
+                for a in entry["achievements"]:
+                    lines.append(f"- {a}")
             lines.append("")
 
         if results["transitions"]:
-            lines.append("TRANSITION ANALYSIS:")
+            lines.append("## Transition Analysis")
             lines.append("")
             for t in results["transitions"]:
-                lines.append(f"  {t['from_role']} → {t['to_role']}:")
+                lines.append(f"**{t['from_role']} → {t['to_role']}**")
                 if t["retained"]:
-                    lines.append(f"    Retained: {', '.join(t['retained'])}")
+                    lines.append(f"- *Retained:* {', '.join(sorted(t['retained']))}")
                 if t["gained"]:
-                    lines.append(f"    Gained: {', '.join(t['gained'])}")
+                    lines.append(f"- *Gained:* {', '.join(sorted(t['gained']))}")
                 if t["lost"]:
-                    lines.append(f"    Dropped: {', '.join(t['lost'])}")
+                    lines.append(f"- *Dropped:* {', '.join(sorted(t['lost']))}")
                 lines.append("")
 
         return "\n".join(lines)
@@ -590,49 +658,81 @@ class HierarchyMapAnalyzer(GraphAnalyzer):
             else:
                 orphans.append(skill)
 
+        # Category grouping — always available from extraction
+        by_category: dict = {}
+        for skill in graph.skills:
+            cat = skill.get("category") or "Uncategorized"
+            by_category.setdefault(cat, []).append(skill)
+
+        # Pattern-based cluster inference — fills the gap when no SKOS hierarchy exists
+        clusters = _infer_skill_clusters(graph.skills)
+
         return {
             "hierarchical_skills": with_hierarchy,
             "orphan_skills": orphans,
             "total_skills": len(graph.skills),
             "hierarchy_count": len(with_hierarchy),
+            "by_category": by_category,
+            "clusters": clusters,
         }
 
     def serialize(self, results: dict, graph: ResumeGraph) -> str:
         name = graph.person_name.split()[0]
         lines = []
 
-        lines.append(
-            f"Of {results['total_skills']} skills in {name}'s graph, "
-            f"only {results['hierarchy_count']} have SKOS hierarchical "
-            f"relationships (broader/narrower). The remaining "
-            f"{len(results['orphan_skills'])} are flat, standalone skill "
-            f"nodes with no taxonomic context."
-        )
+        if results["hierarchy_count"] > 0:
+            lines.append(
+                f"Of **{results['total_skills']} skills** in {name}'s graph, "
+                f"**{results['hierarchy_count']}** have explicit SKOS broader/narrower relationships. "
+                f"The remaining **{len(results['orphan_skills'])}** are standalone nodes."
+            )
+        else:
+            lines.append(
+                f"{name}'s graph contains **{results['total_skills']} skills** with no explicit "
+                f"SKOS broader/narrower relationships — typical for LLM-extracted graphs where "
+                f"hierarchy is implicit in the labels rather than declared as triples. "
+                f"The sections below reconstruct groupings from category labels and keyword patterns."
+            )
         lines.append("")
 
         if results["hierarchical_skills"]:
-            lines.append("SKILLS WITH HIERARCHY:")
+            lines.append("## Explicit SKOS Hierarchy")
+            lines.append("")
             for s in results["hierarchical_skills"]:
                 if s["narrower"]:
                     narrows = [n.split("/")[-1].replace("_", " ") for n in s["narrower"]]
-                    lines.append(f"  {s['label']} → includes: {', '.join(narrows)}")
+                    lines.append(f"- **{s['label']}** → includes: {', '.join(narrows)}")
                 if s["broader"]:
                     broaders = [b.split("/")[-1].replace("_", " ") for b in s["broader"]]
-                    lines.append(f"  {s['label']} → falls under: {', '.join(broaders)}")
+                    lines.append(f"- **{s['label']}** → falls under: {', '.join(broaders)}")
             lines.append("")
 
-        if results["orphan_skills"]:
-            lines.append("STANDALONE SKILLS (no taxonomic relationships):")
-            for s in results["orphan_skills"]:
-                esco = "ESCO-linked" if s["esco_match"] else "string-only"
-                lines.append(f"  • {s['label']} ({s.get('category', '?')}, {esco})")
+        lines.append("## By Category")
+        lines.append("")
+        for cat, skills in sorted(results["by_category"].items()):
+            esco_count = sum(1 for s in skills if s.get("esco_match"))
+            labels = ", ".join(s["label"] for s in skills)
+            esco_note = f", {esco_count} ESCO-linked" if esco_count else ""
+            lines.append(f"**{cat}** ({len(skills)} skills{esco_note}): {labels}")
             lines.append("")
-            lines.append(
-                "Richer skill hierarchies would enable queries like "
-                "'show me all my analytical skills' or 'what cloud platform "
-                "experience do I have' — currently these require manual "
-                "tagging because the skills aren't connected taxonomically."
-            )
+
+        lines.append("## Inferred Skill Clusters")
+        lines.append("")
+        lines.append(
+            "Groupings inferred from skill labels — not declared in the graph, "
+            "but useful for understanding the portfolio structure:"
+        )
+        lines.append("")
+        for cluster_name, skills in results["clusters"].items():
+            labels = ", ".join(s["label"] for s in skills)
+            lines.append(f"**{cluster_name}:** {labels}")
+            lines.append("")
+        lines.append("")
+        lines.append(
+            "Adding `skos:broader`/`skos:narrower` edges during extraction would enable "
+            "structural queries like *'show me all my cloud platform skills'* rather than "
+            "requiring keyword matching."
+        )
 
         return "\n".join(lines)
 
@@ -669,31 +769,31 @@ class ESCOCoverageAnalyzer(GraphAnalyzer):
         lines = []
 
         lines.append(
-            f"{results['coverage_pct']}% of {name}'s skills "
-            f"({len(results['linked'])}/{results['total']}) are linked to "
+            f"**{results['coverage_pct']}%** of {name}'s skills "
+            f"(**{len(results['linked'])}/{results['total']}**) are linked to "
             f"ESCO (European Skills/Competences/Occupations) URIs — making "
             f"them globally identifiable across any ESCO-aligned system."
         )
         lines.append("")
 
         if results["linked"]:
-            lines.append("GLOBALLY IDENTIFIABLE SKILLS (ESCO-linked):")
+            lines.append("## Globally Identifiable Skills (ESCO-linked)")
+            lines.append("")
             for s in results["linked"]:
-                lines.append(f"  ✓ {s['label']}")
+                lines.append(f"- **{s['label']}**")
             lines.append("")
 
         if results["unlinked"]:
-            lines.append("STRING-ONLY SKILLS (not globally identifiable):")
+            lines.append("## String-Only Skills (not globally identifiable)")
+            lines.append("")
             for s in results["unlinked"]:
-                lines.append(f"  ✗ {s['label']} ({s.get('category', '?')})")
+                lines.append(f"- {s['label']} *({s.get('category', '?')})*")
             lines.append("")
             lines.append(
-                f"The pattern: {name}'s foundational and generic skills are "
-                f"globally identifiable, but specialized and differentiating "
-                f"skills (cloud platforms, BI tools) are string-only. "
-                f"In a cross-system search, someone looking for BigQuery "
-                f"expertise would only find this profile through exact "
-                f"string matching — not semantic discovery."
+                f"**Pattern:** {name}'s foundational and well-known skills are globally identifiable, "
+                f"but specialized differentiating skills (domain tools, niche platforms) are string-only. "
+                f"In a cross-system search, someone looking for specific expertise would only find "
+                f"this profile through exact string matching — not semantic discovery."
             )
 
         return "\n".join(lines)
@@ -754,42 +854,41 @@ class RoleProgressionAnalyzer(GraphAnalyzer):
         lines = []
 
         first = results["roles"][0] if results["roles"] else None
-        last = results["roles"][-1] if results["roles"] else None
 
         lines.append(
-            f"{name}'s career spans {results['total_roles']} roles "
-            f"from {first['start'] or '?'} to present, "
-            f"with {results['unique_titles']} distinct titles."
+            f"{name}'s career spans **{results['total_roles']} roles** "
+            f"from **{first['start'] or '?'}** to present, "
+            f"with **{results['unique_titles']} distinct titles**."
         )
         lines.append("")
 
-        lines.append("CAREER TIMELINE:")
+        lines.append("## Career Timeline")
         lines.append("")
         for r in results["roles"]:
-            current = " ← CURRENT" if r["is_current"] else ""
+            current = " ← **CURRENT**" if r["is_current"] else ""
             period = f"{r['start'] or '?'} – {r['end']}"
-            lines.append(f"  {period}: {r['title']}{current}")
+            lines.append(f"### {r['title']} ({period}){current}")
             if r["achievements"]:
-                for a in r["achievements"][:2]:  # top 2
-                    lines.append(f"    • {a}")
-        lines.append("")
+                for a in r["achievements"][:2]:
+                    lines.append(f"- {a}")
+            lines.append("")
 
         if results["repeated_titles"]:
-            lines.append("RECURRING TITLES:")
+            lines.append("## Recurring Titles")
+            lines.append("")
             for t in results["repeated_titles"]:
                 lines.append(
-                    f"  '{t}' appears multiple times — suggesting either "
-                    f"a return to a familiar role type or consistent "
-                    f"professional identity."
+                    f"- **'{t}'** appears multiple times — suggesting either "
+                    f"a return to a familiar role type or consistent professional identity."
                 )
             lines.append("")
 
         if results["repeated_orgs"]:
-            lines.append("ORGANIZATIONAL LOYALTY:")
+            lines.append("## Organizational Loyalty")
+            lines.append("")
             lines.append(
-                f"  {len(results['repeated_orgs'])} organization(s) appear "
-                f"in multiple roles — indicating return engagements or "
-                f"long-term client relationships."
+                f"**{len(results['repeated_orgs'])} organization(s)** appear in multiple roles — "
+                f"indicating return engagements or long-term client relationships."
             )
 
         return "\n".join(lines)

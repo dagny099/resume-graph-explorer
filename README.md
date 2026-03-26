@@ -149,6 +149,8 @@ Frontend will be available at: **http://localhost:3000**
 4. Watch real-time extraction progress
 5. Explore the interactive knowledge graph
 6. Export as RDF (Turtle, RDF/XML, or JSON-LD)
+7. Click **"▶ Analyze Graph"** in the sidebar to run 6 structural analyses (no LLM needed)
+8. Switch to the **Insights** tab to read the findings, then **Generate Narratives** for LLM-synthesized career summaries
 
 See [GETTING_STARTED.md](docs/GETTING_STARTED.md) for a detailed walkthrough.
 
@@ -245,7 +247,9 @@ resume_explorer/
 │   │   ├── services/              # Business logic
 │   │   │   ├── llm_client.py     # LLM abstraction layer
 │   │   │   ├── extraction_dspy.py # DSPy extraction module
-│   │   │   └── resume_extractor.py # Main extractor
+│   │   │   ├── resume_extractor.py # Main extractor
+│   │   │   ├── entity_normalizer.py # Live in-session normalizer
+│   │   │   └── pipeline_service.py # In-app analysis pipeline
 │   │   ├── graph/                 # RDF and graph tools
 │   │   │   ├── vocabularies.py   # SKOS/ESCO/schema.org
 │   │   │   ├── rdf_graph_builder.py # RDF serialization
@@ -277,7 +281,10 @@ resume_explorer/
 │   │   │   ├── ResumeUpload.jsx
 │   │   │   ├── GraphVisualization.jsx
 │   │   │   ├── EntityPanel.jsx
-│   │   │   └── ExportPanel.jsx
+│   │   │   ├── ExportPanel.jsx
+│   │   │   ├── AnalysisPipelinePanel.jsx  # Sidebar: Analyze + Generate buttons
+│   │   │   ├── InsightsViewer.jsx         # Insights tab: 6 analysis docs
+│   │   │   └── NarrativeViewer.jsx        # Narratives tab: Conservative + Exploratory
 │   │   ├── services/              # API clients
 │   │   │   ├── api.js
 │   │   │   └── websocket.js
@@ -352,6 +359,7 @@ The backend exposes a REST API with WebSocket support:
 
 ### REST Endpoints
 
+**Session management:**
 - `POST /api/sessions` - Create session
 - `GET /api/sessions` - List all sessions
 - `GET /api/sessions/:id` - Get session details
@@ -363,13 +371,32 @@ The backend exposes a REST API with WebSocket support:
 - `GET /api/sessions/:id/stats` - Get statistics
 - `GET /health` - Health check
 
+**Analysis pipeline:**
+- `POST /api/sessions/:id/pipeline/analyze` - Trigger graph analysis (Step 1)
+- `POST /api/sessions/:id/pipeline/synthesize` - Generate career narratives (Step 2)
+- `GET /api/sessions/:id/pipeline/status` - Check what's been computed
+- `GET /api/sessions/:id/insights` - Fetch all 6 analysis documents
+- `GET /api/sessions/:id/insights/:type` - Fetch a single analysis
+- `GET /api/sessions/:id/narratives` - Fetch Conservative and Exploratory narratives
+
 ### WebSocket Events
 
+**Extraction:**
 - `extraction_started` - Extraction begins
 - `extraction_progress` - Progress updates
 - `entity_extracted` - Entity discovered
 - `extraction_complete` - Finished
 - `extraction_error` - Error occurred
+
+**Analysis pipeline:**
+- `pipeline_analysis_started` - Graph analysis triggered
+- `pipeline_analysis_progress` - Analysis step progress
+- `pipeline_analysis_complete` - All 6 insights written
+- `pipeline_analysis_error` - Analysis failed
+- `pipeline_synthesis_started` - Narrative generation triggered
+- `pipeline_synthesis_progress` - Per-variant progress (conservative / exploratory)
+- `pipeline_synthesis_complete` - Both narratives written
+- `pipeline_synthesis_error` - Synthesis failed
 
 See [API.md](docs/API.md) for complete documentation.
 
@@ -396,9 +423,9 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 📊 Project Metrics
 
-- **Lines of Code**: ~10,000+
+- **Lines of Code**: ~12,000+
 - **Python Files**: 30+
-- **React Components**: 8
+- **React Components**: 11
 - **Test Coverage**: 80%+
 
 ## 📊 Current Status

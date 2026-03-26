@@ -22,7 +22,10 @@ import ResumeUpload from './components/ResumeUpload';
 import GraphVisualization from './components/GraphVisualization';
 import EntityPanel from './components/EntityPanel';
 import ExportPanel from './components/ExportPanel';
-import { createSession, getSession, getSessionGraph } from './services/api';
+import AnalysisPipelinePanel from './components/AnalysisPipelinePanel';
+import InsightsViewer from './components/InsightsViewer';
+import NarrativeViewer from './components/NarrativeViewer';
+import { createSession, getSession, getSessionGraph, getPipelineStatus } from './services/api';
 import './App.css';
 
 // Resolved once at module load — changing the env var requires a rebuild.
@@ -46,6 +49,12 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Active content tab: 'graph' | 'insights' | 'narratives'
+  const [activeTab, setActiveTab] = useState('graph');
+
+  // Pipeline status — refreshed after analysis/synthesis completes
+  const [pipelineStatus, setPipelineStatus] = useState(null);
+
   // Manual mode: immediately ready (user drives session creation via SessionSelector).
   // Auto mode: starts false — we wait for async init before rendering the main UI.
   const [sessionReady, setSessionReady] = useState(!AUTO_SESSION);
@@ -59,12 +68,6 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(AUTO_SESSION);
 
   // ─── Auto-session initialization ──────────────────────────────────────────
-  // Runs once on mount. Skipped entirely in manual mode.
-  //
-  // Flow:
-  //   1. Check localStorage for a previously stored session ID.
-  //   2. Validate it still exists on the backend (free-tier servers wipe on restart).
-  //   3. If missing or expired, create a fresh session silently.
   useEffect(() => {
     if (!AUTO_SESSION) return;
 
@@ -73,25 +76,23 @@ function App() {
 
       if (savedId) {
         try {
-          await getSession(savedId); // throws a 404 if the session no longer exists
+          await getSession(savedId);
           setCurrentSessionId(savedId);
           setSessionReady(true);
           return;
         } catch {
-          // Session gone (e.g. server restarted) — fall through to create a new one
           localStorage.removeItem(SESSION_STORAGE_KEY);
         }
       }
 
       try {
-        const data = await createSession(); // backend auto-generates a session name
+        const data = await createSession();
         localStorage.setItem(SESSION_STORAGE_KEY, data.session.id);
         setCurrentSessionId(data.session.id);
       } catch (err) {
         console.error('Failed to initialize session:', err);
         setSessionError(true);
       } finally {
-        // Always unblock the UI, whether we succeeded or failed
         setSessionReady(true);
       }
     };
@@ -100,13 +101,15 @@ function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Graph loading ─────────────────────────────────────────────────────────
-  // Re-runs whenever the active session changes (including on first successful init).
   useEffect(() => {
     if (currentSessionId) {
       loadGraph();
+      loadPipelineStatus();
     } else {
       setGraphData(null);
       setSelectedNode(null);
+      setPipelineStatus(null);
+      setActiveTab('graph');
     }
   }, [currentSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -123,7 +126,6 @@ function App() {
       const data = await getSessionGraph(currentSessionId);
       setGraphData(data);
     } catch (error) {
-      // 404 is expected when no documents have completed extraction yet — not an error
       if (!error.response || error.response.status !== 404) {
         console.warn('Graph loading error:', error.message);
       }
@@ -133,9 +135,18 @@ function App() {
     }
   };
 
+  const loadPipelineStatus = async () => {
+    if (!currentSessionId) return;
+    try {
+      const status = await getPipelineStatus(currentSessionId);
+      setPipelineStatus(status);
+    } catch {
+      // Pipeline status is non-critical — silently ignore failures
+    }
+  };
+
   const handleUploadComplete = useCallback(() => {
-    setRefreshKey(prev => prev + 1); // signals ExportPanel to refresh its stats
-    // Poll for the graph — extraction may have just completed, so retry a few times
+    setRefreshKey(prev => prev + 1);
     let attempts = 0;
     const tryLoad = async () => {
       attempts++;
@@ -158,9 +169,6 @@ function App() {
     tryLoad();
   }, [currentSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Clear / reset the current session ───────────────────────────────────
-  // Auto mode: discards the stored session ID and creates a fresh one silently.
-  // Manual mode: deselects the current session, returning to the SessionSelector.
   const handleClearSession = async () => {
     if (AUTO_SESSION) {
       try {
@@ -170,26 +178,35 @@ function App() {
         setCurrentSessionId(data.session.id);
         setGraphData(null);
         setSelectedNode(null);
+        setPipelineStatus(null);
+        setActiveTab('graph');
       } catch (err) {
         console.error('Failed to create new session:', err);
       }
     } else {
-      // The existing useEffect on currentSessionId already clears graphData + selectedNode
       setCurrentSessionId(null);
     }
   };
 
-  // ─── Loading screen — auto mode only, shown during async init ─────────────
+  // Refresh pipeline status after analysis or synthesis completes
+  const handleAnalysisComplete = useCallback(() => {
+    loadPipelineStatus();
+  }, [currentSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSynthesisComplete = useCallback(() => {
+    loadPipelineStatus();
+  }, [currentSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Loading / error screens ───────────────────────────────────────────────
   if (!sessionReady) {
     return (
       <div className="app">
         <AppHeader />
-        <div className="loading-state"><p>Starting up...</p></div>
+        <div className="loading-state"><p>Starting up…</p></div>
       </div>
     );
   }
 
-  // ─── Error screen — auto mode only, shown if backend was unreachable ───────
   if (AUTO_SESSION && sessionError) {
     return (
       <div className="app">
@@ -201,6 +218,11 @@ function App() {
     );
   }
 
+  // ─── Tab badge helpers ─────────────────────────────────────────────────────
+  const insightsCount = pipelineStatus?.insights_available || 0;
+  const narrativesReady =
+    pipelineStatus?.narratives_conservative && pipelineStatus?.narratives_exploratory;
+
   // ─── Main UI ───────────────────────────────────────────────────────────────
   return (
     <div className="app">
@@ -208,7 +230,6 @@ function App() {
 
       <main className="app-main">
         <div className="sidebar">
-          {/* Manual mode: full session management UI (create, rename, delete, switch) */}
           {!AUTO_SESSION && (
             <SessionSelector
               onSessionSelect={setCurrentSessionId}
@@ -216,12 +237,19 @@ function App() {
             />
           )}
 
-          {/* Export controls — shown once a session is active and welcome is dismissed */}
           {currentSessionId && !showWelcome && (
             <ExportPanel sessionId={currentSessionId} refreshKey={refreshKey} />
           )}
 
-          {/* Clear session button — shown in both modes once a session is active */}
+          {currentSessionId && !showWelcome && (
+            <AnalysisPipelinePanel
+              sessionId={currentSessionId}
+              pipelineStatus={pipelineStatus}
+              onAnalysisComplete={handleAnalysisComplete}
+              onSynthesisComplete={handleSynthesisComplete}
+            />
+          )}
+
           {currentSessionId && !showWelcome && (
             <button
               className="btn-reset"
@@ -234,7 +262,6 @@ function App() {
         </div>
 
         <div className="content">
-          {/* Welcome screen — shown in auto mode until dismissed, in manual mode until session selected */}
           {(AUTO_SESSION ? showWelcome : !currentSessionId) ? (
             <div className="welcome-state">
               <h2>Welcome to Resume Explorer</h2>
@@ -271,26 +298,70 @@ function App() {
             </div>
           ) : currentSessionId ? (
             <>
-              <ResumeUpload
-                sessionId={currentSessionId}
-                onUploadComplete={handleUploadComplete}
-                graphData={graphData}
-              />
+              {/* Content tab strip */}
+              <div className="content-tabs">
+                <button
+                  className={`content-tab ${activeTab === 'graph' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('graph')}
+                >
+                  📊 Graph
+                </button>
+                <button
+                  className={`content-tab ${activeTab === 'insights' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('insights')}
+                >
+                  🔬 Insights
+                  {insightsCount > 0 && (
+                    <span className="tab-badge">{insightsCount}/6</span>
+                  )}
+                </button>
+                <button
+                  className={`content-tab ${activeTab === 'narratives' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('narratives')}
+                >
+                  📖 Narratives
+                  {narrativesReady && <span className="tab-badge">✓</span>}
+                </button>
+              </div>
 
-              {loading ? (
-                <div className="loading-state"><p>Loading graph...</p></div>
-              ) : (
-                <GraphVisualization
-                  graphData={graphData}
-                  onNodeClick={setSelectedNode}
+              {/* Graph tab */}
+              {activeTab === 'graph' && (
+                <>
+                  <ResumeUpload
+                    sessionId={currentSessionId}
+                    onUploadComplete={handleUploadComplete}
+                    graphData={graphData}
+                  />
+                  {loading ? (
+                    <div className="loading-state"><p>Loading graph…</p></div>
+                  ) : (
+                    <GraphVisualization
+                      graphData={graphData}
+                      onNodeClick={setSelectedNode}
+                    />
+                  )}
+                  {selectedNode && <EntityPanel selectedNode={selectedNode} />}
+                </>
+              )}
+
+              {/* Insights tab */}
+              {activeTab === 'insights' && (
+                <InsightsViewer
+                  sessionId={currentSessionId}
+                  pipelineStatus={pipelineStatus}
                 />
               )}
 
-              {selectedNode && <EntityPanel selectedNode={selectedNode} />}
+              {/* Narratives tab */}
+              {activeTab === 'narratives' && (
+                <NarrativeViewer
+                  sessionId={currentSessionId}
+                  pipelineStatus={pipelineStatus}
+                />
+              )}
             </>
           ) : (
-            // Auto mode: session still initializing after welcome was dismissed
-            <div className="loading-state"><p>Starting up...</p></div>
+            <div className="loading-state"><p>Starting up…</p></div>
           )}
         </div>
       </main>

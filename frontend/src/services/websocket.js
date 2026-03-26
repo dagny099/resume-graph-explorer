@@ -72,6 +72,18 @@ class WebSocketClient {
       this._emit('extraction_error', data);
     });
 
+    // Pipeline analysis events
+    this.socket.on('pipeline_analysis_started',  (data) => { this._emit('pipeline_analysis_started',  data); });
+    this.socket.on('pipeline_analysis_progress', (data) => { this._emit('pipeline_analysis_progress', data); });
+    this.socket.on('pipeline_analysis_complete', (data) => { this._emit('pipeline_analysis_complete', data); });
+    this.socket.on('pipeline_analysis_error',    (data) => { this._emit('pipeline_analysis_error',    data); });
+
+    // Pipeline synthesis events
+    this.socket.on('pipeline_synthesis_started',  (data) => { this._emit('pipeline_synthesis_started',  data); });
+    this.socket.on('pipeline_synthesis_progress', (data) => { this._emit('pipeline_synthesis_progress', data); });
+    this.socket.on('pipeline_synthesis_complete', (data) => { this._emit('pipeline_synthesis_complete', data); });
+    this.socket.on('pipeline_synthesis_error',    (data) => { this._emit('pipeline_synthesis_error',    data); });
+
     return this.socket;
   }
 

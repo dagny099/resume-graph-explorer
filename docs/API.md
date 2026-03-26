@@ -858,6 +858,100 @@ Extraction failed.
 
 ---
 
+### Pipeline Events
+
+Eight events emitted during the two-step analysis pipeline (same `/extraction` namespace).
+
+#### `pipeline_analysis_started`
+Graph analysis triggered.
+
+**Payload**:
+```json
+{
+  "session_id": "session-id-1",
+  "timestamp": "2026-03-25T10:00:00Z"
+}
+```
+
+#### `pipeline_analysis_progress`
+Intermediate progress during analysis.
+
+**Payload**:
+```json
+{
+  "session_id": "session-id-1",
+  "message": "Running 6 structural analyses…"
+}
+```
+
+#### `pipeline_analysis_complete`
+All 6 insight files written.
+
+**Payload**:
+```json
+{
+  "session_id": "session-id-1",
+  "insights_count": 6
+}
+```
+
+#### `pipeline_analysis_error`
+Analysis failed.
+
+**Payload**:
+```json
+{
+  "session_id": "session-id-1",
+  "error": "graph_analyzer failed: ..."
+}
+```
+
+#### `pipeline_synthesis_started`
+Narrative generation triggered.
+
+**Payload**:
+```json
+{
+  "session_id": "session-id-1",
+  "provider": "anthropic"
+}
+```
+
+#### `pipeline_synthesis_progress`
+One narrative variant in progress.
+
+**Payload**:
+```json
+{
+  "session_id": "session-id-1",
+  "message": "Generating exploratory narrative…",
+  "variant": "exploratory"
+}
+```
+
+#### `pipeline_synthesis_complete`
+Both narratives written.
+
+**Payload**:
+```json
+{
+  "session_id": "session-id-1"
+}
+```
+
+#### `pipeline_synthesis_error`
+Synthesis failed.
+
+**Payload**:
+```json
+{
+  "session_id": "session-id-1",
+  "error": "LLM call failed: ..."
+}
+```
+
+---
+
 ### JavaScript Example
 
 ```javascript
@@ -890,6 +984,223 @@ socket.on('extraction_complete', (data) => {
 socket.on('extraction_error', (data) => {
   console.error('Error:', data.error);
 });
+```
+
+---
+
+## Analysis Pipeline
+
+The pipeline endpoints trigger the two-step post-export analysis pipeline from within the app (no CLI required). Both steps run asynchronously and emit WebSocket progress events.
+
+---
+
+### Trigger Graph Analysis
+
+#### `POST /api/sessions/:id/pipeline/analyze`
+
+Run 6 structural analyses on the session's knowledge graph. Creates or reuses `sessions/{id}/graph.jsonld`, then writes 6 markdown insight files to `sessions/{id}/insights/`. Fast and free — no LLM required.
+
+**Parameters**:
+- `id` (string) - Session ID
+
+**Request Body**:
+```json
+{
+  "normalize": false
+}
+```
+- `normalize` (bool, default `false`) — Run deterministic entity normalization (URL decoding, case fixes) before analysis. Adds ~5 seconds. No API key needed.
+
+**Response** (202 Accepted):
+```json
+{
+  "message": "Analysis started",
+  "session_id": "session-id-1"
+}
+```
+
+**Response** (404 Not Found):
+```json
+{ "error": "Session not found" }
+```
+
+**Response** (409 Conflict):
+```json
+{ "error": "No completed extractions in this session" }
+```
+
+**Example**:
+```bash
+curl -X POST http://localhost:5000/api/sessions/session-id-1/pipeline/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"normalize": false}'
+```
+
+**Notes**:
+- Runs in a background thread; listen for `pipeline_analysis_*` WebSocket events for progress.
+- If `graph.jsonld` already exists on disk it is reused; otherwise it is built from extracted entities.
+
+---
+
+### Trigger Narrative Synthesis
+
+#### `POST /api/sessions/:id/pipeline/synthesize`
+
+Generate Conservative and Exploratory career narratives from the 6 insight files. Makes 2 LLM calls (~30 seconds total).
+
+**Parameters**:
+- `id` (string) - Session ID
+
+**Request Body**:
+```json
+{
+  "provider": "anthropic",
+  "model": null
+}
+```
+- `provider` — `"anthropic"` (default) or `"openai"`
+- `model` — Specific model override. `null` uses the provider default (`claude-sonnet-4-20250514` / `gpt-4o`).
+
+**Response** (202 Accepted):
+```json
+{
+  "message": "Synthesis started",
+  "session_id": "session-id-1"
+}
+```
+
+**Response** (400 Bad Request):
+```json
+{ "error": "No insight files found. Run graph analysis (Step 1) first." }
+```
+
+**Example**:
+```bash
+curl -X POST http://localhost:5000/api/sessions/session-id-1/pipeline/synthesize \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "anthropic"}'
+```
+
+**Notes**:
+- Requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` depending on provider.
+- Runs in background; listen for `pipeline_synthesis_*` WebSocket events.
+
+---
+
+### Get Pipeline Status
+
+#### `GET /api/sessions/:id/pipeline/status`
+
+Check which analyses and narratives have been computed for a session.
+
+**Response** (200 OK):
+```json
+{
+  "insights_available": 6,
+  "insights_total": 6,
+  "insights_list": [
+    "skill_gap", "career_topology", "tech_evolution",
+    "hierarchy_map", "esco_coverage", "role_progression"
+  ],
+  "narratives_conservative": true,
+  "narratives_exploratory": true
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:5000/api/sessions/session-id-1/pipeline/status
+```
+
+---
+
+### Get All Insights
+
+#### `GET /api/sessions/:id/insights`
+
+Fetch all 6 analysis documents (with content if available).
+
+**Response** (200 OK):
+```json
+{
+  "analyses": [
+    {
+      "type": "skill_gap",
+      "title": "Hidden Skills — Claimed vs. Used Analysis",
+      "available": true,
+      "content": "---\ntitle: ...\n---\n\n# Hidden Skills..."
+    },
+    {
+      "type": "career_topology",
+      "title": "Career Topology — What Connects Different Roles",
+      "available": false,
+      "content": null
+    }
+  ]
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:5000/api/sessions/session-id-1/insights
+```
+
+---
+
+### Get Single Insight
+
+#### `GET /api/sessions/:id/insights/:type`
+
+Fetch one analysis document by type.
+
+**Parameters**:
+- `id` (string) - Session ID
+- `type` (string) - One of: `skill_gap`, `career_topology`, `tech_evolution`, `hierarchy_map`, `esco_coverage`, `role_progression`
+
+**Response** (200 OK):
+```json
+{
+  "type": "skill_gap",
+  "title": "Hidden Skills — Claimed vs. Used Analysis",
+  "available": true,
+  "content": "---\ntitle: ...\n---\n\n# Hidden Skills..."
+}
+```
+
+**Response** (400 Bad Request):
+```json
+{ "error": "Invalid analysis type. Valid types: skill_gap, career_topology, ..." }
+```
+
+**Response** (404 Not Found):
+```json
+{ "error": "Analysis 'skill_gap' not yet generated. Run pipeline analysis first." }
+```
+
+**Example**:
+```bash
+curl http://localhost:5000/api/sessions/session-id-1/insights/skill_gap
+```
+
+---
+
+### Get Narratives
+
+#### `GET /api/sessions/:id/narratives`
+
+Fetch both career narratives (Conservative and Exploratory). Returns `null` for any not yet generated.
+
+**Response** (200 OK):
+```json
+{
+  "conservative": "---\nvariant: conservative\n---\n\n# John's Career...",
+  "exploratory": "---\nvariant: exploratory\n---\n\n# John's Career..."
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:5000/api/sessions/session-id-1/narratives
 ```
 
 ---
@@ -936,5 +1247,5 @@ For production, consider:
 
 ---
 
-**Version**: 1.0.0
-**Last Updated**: December 10, 2025
+**Version**: 1.1.0
+**Last Updated**: March 25, 2026

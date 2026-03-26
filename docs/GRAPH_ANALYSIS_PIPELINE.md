@@ -63,7 +63,9 @@ This pipeline is "Avenue 3" — the third major architectural avenue for Resume 
 
 ### Phase 1: Graph → Pre-Computed Insight Documents (DONE)
 
-**Status:** Implemented in `backend/tools/`
+**Status:** Implemented — accessible both via CLI (`backend/tools/`) and the in-app UI.
+
+**In-app access:** The web app exposes Phase 1 directly through the Analysis Pipeline sidebar panel. Click **▶ Analyze Graph** (Step 1) to run all 6 analyses without leaving the browser, then view results in the **Insights** tab. Click **▶ Generate Narratives** (Step 2) to run synthesis. No CLI or file management required. See `backend/resume_explorer/services/pipeline_service.py` for the in-app wrapper.
 
 **What it does:** Run a battery of 6 structural analyses on the JSON-LD export. Convert each result to a natural language document. Optionally embed into ChromaDB alongside existing Digital Twin content.
 
@@ -180,10 +182,15 @@ Each phase is independently demoable. Phase 1 is live. Phases 2 and 3 are the ro
 
 | File | What it is | Purpose |
 |------|-----------|---------|
-| `backend/tools/entity_normalizer.py` | Offline script | Fix naming inconsistencies before analysis |
-| `backend/tools/graph_analyzer.py` | Offline script | 6 structural analyses → 6 markdown docs |
-| `backend/tools/narrative_synthesizer.py` | Offline script | LLM synthesis of all 6 analyses |
-| `backend/tools/tools-README.md` | Operational guide | How to run the pipeline |
+| `backend/tools/entity_normalizer.py` | Offline CLI script | Fix naming inconsistencies before analysis |
+| `backend/tools/graph_analyzer.py` | Offline CLI script | 6 structural analyses → 6 markdown docs |
+| `backend/tools/narrative_synthesizer.py` | Offline CLI script | LLM synthesis of all 6 analyses |
+| `backend/tools/tools-README.md` | Operational guide | How to run the CLI pipeline |
+| `backend/resume_explorer/services/pipeline_service.py` | In-app service | Wraps the tools for use within the Flask API + WebSocket progress |
+| `backend/resume_explorer/api/routes.py` | API routes | 6 pipeline endpoints (`/pipeline/analyze`, `/pipeline/synthesize`, etc.) |
+| `frontend/src/components/AnalysisPipelinePanel.jsx` | React component | Sidebar buttons: Analyze Graph + Generate Narratives |
+| `frontend/src/components/InsightsViewer.jsx` | React component | Insights tab: 6 tabbed analysis docs rendered as markdown |
+| `frontend/src/components/NarrativeViewer.jsx` | React component | Narratives tab: Conservative + Exploratory with download |
 | `docs/GRAPH_ANALYSIS_PIPELINE.md` | This file | Why it was built and where it's going |
 | `New Plans/avenue-3-implementation-plan.jsx` | Planning artifact | Detailed Phase 2+3 spec |
 | `New Plans/resume-explorer-graph-analysis.jsx` | Planning artifact | The specific findings that motivated Phase 1 |

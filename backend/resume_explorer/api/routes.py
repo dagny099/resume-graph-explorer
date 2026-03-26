@@ -15,7 +15,7 @@ from pathlib import Path
 import threading
 
 from .session_store import SessionStore
-from .websocket import ExtractionEventEmitter
+from .websocket import ExtractionEventEmitter, emit_to_session
 from ..services import ResumeExtractor, EntityNormalizer
 from ..utils import DocumentProcessor, logger
 from ..graph import RDFGraphBuilder, NetworkXAdapter
@@ -639,6 +639,181 @@ def get_storage_stats():
     session_store: SessionStore = current_app.session_store
 
     return jsonify(session_store.get_stats())
+
+
+# ============================================================================
+# Analysis Pipeline Endpoints
+# ============================================================================
+
+VALID_ANALYSIS_TYPES = {
+    'skill_gap', 'career_topology', 'tech_evolution',
+    'hierarchy_map', 'esco_coverage', 'role_progression',
+}
+
+
+def _run_analysis_in_background(session_id: str, normalize: bool, app):
+    """Run graph analysis in a background thread (mirrors _run_extraction pattern)."""
+    def _task():
+        with app.app_context():
+            emit_fn = lambda event, data: emit_to_session(session_id, event, data)
+            try:
+                app.pipeline_service.run_analysis(session_id, normalize, emit_fn)
+            except Exception as e:
+                logger.error(f"Background analysis failed for {session_id}: {e}")
+
+    threading.Thread(target=_task, daemon=True).start()
+
+
+def _run_synthesis_in_background(session_id: str, provider: str, model, app):
+    """Run narrative synthesis in a background thread."""
+    def _task():
+        with app.app_context():
+            emit_fn = lambda event, data: emit_to_session(session_id, event, data)
+            try:
+                app.pipeline_service.run_synthesis(session_id, provider, model, emit_fn)
+            except Exception as e:
+                logger.error(f"Background synthesis failed for {session_id}: {e}")
+
+    threading.Thread(target=_task, daemon=True).start()
+
+
+@api_bp.route('/sessions/<session_id>/pipeline/analyze', methods=['POST'])
+def run_pipeline_analyze(session_id):
+    """
+    Trigger graph analysis for a session.
+
+    Body (JSON, all optional):
+        normalize (bool): Run deterministic entity normalization first. Default false.
+
+    Returns 202 immediately; progress is streamed via WebSocket.
+    """
+    session_store: SessionStore = current_app.session_store
+
+    session = session_store.get_session(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    documents = session_store.get_session_documents(session_id)
+    complete_docs = [d for d in documents if d.status == 'complete']
+    if not complete_docs:
+        return jsonify({'error': 'No completed extractions in this session'}), 409
+
+    data = request.get_json() or {}
+    normalize = bool(data.get('normalize', False))
+
+    app = current_app._get_current_object()
+    _run_analysis_in_background(session_id, normalize, app)
+
+    return jsonify({
+        'message': 'Analysis started',
+        'session_id': session_id,
+        'normalize': normalize,
+    }), 202
+
+
+@api_bp.route('/sessions/<session_id>/pipeline/synthesize', methods=['POST'])
+def run_pipeline_synthesize(session_id):
+    """
+    Trigger narrative synthesis for a session.
+
+    Requires graph analysis (Step 1) to have been run first.
+
+    Body (JSON, all optional):
+        provider (str): 'anthropic' or 'openai'. Default 'anthropic'.
+        model (str):    Model override. Default is provider default.
+
+    Returns 202 immediately; progress is streamed via WebSocket.
+    """
+    session_store: SessionStore = current_app.session_store
+
+    session = session_store.get_session(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    # Verify insights exist before accepting the request
+    status = current_app.pipeline_service.get_pipeline_status(session_id)
+    if status['insights_available'] == 0:
+        return jsonify({
+            'error': 'No insights found. Run graph analysis first.',
+            'hint': 'POST /sessions/{id}/pipeline/analyze',
+        }), 400
+
+    data = request.get_json() or {}
+    provider = data.get('provider', 'anthropic')
+    model = data.get('model', None)
+
+    if provider not in ('anthropic', 'openai'):
+        return jsonify({'error': "provider must be 'anthropic' or 'openai'"}), 400
+
+    app = current_app._get_current_object()
+    _run_synthesis_in_background(session_id, provider, model, app)
+
+    return jsonify({
+        'message': 'Narrative synthesis started',
+        'session_id': session_id,
+        'provider': provider,
+    }), 202
+
+
+@api_bp.route('/sessions/<session_id>/pipeline/status', methods=['GET'])
+def get_pipeline_status(session_id):
+    """Return pipeline status: which insights and narratives are available."""
+    session_store: SessionStore = current_app.session_store
+
+    if not session_store.get_session(session_id):
+        return jsonify({'error': 'Session not found'}), 404
+
+    status = current_app.pipeline_service.get_pipeline_status(session_id)
+    return jsonify(status)
+
+
+@api_bp.route('/sessions/<session_id>/insights', methods=['GET'])
+def get_insights(session_id):
+    """Return all 6 analysis documents with content (null if not yet run)."""
+    session_store: SessionStore = current_app.session_store
+
+    if not session_store.get_session(session_id):
+        return jsonify({'error': 'Session not found'}), 404
+
+    return jsonify(current_app.pipeline_service.get_insights(session_id))
+
+
+@api_bp.route('/sessions/<session_id>/insights/<analysis_type>', methods=['GET'])
+def get_insight(session_id, analysis_type):
+    """Return a specific analysis document by type."""
+    session_store: SessionStore = current_app.session_store
+
+    if not session_store.get_session(session_id):
+        return jsonify({'error': 'Session not found'}), 404
+
+    if analysis_type not in VALID_ANALYSIS_TYPES:
+        return jsonify({
+            'error': f"Invalid analysis type '{analysis_type}'",
+            'valid': sorted(VALID_ANALYSIS_TYPES),
+        }), 400
+
+    insights = current_app.pipeline_service.get_insights(session_id)
+    for analysis in insights['analyses']:
+        if analysis['type'] == analysis_type:
+            if not analysis['available']:
+                return jsonify({
+                    'error': 'Analysis not yet run',
+                    'hint': f"POST /sessions/{session_id}/pipeline/analyze",
+                }), 404
+            return jsonify(analysis)
+
+    return jsonify({'error': 'Analysis not found'}), 404
+
+
+@api_bp.route('/sessions/<session_id>/narratives', methods=['GET'])
+def get_narratives(session_id):
+    """Return conservative and exploratory narratives (null if not yet run)."""
+    session_store: SessionStore = current_app.session_store
+
+    if not session_store.get_session(session_id):
+        return jsonify({'error': 'Session not found'}), 404
+
+    return jsonify(current_app.pipeline_service.get_narratives(session_id))
 
 
 __all__ = ['api_bp']
