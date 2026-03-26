@@ -149,7 +149,9 @@ export const runGraphAnalysis = async (sessionId, options = {}) => {
 };
 
 export const runSynthesis = async (sessionId, options = {}) => {
-  const response = await api.post(`/sessions/${sessionId}/pipeline/synthesize`, options);
+  const { apiKey, ...body } = options;
+  const headers = apiKey ? { 'X-LLM-Api-Key': apiKey } : {};
+  const response = await api.post(`/sessions/${sessionId}/pipeline/synthesize`, body, { headers });
   return response.data;
 };
 

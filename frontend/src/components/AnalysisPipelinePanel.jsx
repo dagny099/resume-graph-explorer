@@ -18,6 +18,28 @@ const NORMALIZE_TOOLTIP =
   'inconsistencies before analysis (free, no API key needed). ' +
   'Recommended if your resume has inconsistent skill naming.';
 
+const BYOK_MODE = import.meta.env.VITE_BYOK_MODE === 'true';
+
+const byokStorageKey = (provider) => `byok_key_${provider}`;
+
+const KEY_LINKS = {
+  anthropic: 'https://console.anthropic.com/account/keys',
+  openai: 'https://platform.openai.com/api-keys',
+};
+
+const PROVIDER_MODELS = {
+  anthropic: [
+    { id: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4 (default)' },
+    { id: 'claude-opus-4-6',          label: 'Claude Opus 4.6 (most capable)' },
+    { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (fastest)' },
+  ],
+  openai: [
+    { id: 'gpt-4.1-mini', label: 'GPT-4.1 Mini (default)' },
+    { id: 'gpt-4o',       label: 'GPT-4o' },
+    { id: 'gpt-4o-mini',  label: 'GPT-4o Mini (faster)' },
+  ],
+};
+
 const AnalysisPipelinePanel = ({
   sessionId,
   pipelineStatus,
@@ -32,6 +54,11 @@ const AnalysisPipelinePanel = ({
   const [synthesisMessage, setSynthesisMessage]   = useState('');
   const [analysisError, setAnalysisError]         = useState('');
   const [synthesisError, setSynthesisError]       = useState('');
+  const [model, setModel]     = useState(PROVIDER_MODELS.anthropic[0].id);
+  const [apiKey, setApiKey]   = useState(() =>
+    BYOK_MODE ? (sessionStorage.getItem(byokStorageKey('anthropic')) || '') : ''
+  );
+  const [showKey, setShowKey] = useState(false);
 
   // WebSocket listeners for pipeline events
   useEffect(() => {
@@ -138,11 +165,28 @@ const AnalysisPipelinePanel = ({
     }
   };
 
+  const handleProviderChange = (newProvider) => {
+    setProvider(newProvider);
+    setModel(PROVIDER_MODELS[newProvider][0].id);
+    if (BYOK_MODE) {
+      setApiKey(sessionStorage.getItem(byokStorageKey(newProvider)) || '');
+    }
+  };
+
+  const handleApiKeyChange = (value) => {
+    setApiKey(value);
+    sessionStorage.setItem(byokStorageKey(provider), value);
+  };
+
   const handleSynthesize = async () => {
     try {
       setSynthesisError('');
       setSynthesisMessage('Sending request…');
-      await runSynthesis(sessionId, { provider });
+      await runSynthesis(sessionId, {
+        provider,
+        model,
+        apiKey: BYOK_MODE ? apiKey.trim() : undefined,
+      });
       // Further updates come via WebSocket
     } catch (err) {
       setSynthesizing(false);
@@ -152,6 +196,13 @@ const AnalysisPipelinePanel = ({
   };
 
   const insightsReady = pipelineStatus?.insights_available > 0;
+
+  // In BYOK mode, require a key with the expected prefix before enabling synthesis.
+  const keyValid = !BYOK_MODE || (
+    provider === 'anthropic'
+      ? apiKey.trim().startsWith('sk-ant-')
+      : apiKey.trim().startsWith('sk-')
+  );
 
   return (
     <div className="pipeline-panel">
@@ -197,7 +248,7 @@ const AnalysisPipelinePanel = ({
           Provider:
           <select
             value={provider}
-            onChange={(e) => setProvider(e.target.value)}
+            onChange={(e) => handleProviderChange(e.target.value)}
             disabled={synthesizing}
           >
             <option value="anthropic">Claude (Anthropic)</option>
@@ -205,11 +256,64 @@ const AnalysisPipelinePanel = ({
           </select>
         </label>
 
+        <label className="provider-label">
+          Model:
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            disabled={synthesizing}
+          >
+            {PROVIDER_MODELS[provider].map((m) => (
+              <option key={m.id} value={m.id}>{m.label}</option>
+            ))}
+          </select>
+        </label>
+
+        {BYOK_MODE && (
+          <div className="byok-key-input">
+            <label className="byok-key-label">
+              API Key:
+              <div className="key-input-row">
+                <input
+                  type={showKey ? 'text' : 'password'}
+                  className="byok-key-field"
+                  placeholder={provider === 'anthropic' ? 'sk-ant-...' : 'sk-...'}
+                  value={apiKey}
+                  onChange={(e) => handleApiKeyChange(e.target.value)}
+                  disabled={synthesizing}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  className="key-toggle-btn"
+                  onClick={() => setShowKey((v) => !v)}
+                  tabIndex={-1}
+                >
+                  {showKey ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </label>
+            <small className="byok-key-hint">
+              Stored for this browser session only.{' '}
+              <a href={KEY_LINKS[provider]} target="_blank" rel="noopener noreferrer">
+                Get a key
+              </a>
+            </small>
+          </div>
+        )}
+
         <button
           className="pipeline-btn"
           onClick={handleSynthesize}
-          disabled={synthesizing || !insightsReady}
-          title={!insightsReady ? 'Run Step 1 first' : ''}
+          disabled={synthesizing || !insightsReady || !keyValid}
+          title={
+            !insightsReady
+              ? 'Run Step 1 first'
+              : !keyValid
+              ? 'Enter a valid API key above'
+              : ''
+          }
         >
           {synthesizing ? '⏳ Generating…' : '▶ Generate Narratives'}
         </button>

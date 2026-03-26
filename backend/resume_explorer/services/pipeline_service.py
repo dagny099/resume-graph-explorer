@@ -274,6 +274,7 @@ class PipelineService:
         provider: str = 'anthropic',
         model: Optional[str] = None,
         emit_fn: Optional[Callable] = None,
+        api_key: Optional[str] = None,
     ) -> dict:
         """
         Generate Conservative and Exploratory career narratives from the 6 insights.
@@ -299,9 +300,14 @@ class PipelineService:
             )
 
         # Instantiate a client for the requested provider (may differ from the app default).
-        # Falls back to self.llm_client only if provider matches or creation fails.
+        # api_key comes from the request header (BYOK); falls back to env var if None.
+        # Falls back to self.llm_client only if creation fails entirely.
         try:
-            synthesis_client = create_llm_client(provider=provider)
+            synthesis_client = create_llm_client(
+                provider=provider,
+                api_key=api_key,
+                **({'model': model} if model else {}),
+            )
         except Exception as e:
             if self.llm_client is None:
                 raise ValueError(

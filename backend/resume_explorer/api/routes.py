@@ -667,13 +667,15 @@ def _run_analysis_in_background(session_id: str, normalize: bool, app):
     threading.Thread(target=_task, daemon=True).start()
 
 
-def _run_synthesis_in_background(session_id: str, provider: str, model, app):
+def _run_synthesis_in_background(session_id: str, provider: str, model, app, api_key=None):
     """Run narrative synthesis in a background thread."""
     def _task():
         with app.app_context():
             emit_fn = lambda event, data: emit_to_session(session_id, event, data)
             try:
-                app.pipeline_service.run_synthesis(session_id, provider, model, emit_fn)
+                app.pipeline_service.run_synthesis(
+                    session_id, provider, model, emit_fn, api_key=api_key
+                )
             except Exception as e:
                 logger.error(f"Background synthesis failed for {session_id}: {e}")
 
@@ -748,8 +750,11 @@ def run_pipeline_synthesize(session_id):
     if provider not in ('anthropic', 'openai'):
         return jsonify({'error': "provider must be 'anthropic' or 'openai'"}), 400
 
+    # Optional user-supplied API key (BYOK). Never log this value.
+    api_key = request.headers.get('X-LLM-Api-Key') or None
+
     app = current_app._get_current_object()
-    _run_synthesis_in_background(session_id, provider, model, app)
+    _run_synthesis_in_background(session_id, provider, model, app, api_key=api_key)
 
     return jsonify({
         'message': 'Narrative synthesis started',

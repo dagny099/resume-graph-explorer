@@ -112,6 +112,75 @@
   color: #ccc;
 }
 
+/* BYOK key input */
+.byok-key-input {
+  margin-bottom: 8px;
+}
+
+.byok-key-label {
+  display: block;
+  font-size: 13px;
+  color: #444;
+}
+
+.key-input-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.byok-key-field {
+  flex: 1;
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: monospace;
+  min-width: 0;
+}
+
+.byok-key-field:focus {
+  outline: none;
+  border-color: #4ECDC4;
+}
+
+.byok-key-field:disabled {
+  background: #f8f8f8;
+  color: #999;
+}
+
+.key-toggle-btn {
+  font-size: 11px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f8f8f8;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.key-toggle-btn:hover {
+  background: #eee;
+}
+
+.byok-key-hint {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  margin-top: 3px;
+}
+
+.byok-key-hint a {
+  color: #4ECDC4;
+  text-decoration: none;
+}
+
+.byok-key-hint a:hover {
+  text-decoration: underline;
+}
+
 /* Status and error messages */
 .pipeline-status-msg {
   font-size: 12px;

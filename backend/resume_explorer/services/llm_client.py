@@ -158,7 +158,7 @@ class OpenAIBackend(LLMBackend):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "gpt-4-turbo-preview",  # Default to GPT-4 Turbo
+        model: str = "gpt-4.1-mini",  # Default to GPT-4.1 mini
     ):
         super().__init__(model_name=model)
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
