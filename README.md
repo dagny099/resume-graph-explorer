@@ -183,7 +183,7 @@ See [GETTING_STARTED.md](docs/GETTING_STARTED.md) for a detailed walkthrough.
 ### Knowledge Graph
 
 - **SKOS-Compliant**: Uses W3C SKOS vocabulary
-- **ESCO Integration**: Links skills to European Skills taxonomy
+- **ESCO Integration**: Links skills to the European Skills/Competences taxonomy (v1.2.1). Skill hierarchy analysis uses the ESCO REST API at analysis time — no download required, results cached locally. ~50–60% of skills match; vendor-specific tools appear as "uncategorized," which is expected for modern stacks.
 - **schema.org Types**: Person, JobPosting, Organization, etc.
 - **Hierarchical Relationships**: broader/narrower/related concepts
 
@@ -209,11 +209,12 @@ Once you've exported a graph, a separate offline pipeline turns the structural d
 ```
 Resume Explorer (export .jsonld)
     ↓
-entity_normalizer.py   ← fix naming inconsistencies (GA4 vs Google Analytics 4)
+entity_normalizer.py    ← fix naming inconsistencies (GA4 vs Google Analytics 4)
     ↓
-graph_analyzer.py      ← 6 structural analyses → 6 markdown insight files
+graph_analyzer.py       ← 6 structural analyses → 6 markdown insight files
+  uses esco_lookup.py   ← ESCO REST API client (disk-cached, no auth required)
     ↓
-narrative_synthesizer.py  ← LLM cross-references all 6 → 2 career narrative docs
+narrative_synthesizer.py ← LLM cross-references all 6 → 2 career narrative docs
     ↓
 embed into Digital Twin's ChromaDB  (future: embed_insights.py)
 ```

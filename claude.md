@@ -36,6 +36,13 @@ The app is production-ready for single-resume sessions and deployed on Render/Ko
 
 **Offline pipeline (Avenue 3 / Phase 1)**: `backend/tools/` scripts are standalone — they operate on exported JSON-LD, need different API keys, and produce files for a downstream Digital Twin. They are not part of the deployed app. See `docs/GRAPH_ANALYSIS_PIPELINE.md` for the 3-phase roadmap.
 
+**ESCO skill hierarchy (`backend/tools/esco_lookup.py`)** — added March 2026:
+- Uses the ESCO REST API at *analysis* time (not upload time) — no CSV download, no auth required.
+- Cache: `backend/data/esco/skill_cache.json` (already gitignored via `backend/data/`). Populated on first analysis run (~0.1 s/skill), instant thereafter.
+- `graph_analyzer.py` adds the tools directory to `sys.path` at module level so `esco_lookup` is importable both as a CLI script and when loaded via `importlib.util.spec_from_file_location()` from `pipeline_service.py`.
+- The old `_CLUSTER_HINTS` list and `_infer_skill_clusters()` function in `graph_analyzer.py` were removed. Do not re-add them.
+- Match rate ~50–60% for typical resumes. Vendor-specific tools (AWS, TensorFlow, Kubernetes) correctly return no ESCO match — this is expected, not a bug.
+
 ## Document Processing Architecture
 
 Resume Explorer supports multiple document formats with a robust extraction pipeline.

@@ -101,7 +101,18 @@ export const getSessionGraph = async (sessionId) => {
   return response.data;
 };
 
-export const exportSessionGraph = async (sessionId, format = 'turtle') => {
+/** Sanitize a person name into a safe filename prefix (e.g. "José O'Brien Jr." → "jose-obrien-jr"). */
+function sanitizeNameForFilename(name) {
+  if (!name) return null;
+  return name
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip diacritics
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')  // non-alphanumeric → hyphen
+    .replace(/^-+|-+$/g, '')       // trim leading/trailing hyphens
+    || null;
+}
+
+export const exportSessionGraph = async (sessionId, format = 'turtle', personName = null) => {
   const response = await api.get(`/sessions/${sessionId}/export/${format}`, {
     responseType: 'blob',
   });
@@ -112,7 +123,9 @@ export const exportSessionGraph = async (sessionId, format = 'turtle') => {
   link.href = url;
 
   const extension = format === 'turtle' ? 'ttl' : format === 'rdfxml' ? 'rdf' : 'jsonld';
-  link.setAttribute('download', `resume-graph.${extension}`);
+  const slug = sanitizeNameForFilename(personName);
+  const basename = slug ? `${slug}_resume-graph` : 'resume-graph';
+  link.setAttribute('download', `${basename}.${extension}`);
 
   document.body.appendChild(link);
   link.click();

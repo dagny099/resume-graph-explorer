@@ -21,6 +21,36 @@ const ANALYSIS_TYPES = [
   { type: 'role_progression',label: 'Role Progression' },
 ];
 
+/**
+ * Optional info banners shown above the markdown for specific analyses.
+ * Explains what the analysis does and doesn't tell you — set expectations
+ * before the reader encounters numbers that might seem surprising.
+ */
+const ANALYSIS_INFO = {
+  hierarchy_map: (
+    <div className="insight-info">
+      <strong>About ESCO Categories:</strong> Skills are grouped using the{' '}
+      <a href="https://esco.ec.europa.eu" target="_blank" rel="noreferrer">
+        European Skills/Competences taxonomy
+      </a>{' '}
+      (ESCO v1.2.1), a standard used by HR and job-matching systems across the EU.
+      Expect ~50–60% of modern tech skills to match — vendor-specific tools (AWS,
+      TensorFlow) and emerging AI frameworks (LangChain, LlamaIndex) rarely have
+      ESCO entries. A large "uncategorized" group often signals a cutting-edge,
+      specialized stack — not a gap in your profile.
+    </div>
+  ),
+  esco_coverage: (
+    <div className="insight-info">
+      <strong>About ESCO coverage:</strong> Skills with a real ESCO URI are
+      discoverable across any ESCO-aligned system (job boards, ATS, EU talent
+      platforms). Vendor-specific tools typically have no ESCO entry — this is
+      expected, not a problem. The coverage percentage reflects how interoperable
+      your declared skill set is, not how impressive it is.
+    </div>
+  ),
+};
+
 /** Strip YAML front matter (--- ... ---) from markdown content. */
 function stripFrontMatter(content) {
   if (!content) return '';
@@ -110,9 +140,16 @@ const InsightsViewer = ({ sessionId, pipelineStatus }) => {
         ) : error ? (
           <div className="insights-error"><p>⚠ {error}</p></div>
         ) : content ? (
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {stripFrontMatter(content)}
-          </ReactMarkdown>
+          <>
+            {ANALYSIS_INFO[activeType] && (
+              <div className="insight-info-wrapper">
+                {ANALYSIS_INFO[activeType]}
+              </div>
+            )}
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {stripFrontMatter(content)}
+            </ReactMarkdown>
+          </>
         ) : null}
       </div>
     </div>

@@ -30,11 +30,27 @@ Design principle for serialization:
 
 import json
 import argparse
+import sys
+import urllib.parse
 from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import Optional
+
+# ─── Optional ESCO Lookup ─────────────────────────────────────────
+# esco_lookup.py lives in the same tools/ directory as this script.
+# Add the directory to sys.path so it's importable whether this module
+# is run directly or loaded via importlib.util.spec_from_file_location().
+_TOOLS_DIR = str(Path(__file__).resolve().parent)
+if _TOOLS_DIR not in sys.path:
+    sys.path.insert(0, _TOOLS_DIR)
+
+try:
+    from esco_lookup import ESCOLookup as _ESCOLookup
+    _ESCO_AVAILABLE = True
+except ImportError:
+    _ESCO_AVAILABLE = False
 
 
 # ─── URI Constants ────────────────────────────────────────────────
@@ -292,50 +308,53 @@ class GraphAnalyzer(ABC):
 # ═══════════════════════════════════════════════════════════════════
 
 
-# ─── Skill Cluster Inference ──────────────────────────────────────
-# Used by HierarchyMapAnalyzer to group skills when no explicit
-# skos:broader/narrower triples exist (the common case for LLM-extracted graphs).
+# ─── ESCO-Backed Skill Grouper ────────────────────────────────────
+# Groups skills by their ESCO broader concept using the ESCO REST API.
+# Results are cached to disk (backend/data/esco/skill_cache.json) so
+# repeat analysis runs are instant even with many skills.
 
-_CLUSTER_HINTS = [
-    ("Cloud Platforms",      ["aws", "azure", "gcp", "google cloud", "cloud computing", "cloud "]),
-    ("ML / AI",              ["tensorflow", "pytorch", "xgboost", "machine learning", "deep learning",
-                               "algorithm development", "neural network", "scikit", "keras", "ai/ml"]),
-    ("Data & Analytics",     ["sql", "powerbi", "power bi", "tableau", "looker", "data analysis",
-                               "analytics", "data engineering", "data integration", "pipeline development",
-                               "etl", "spark", "hadoop", "bigquery", "databricks"]),
-    ("Programming",          ["python", "matlab", "java", "scala", " c++", "r programming",
-                               "javascript", "typescript", "golang", ".net", "ruby"]),
-    ("Domain Systems",       ["emr", "ehr", "healthcare technology", "servicenow", "salesforce",
-                               "sap", "workday", "mainframe"]),
-    ("Research Methods",     ["research", "a/b testing", "experiment", "statistics", "statistical",
-                               "workshop facilitation"]),
-    ("Leadership & Process", ["stakeholder management", "leadership", "project management",
-                               "technical consulting", "regulatory compliance", "software development",
-                               "vendor management", "team management", "service level"]),
-]
-
-
-def _infer_skill_clusters(skills: list) -> dict:
-    """Group skills into named clusters using keyword matching on labels.
-    Returns an ordered dict: cluster_name → list of skill dicts.
-    Skills that match no pattern land in 'Other'.
+def _group_skills_by_esco(skills: list, verbose: bool = False) -> tuple[dict, list]:
     """
-    assigned = set()
-    clusters: dict = {}
-    for cluster_name, keywords in _CLUSTER_HINTS:
-        matched = []
-        for s in skills:
-            if s["id"] not in assigned:
-                label_lower = (s["label"] or "").lower()
-                if any(kw in label_lower for kw in keywords):
-                    matched.append(s)
-                    assigned.add(s["id"])
-        if matched:
-            clusters[cluster_name] = matched
-    other = [s for s in skills if s["id"] not in assigned]
-    if other:
-        clusters["Other"] = other
-    return clusters
+    Look up all skills via ESCO REST API and group by broader concept.
+
+    Returns:
+        esco_groups: dict of {broader_label → [skill_dicts]}
+                     (only for skills that matched ESCO)
+        unmatched:   list of skill dicts with no ESCO match
+                     (vendor-specific tools, niche terms, emerging tech)
+
+    Falls back to (empty dict, all_skills) if esco_lookup is unavailable
+    or the network is unreachable.
+    """
+    if not _ESCO_AVAILABLE:
+        return {}, list(skills)
+
+    labels = [s["label"] for s in skills if s.get("label")]
+    try:
+        esco = _ESCOLookup()
+        results = esco.lookup_batch(labels, verbose=verbose)
+    except Exception:
+        return {}, list(skills)
+
+    esco_groups: dict = {}
+    unmatched = []
+    for skill in skills:
+        label = skill.get("label")
+        if not label:
+            unmatched.append(skill)
+            continue
+        match = results.get(label)
+        if match and match.get("broader_label"):
+            broader = match["broader_label"]
+            esco_groups.setdefault(broader, []).append({
+                **skill,
+                "_esco_uri": match.get("uri"),
+                "_esco_preferred": match.get("preferred_label"),
+            })
+        else:
+            unmatched.append(skill)
+
+    return esco_groups, unmatched
 
 
 class SkillGapAnalyzer(GraphAnalyzer):
@@ -650,22 +669,19 @@ class HierarchyMapAnalyzer(GraphAnalyzer):
     ]
 
     def compute(self, graph: ResumeGraph) -> dict:
-        with_hierarchy = []
-        orphans = []
-        for skill in graph.skills:
-            if skill["broader"] or skill["narrower"]:
-                with_hierarchy.append(skill)
-            else:
-                orphans.append(skill)
+        # Check for explicit SKOS hierarchy already in the graph
+        with_hierarchy = [s for s in graph.skills if s["broader"] or s["narrower"]]
+        orphans = [s for s in graph.skills if not s["broader"] and not s["narrower"]]
 
-        # Category grouping — always available from extraction
+        # Category grouping from extraction metadata (always available)
         by_category: dict = {}
         for skill in graph.skills:
             cat = skill.get("category") or "Uncategorized"
             by_category.setdefault(cat, []).append(skill)
 
-        # Pattern-based cluster inference — fills the gap when no SKOS hierarchy exists
-        clusters = _infer_skill_clusters(graph.skills)
+        # ESCO-backed grouping: look up each skill and group by ESCO broader concept.
+        # Uses REST API with disk cache — fast on repeat runs, slow (~0.1s/skill) on first run.
+        esco_groups, unmatched = _group_skills_by_esco(graph.skills)
 
         return {
             "hierarchical_skills": with_hierarchy,
@@ -673,66 +689,96 @@ class HierarchyMapAnalyzer(GraphAnalyzer):
             "total_skills": len(graph.skills),
             "hierarchy_count": len(with_hierarchy),
             "by_category": by_category,
-            "clusters": clusters,
+            "esco_groups": esco_groups,
+            "esco_unmatched": unmatched,
+            "esco_matched_count": len(graph.skills) - len(unmatched),
+            "esco_available": _ESCO_AVAILABLE,
         }
 
     def serialize(self, results: dict, graph: ResumeGraph) -> str:
         name = graph.person_name.split()[0]
         lines = []
 
-        if results["hierarchy_count"] > 0:
+        total = results["total_skills"]
+        matched = results["esco_matched_count"]
+        pct = (matched * 100 // total) if total else 0
+
+        if results["esco_available"]:
             lines.append(
-                f"Of **{results['total_skills']} skills** in {name}'s graph, "
-                f"**{results['hierarchy_count']}** have explicit SKOS broader/narrower relationships. "
-                f"The remaining **{len(results['orphan_skills'])}** are standalone nodes."
+                f"{name}'s graph contains **{total} skills**. "
+                f"**{matched} ({pct}%)** matched to ESCO skill categories, "
+                f"enabling standardized grouping by the European Skills/Competences taxonomy. "
+                f"The remaining **{len(results['esco_unmatched'])}** are vendor-specific tools, "
+                f"niche platforms, or emerging technologies not yet in the ESCO taxonomy."
             )
         else:
             lines.append(
-                f"{name}'s graph contains **{results['total_skills']} skills** with no explicit "
-                f"SKOS broader/narrower relationships — typical for LLM-extracted graphs where "
-                f"hierarchy is implicit in the labels rather than declared as triples. "
-                f"The sections below reconstruct groupings from category labels and keyword patterns."
+                f"{name}'s graph contains **{total} skills**. "
+                f"ESCO lookup unavailable (install esco_lookup or check network access)."
             )
         lines.append("")
 
-        if results["hierarchical_skills"]:
+        if results["hierarchy_count"] > 0:
             lines.append("## Explicit SKOS Hierarchy")
             lines.append("")
+
+            def _decode_uri(uri: str) -> str:
+                """Extract and URL-decode the last path segment of a URI."""
+                segment = uri.split("/")[-1]
+                return urllib.parse.unquote(segment).replace("_", " ")
+
             for s in results["hierarchical_skills"]:
                 if s["narrower"]:
-                    narrows = [n.split("/")[-1].replace("_", " ") for n in s["narrower"]]
+                    narrows = [_decode_uri(n) for n in s["narrower"]]
                     lines.append(f"- **{s['label']}** → includes: {', '.join(narrows)}")
                 if s["broader"]:
-                    broaders = [b.split("/")[-1].replace("_", " ") for b in s["broader"]]
+                    broaders = [_decode_uri(b) for b in s["broader"]]
                     lines.append(f"- **{s['label']}** → falls under: {', '.join(broaders)}")
             lines.append("")
 
-        lines.append("## By Category")
-        lines.append("")
-        for cat, skills in sorted(results["by_category"].items()):
-            esco_count = sum(1 for s in skills if s.get("esco_match"))
-            labels = ", ".join(s["label"] for s in skills)
-            esco_note = f", {esco_count} ESCO-linked" if esco_count else ""
-            lines.append(f"**{cat}** ({len(skills)} skills{esco_note}): {labels}")
+        if results["esco_groups"]:
+            lines.append("## Skills by ESCO Category")
+            lines.append("")
+            lines.append(
+                "Each group below is a real ESCO broader concept — "
+                "not a keyword pattern, but a node in the European skill taxonomy:"
+            )
+            lines.append("")
+            for broader_label, skills in sorted(results["esco_groups"].items()):
+                lines.append(f"**{broader_label}** ({len(skills)} skill{'s' if len(skills) != 1 else ''})")
+                lines.append("")
+                for s in skills:
+                    lines.append(f"- {s['label']}")
+                lines.append("")
+
+        if results["esco_unmatched"]:
+            lines.append("## Domain-Specific & Uncategorized Skills")
+            lines.append("")
+            lines.append(
+                "These skills have no direct match in the ESCO taxonomy. "
+                "They are often vendor-specific products (AWS, Salesforce), "
+                "emerging tools (LangChain, Databricks), or domain jargon "
+                "that ESCO hasn't yet incorporated:"
+            )
+            lines.append("")
+            for s in results["esco_unmatched"]:
+                cat = s.get("category", "")
+                cat_note = f" *({cat})*" if cat and cat.lower() != "uncategorized" else ""
+                lines.append(f"- {s['label']}{cat_note}")
             lines.append("")
 
-        lines.append("## Inferred Skill Clusters")
-        lines.append("")
-        lines.append(
-            "Groupings inferred from skill labels — not declared in the graph, "
-            "but useful for understanding the portfolio structure:"
-        )
-        lines.append("")
-        for cluster_name, skills in results["clusters"].items():
-            labels = ", ".join(s["label"] for s in skills)
-            lines.append(f"**{cluster_name}:** {labels}")
+        if results["by_category"]:
+            lines.append("## By Extraction Category")
             lines.append("")
-        lines.append("")
-        lines.append(
-            "Adding `skos:broader`/`skos:narrower` edges during extraction would enable "
-            "structural queries like *'show me all my cloud platform skills'* rather than "
-            "requiring keyword matching."
-        )
+            lines.append(
+                "Categories assigned during resume extraction — "
+                "complements the ESCO grouping above:"
+            )
+            lines.append("")
+            for cat, skills in sorted(results["by_category"].items()):
+                labels = ", ".join(s["label"] for s in skills)
+                lines.append(f"**{cat}** ({len(skills)} skill{'s' if len(skills) != 1 else ''}): {labels}")
+                lines.append("")
 
         return "\n".join(lines)
 
