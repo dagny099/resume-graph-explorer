@@ -30,7 +30,7 @@ const ExportPanel = ({ sessionId, refreshKey }) => {
   const handleExport = async (format) => {
     try {
       setExporting(true);
-      await exportSessionGraph(sessionId, format);
+      await exportSessionGraph(sessionId, format, stats?.person_name);
     } catch (error) {
       console.error('Export failed:', error);
       alert('Export failed: ' + (error.response?.data?.error || error.message));

@@ -24,7 +24,7 @@ const AnalysisPipelinePanel = ({
   onAnalysisComplete,
   onSynthesisComplete,
 }) => {
-  const [normalize, setNormalize]           = useState(false);
+  const [normalize, setNormalize]           = useState(true);
   const [provider, setProvider]             = useState('anthropic');
   const [analyzing, setAnalyzing]           = useState(false);
   const [synthesizing, setSynthesizing]     = useState(false);

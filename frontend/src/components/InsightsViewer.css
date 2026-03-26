@@ -159,3 +159,29 @@
   color: #333;
   font-weight: 600;
 }
+
+/* Info banner — shown above markdown for analyses that need context framing */
+.insight-info-wrapper {
+  margin-bottom: 4px;
+}
+
+.insight-info {
+  background: #f0f4ff;
+  border-left: 3px solid #5c7cfa;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.84rem;
+  color: #374151;
+  margin-bottom: 1.2rem;
+  border-radius: 0 4px 4px 0;
+  line-height: 1.55;
+}
+
+.insight-info a {
+  color: #3b5bdb;
+  text-decoration: underline;
+}
+
+.insight-info strong {
+  color: #1e3a8a;
+  font-weight: 600;
+}

@@ -616,6 +616,9 @@ def get_session_stats(session_id):
         graph_stats = builder.get_graph_stats()
         entity_counts = graph_stats['entity_counts']
 
+        # Expose person name for filename generation
+        stats['person_name'] = person.name if person.name and person.name != 'Unknown' else None
+
         # Map field names to match frontend expectations (plural forms)
         stats['total_entities'] = {
             'persons': entity_counts.get('person', 0),
