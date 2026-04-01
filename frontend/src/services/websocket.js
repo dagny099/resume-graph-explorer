@@ -16,6 +16,7 @@ class WebSocketClient {
     this.socket = null;
     this.handlers = {};
     this.connected = false;
+    this.activeSessionId = null;
   }
 
   connect() {
@@ -34,8 +35,13 @@ class WebSocketClient {
       console.log('WebSocket connected');
       this.connected = true;
 
-      // Join extraction namespace
       this.socket.emit('ping', { timestamp: Date.now() });
+
+      // Rejoin the active session room after any reconnect so room-targeted
+      // events (analysis/synthesis progress) are still received.
+      if (this.activeSessionId) {
+        this.socket.emit('join_session', { session_id: this.activeSessionId });
+      }
     });
 
     this.socket.on('disconnect', () => {
@@ -115,12 +121,16 @@ class WebSocketClient {
   }
 
   joinSession(sessionId) {
+    this.activeSessionId = sessionId;
     if (this.socket && this.connected) {
       this.socket.emit('join_session', { session_id: sessionId });
     }
   }
 
   leaveSession(sessionId) {
+    if (this.activeSessionId === sessionId) {
+      this.activeSessionId = null;
+    }
     if (this.socket && this.connected) {
       this.socket.emit('leave_session', { session_id: sessionId });
     }

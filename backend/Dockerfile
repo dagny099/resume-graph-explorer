@@ -14,12 +14,14 @@ RUN pip install --no-cache-dir -r requirements-prod.txt \
 
 # Copy application source
 COPY resume_explorer/ ./resume_explorer/
+COPY tools/ ./tools/
 
 # Persistent session data lives here (ephemeral on free tier — acceptable for demo)
 RUN mkdir -p data/sessions
 
 ENV PORT=8000 \
-    DATA_PATH=/app/data
+    DATA_PATH=/app/data \
+    SOCKETIO_ASYNC_MODE=eventlet
 
 EXPOSE 8000
 

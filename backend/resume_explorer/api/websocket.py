@@ -5,15 +5,22 @@ Handles real-time communication with frontend during extraction.
 Uses Flask-SocketIO for WebSocket support.
 """
 
+import os
+
 from flask_socketio import SocketIO, emit
 from typing import Dict, Any, Optional
 from ..utils.logger import logger
 
 
+# async_mode must match the WSGI worker class.
+# Production (gunicorn --worker-class eventlet): set SOCKETIO_ASYNC_MODE=eventlet
+# Local dev (flask run / threading server): defaults to 'threading'
+_async_mode = os.getenv('SOCKETIO_ASYNC_MODE', 'threading')
+
 # Global SocketIO instance (created at module level, bound to app later)
 socketio = SocketIO(
-    cors_allowed_origins="*",  # Allow all origins for development
-    async_mode='threading',     # Use threading for compatibility
+    cors_allowed_origins="*",
+    async_mode=_async_mode,
     logger=True,
     engineio_logger=False
 )
