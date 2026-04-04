@@ -9,15 +9,52 @@
  */
 
 import axios from 'axios';
+import axiosRetry from 'axios-retry';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000, // 30 seconds for initial connection (handles cold starts)
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Retry logic for cold starts and transient network errors
+axiosRetry(api, {
+  retries: 5,
+  retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: (error) => {
+    return axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+           error.code === 'ECONNABORTED' ||
+           (error.response && [502, 503, 504].includes(error.response.status));
+  },
+  onRetry: (retryCount, error) => {
+    console.log(`Retrying request (${retryCount}/5): ${error.message}`);
+  },
+});
+
+// ============================================================================
+// Health Check & Warmup
+// ============================================================================
+
+/**
+ * Warmup request to wake the backend from cold start.
+ * Returns true if backend is reachable, false otherwise.
+ */
+export const warmupBackend = async () => {
+  try {
+    await axios.get(`${API_BASE_URL}/health`, {
+      timeout: 30000,
+      validateStatus: () => true, // Accept any status code
+    });
+    return true;
+  } catch (error) {
+    console.log('Backend warmup failed:', error.message);
+    return false;
+  }
+};
 
 // ============================================================================
 // Session Management

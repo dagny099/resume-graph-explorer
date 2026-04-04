@@ -25,7 +25,7 @@ import ExportPanel from './components/ExportPanel';
 import AnalysisPipelinePanel from './components/AnalysisPipelinePanel';
 import InsightsViewer from './components/InsightsViewer';
 import NarrativeViewer from './components/NarrativeViewer';
-import { createSession, getSession, getSessionGraph, getPipelineStatus } from './services/api';
+import { createSession, getSession, getSessionGraph, getPipelineStatus, warmupBackend } from './services/api';
 import './App.css';
 
 // Resolved once at module load — changing the env var requires a rebuild.
@@ -62,6 +62,9 @@ function App() {
   // Auto mode only: true if the backend was unreachable during init.
   const [sessionError, setSessionError] = useState(false);
 
+  // Connection status for better UX during cold starts
+  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'connecting' | 'warming' | 'retrying' | 'ready' | 'error'
+
   // Welcome screen: shown initially in both modes.
   // Auto mode: dismissed by clicking "Get Started". Auto-dismissed if returning user has graph data.
   // Manual mode: dismissed when user creates/selects a session (currentSessionId becomes non-null).
@@ -72,26 +75,38 @@ function App() {
     if (!AUTO_SESSION) return;
 
     const initSession = async () => {
+      setConnectionStatus('connecting');
+
+      // Warm up the backend first (wakes from cold start)
+      setConnectionStatus('warming');
+      await warmupBackend();
+
       const savedId = localStorage.getItem(SESSION_STORAGE_KEY);
 
       if (savedId) {
         try {
+          setConnectionStatus('connecting');
           await getSession(savedId);
           setCurrentSessionId(savedId);
           setSessionReady(true);
+          setConnectionStatus('ready');
           return;
         } catch {
           localStorage.removeItem(SESSION_STORAGE_KEY);
+          setConnectionStatus('retrying');
         }
       }
 
       try {
+        setConnectionStatus('connecting');
         const data = await createSession();
         localStorage.setItem(SESSION_STORAGE_KEY, data.session.id);
         setCurrentSessionId(data.session.id);
+        setConnectionStatus('ready');
       } catch (err) {
         console.error('Failed to initialize session:', err);
         setSessionError(true);
+        setConnectionStatus('error');
       } finally {
         setSessionReady(true);
       }
@@ -199,10 +214,23 @@ function App() {
 
   // ─── Loading / error screens ───────────────────────────────────────────────
   if (!sessionReady) {
+    const statusMessages = {
+      connecting: 'Connecting to backend…',
+      warming: '⏳ Waking up backend from sleep…',
+      retrying: 'Retrying connection…',
+    };
+
     return (
       <div className="app">
         <AppHeader />
-        <div className="loading-state"><p>Starting up…</p></div>
+        <div className="loading-state">
+          <p>{statusMessages[connectionStatus] || 'Starting up…'}</p>
+          {connectionStatus === 'warming' && (
+            <p style={{ fontSize: '14px', opacity: 0.8, marginTop: '10px' }}>
+              First visit can take 5-10 seconds while the server starts up
+            </p>
+          )}
+        </div>
       </div>
     );
   }
@@ -211,8 +239,24 @@ function App() {
     return (
       <div className="app">
         <AppHeader />
-        <div className="loading-state">
-          <p>Could not connect to the backend. Please try refreshing the page.</p>
+        <div className="loading-state" style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: '18px', marginBottom: '10px' }}>⏳ Backend is waking up from sleep...</p>
+          <p style={{ fontSize: '14px', opacity: 0.8, marginBottom: '20px' }}>
+            This can take 5-10 seconds on first visit. The connection will retry automatically.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 20px',
+              fontSize: '14px',
+              cursor: 'pointer',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+              background: '#f5f5f5',
+            }}
+          >
+            Retry Now
+          </button>
         </div>
       </div>
     );

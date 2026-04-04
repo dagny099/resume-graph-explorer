@@ -28,6 +28,10 @@ class WebSocketClient {
     this.socket = io(`${WS_URL}/extraction`, {
       path: '/socket.io',
       transports: ['websocket', 'polling'],
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 30000, // Wait longer for initial connection (handles cold starts)
     });
 
     // Connection handlers
