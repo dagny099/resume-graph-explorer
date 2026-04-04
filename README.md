@@ -1,5 +1,12 @@
 # Resume Explorer
 
+[![Vercel](https://img.shields.io/badge/vercel-deployed-black?logo=vercel)](https://resume-graph-explorer.vercel.app)
+[![Backend Status](https://img.shields.io/website?url=https%3A%2F%2Ffew-wallis-balex-atx-966af829.koyeb.app%2Fhealth&label=backend&up_message=online&down_message=offline)](https://few-wallis-balex-atx-966af829.koyeb.app)
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python)](https://www.python.org/downloads/)
+[![Node](https://img.shields.io/badge/node-18+-green.svg?logo=node.js)](https://nodejs.org/)
+[![SKOS](https://img.shields.io/badge/SKOS-compliant-purple)](https://www.w3.org/TR/skos-reference/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Transform your resume into an interactive SKOS-compliant knowledge graph.
 
 ## Overview
