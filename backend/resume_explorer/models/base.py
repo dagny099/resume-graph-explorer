@@ -62,6 +62,10 @@ class SKOSEntity:
     confidence: float = 1.0  # 0.0 = low confidence, 1.0 = high confidence
     source_doc: str = ""
 
+    # Human feedback — foundation for future editable nodes UI
+    user_verified: bool = False  # user confirmed this entity is correct
+    user_notes: Optional[str] = None  # freeform user annotation
+
     def get_uri(self, base_namespace: Namespace = RESUME) -> URIRef:
         """
         Generate RDF URI for this entity.
@@ -156,6 +160,8 @@ class SKOSEntity:
             "confidence": self.confidence,
             "source_doc": self.source_doc,
             "created_at": self.created_at.isoformat(),
+            "user_verified": self.user_verified,
+            "user_notes": self.user_notes,
         }
 
     @classmethod

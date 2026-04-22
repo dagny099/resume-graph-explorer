@@ -119,6 +119,7 @@ class EntityNormalizer:
         org_labels: set = set()
         degree_labels: set = set()
         skill_to_esco: Dict[str, str] = {}  # skill_label -> esco_uri
+        verified_labels: set = set()        # labels from user_verified entities — treated as anchors
 
         for entities in all_entities:
             for skill in entities.get("skills", []):
@@ -129,6 +130,8 @@ class EntityNormalizer:
                     esco = skill.get("esco_uri")
                     if esco:
                         skill_to_esco[decoded_label] = esco
+                    if skill.get("user_verified"):
+                        verified_labels.add(decoded_label)
 
             for job in entities.get("jobs", []):
                 for tech in job.get("technologies_used", []):
@@ -210,9 +213,14 @@ class EntityNormalizer:
         # Build final label map (chain all phases)
         label_map = self._build_final_map(all_labels, phase1_map, phase2_map, phase3_map)
 
+        # Protect verified labels: they are authoritative anchors and must not be remapped.
+        # Other labels may already normalize TO them (the map is unchanged for those).
+        for vl in verified_labels:
+            label_map[vl] = vl
+
         # Apply normalization to entities; track alt_labels on skills whose labels changed
         normalized_entities = self._apply_normalization(
-            all_entities, label_map, declared_skill_labels
+            all_entities, label_map, declared_skill_labels, verified_labels=verified_labels
         )
 
         # Build report
@@ -630,6 +638,7 @@ Include ALL names — even unique ones should appear as single-member groups.
         all_entities: List[Dict[str, Any]],
         label_map: Dict[str, str],
         declared_skill_labels: Optional[set] = None,
+        verified_labels: Optional[set] = None,
     ) -> List[Dict[str, Any]]:
         """
         Apply label_map to all entities.
@@ -637,8 +646,12 @@ Include ALL names — even unique ones should appear as single-member groups.
         When a skill's label is remapped to a canonical (e.g. "ML" → "Machine Learning"),
         the original label is stored in skill["alt_labels"] so the RDF builder can write
         it as a skos:altLabel triple, keeping variant names discoverable in the graph.
+
+        Entities with user_verified=True are skipped — their labels are authoritative
+        and must not be overwritten by normalization.
         """
         normalized = []
+        _verified = verified_labels or set()
 
         for entities in all_entities:
             normalized_doc = {}
@@ -651,6 +664,10 @@ Include ALL names — even unique ones should appear as single-member groups.
             normalized_skills = []
             for skill in entities.get("skills", []):
                 skill_copy = skill.copy()
+                # Skip user-curated entities — their label is authoritative
+                if skill_copy.get("user_verified"):
+                    normalized_skills.append(skill_copy)
+                    continue
                 old_label = skill_copy.get("name") or skill_copy.get("label")
                 if old_label:
                     decoded = self._url_decode(old_label)

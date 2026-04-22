@@ -188,6 +188,20 @@ function App() {
     }
   };
 
+  // Refresh graph and panel after a node label is edited
+  const handleNodeUpdated = useCallback(async (updatedEntity) => {
+    try {
+      const data = await getSessionGraph(currentSessionId);
+      setGraphData(data);
+    } catch {
+      // Graph may not exist yet — not critical
+    }
+    // Update selectedNode immediately so the panel reflects the new label
+    setSelectedNode(prev =>
+      prev ? { ...prev, label: updatedEntity.label, metadata: { ...prev.metadata, ...updatedEntity } } : null
+    );
+  }, [currentSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Refresh pipeline status after analysis or synthesis completes
   const handleAnalysisComplete = useCallback(() => {
     loadPipelineStatus();
@@ -340,7 +354,13 @@ function App() {
                       onNodeClick={setSelectedNode}
                     />
                   )}
-                  {selectedNode && <EntityPanel selectedNode={selectedNode} />}
+                  {selectedNode && (
+                    <EntityPanel
+                      selectedNode={selectedNode}
+                      sessionId={currentSessionId}
+                      onNodeUpdated={handleNodeUpdated}
+                    />
+                  )}
                 </>
               )}
 

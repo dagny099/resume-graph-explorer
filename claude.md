@@ -1,8 +1,8 @@
 You are the **coding agent** for **Resume Explorer**, a full-stack application that transforms resumes into interactive SKOS-compliant knowledge graphs. The project is **deployed and functional** — you are working on an evolving codebase, not starting from scratch.
 
-## Current State (as of March 2026)
+## Current State (as of April 2026)
 
-The app is production-ready for single-resume sessions and deployed on Render/Koyeb. The codebase has ~10k+ lines across a Flask backend and React frontend.
+The app is production-ready for both single and multi-resume sessions, deployed on Render/Koyeb. The codebase has ~12k+ lines across a Flask backend and React frontend.
 
 **What exists and works:**
 - Flask backend with REST API + WebSocket streaming for real-time extraction progress
@@ -10,13 +10,15 @@ The app is production-ready for single-resume sessions and deployed on Render/Ko
 - LLM-powered entity extraction (Claude, OpenAI, Ollama) → SKOS-compliant RDF graph
 - RDF export in Turtle, RDF/XML, JSON-LD
 - Multi-document session management with file-based persistence (`backend/data/sessions/`)
-- Entity normalization: 3-phase pipeline (deterministic → ESCO-anchored → LLM batch), runs automatically on upload. As of March 2026, includes separate type-pool normalization and `skos:altLabel` preservation for merged skill aliases.
+- Entity normalization: 3-phase pipeline (deterministic → ESCO-anchored → LLM batch), runs automatically on upload. Includes type-pool normalization, `skos:altLabel` preservation for merged skill aliases, and `user_verified` anchor protection.
+- Multi-resume sessions: zero unknown nodes (4-part bug fix, April 2026). Two resumes of the same person → 1 Person node, merged skill/job lists, correct dedup.
+- Duplicate file detection: uploading the same file twice to a session returns HTTP 409.
+- Editable node labels: click any graph node → Edit → correct the label, add notes, mark as verified. Verified labels are authoritative anchors for future normalization runs.
 - Post-export offline analysis pipeline (`backend/tools/`): entity_normalizer → graph_analyzer (6 structural analyses → markdown docs) → narrative_synthesizer
+- Evaluation framework: `tests/test_evaluation.py` (precision/recall), `docs/EVALUATION_PLAN.md` (full methodology)
 
 **Known issues to preserve/not regress:**
 - DSPy threading issues: `ENABLE_DSPY` must stay `false` in deployed config
-- ~8-10 "unknown nodes" in multi-resume sessions (orphaned Person references after normalization — cosmetic only, fix in progress)
-- Single-resume sessions are recommended; multi-resume is functional but has the above cosmetic issue
 
 ## Architecture Decisions to Know
 
@@ -26,11 +28,15 @@ The app is production-ready for single-resume sessions and deployed on Render/Ko
 
 **RDF graph builder dedup caches** (first-defense before the normalizer):
 - Skills: case-insensitive label (`_skill_cache`)
-- Orgs: fuzzy-normalized name, strips "Inc.", "The " prefix (`_normalize_org_name`)
-- Jobs: (title, org, start_date) tuple
+- Orgs: fuzzy-normalized name, iterative suffix stripping ("Corp", "Inc.", "LLC", etc.) — `_normalize_org_name`. Iterative loop, not `break`-on-first-match, so "Acme Corp, Inc." and "Acme Corp" collapse correctly.
+- Jobs: exact `(title, org_uri, start_date)` tuple first; then fuzzy title similarity (≥0.85 SequenceMatcher) at same org within 30 days. Handles "Senior Engineer" ↔ "Sr. Software Engineer" dedup.
 - Education: (degree, field, institution) tuple
 
-**`alt_labels` on Skill** (added March 2026): When the normalizer merges a variant label (e.g. "ML" → "Machine Learning"), the original is stored in `skill.alt_labels` and written as `skos:altLabel` triples in the RDF export. Adding new optional fields with defaults to `SKOSEntity` subclasses is backward-compatible: `from_dict` filters to `__dataclass_fields__`, so old sessions without the field load safely.
+**`alt_labels` on Skill** (added March 2026): When the normalizer merges a variant label (e.g. "ML" → "Machine Learning"), the original is stored in `skill.alt_labels` and written as `skos:altLabel` triples in the RDF export. When a user edits a skill label via the UI, the old label is also preserved as `alt_label`. Adding new optional fields with defaults to `SKOSEntity` subclasses is backward-compatible: `from_dict` filters to `__dataclass_fields__`, so old sessions without the field load safely.
+
+**`user_verified` and `user_notes` on `SKOSEntity`** (added April 2026): Two optional fields on the base dataclass. `user_verified=True` makes an entity's label authoritative — the normalizer protects it from being remapped (identity override in `label_map`) and skips it during `_apply_normalization`. New uploads normalize *toward* verified labels, never away. `user_notes` is freeform. Both backward-compatible.
+
+**Editable nodes** (added April 2026): `PATCH /api/sessions/{id}/entities/{entity_type}/{entity_id}` — mutable fields: `label`, `user_verified`, `user_notes`. Whitelist-validated (unknown fields → 400). Searches by UUID (primary) then by normalized label (secondary, covers cross-doc dedup cases). Propagates to all source documents in the session.
 
 **WebSocket + Flask-SocketIO**: Uses eventlet. In deployment, gunicorn must use `--worker-class eventlet -w 1`. Nginx needs `Upgrade`/`Connection` headers for WebSocket proxying.
 

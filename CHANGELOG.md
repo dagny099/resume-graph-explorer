@@ -5,6 +5,35 @@ All notable changes to Resume Explorer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-22
+
+### Fixed
+- **Multi-resume unknown nodes (4 root causes):**
+  - Index mismatch in `_maybe_normalize_session_entities` save loop — wrong entities written to wrong documents when any doc had no entities
+  - `get_session_graph` used `all_persons[0]` whose reference lists only contained Doc 1's IDs — Doc 2's entity IDs were never linked to the person node
+  - `export_session_graph` omitted organizations, education, and certifications — jobs referencing orgs that were never added created ghost URIs
+  - `add_person` ghost URI fallback — unresolved IDs now skip with a warning instead of creating untyped URIs
+- **Multi-suffix org normalization:** `_normalize_org_name` used `break` after first suffix match; changed to iterative loop so "Acme Corp, Inc." and "Acme Corp" correctly deduplicate
+
+### Added
+- **Editable node labels:** `PATCH /api/sessions/{id}/entities/{type}/{entity_id}` — update `label`, `user_verified`, `user_notes` on any entity. Propagates to all source documents in the session. Frontend: inline edit mode in `EntityPanel` (no modal required).
+- **Authoritative label anchoring:** Entities with `user_verified=True` are protected from normalizer rewrites and serve as canonical anchors for future uploads.
+- **MD5 duplicate file detection:** Uploading an already-uploaded file to the same session returns HTTP 409 with `{"duplicate_of": "<doc_id>"}`.
+- **Similarity-based job dedup:** `add_job` now falls back to SequenceMatcher title similarity (≥0.85) at the same org within 30 days when exact match fails.
+- **`user_verified` and `user_notes` fields** on `SKOSEntity` base class (backward-compatible).
+- **Evaluation framework:** `tests/test_evaluation.py` (precision/recall), `tests/conftest.py` (fixture loading), `tests/fixtures/ground_truth_schema.json` (authoring template), `pytest.ini`, `docs/EVALUATION_PLAN.md` (8-section hybrid methodology).
+- **Multi-resume regression tests:** `tests/test_unknown_nodes.py` (12 tests) — replaces retired `docs/plan-for-fixing-unknown-bugs-prompt.md`.
+
+### Removed
+- `docs/plan-for-fixing-unknown-bugs-prompt.md` — lessons preserved in `test_unknown_nodes.py` header comment
+
+### Changed
+- Multi-resume sessions are now production-quality. The "use separate sessions per resume" workaround is no longer necessary.
+- README: removed stale DSPy feature bullet, updated Current Status to reflect multi-resume fix, added PATCH endpoint to API overview.
+- `CLAUDE.md`: updated known issues, dedup cache documentation, added editable nodes and evaluation framework sections.
+
+---
+
 ## [Unreleased]
 
 ### Changed - UI Optimization (2025-12-17)
