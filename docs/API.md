@@ -284,6 +284,12 @@ Upload a resume document to a session and trigger extraction.
 - **Body**:
   - `file` (file) - Resume file (PDF, DOCX, TXT, MD)
 
+**Query Parameters**:
+- `use_dspy` (optional: `true|false|1|0|yes|no`)
+  - `true`: force DSPy extraction route (experimental, not production-validated)
+  - `false`: force `SimplifiedExtractor` route
+  - omitted/invalid: use server default (`ENABLE_DSPY`)
+
 **Supported Formats**:
 - `.pdf` - PDF documents
 - `.docx`, `.doc` - Microsoft Word
@@ -334,6 +340,8 @@ curl -X POST http://localhost:5000/api/sessions/session-id-1/documents \
 - Extraction runs asynchronously in background thread
 - Real-time progress via WebSocket events (see [WebSocket Events](#websocket-events))
 - Document status changes: `pending` → `processing` → `complete` or `error`
+- DSPy route is currently experimental and may be less stable under concurrent workloads
+- Recommended production default: `ENABLE_DSPY=false`; opt in with `use_dspy=true` only for targeted testing
 
 ---
 

@@ -21,7 +21,7 @@ Resume Explorer is a complete full-stack application that extracts structured en
 - **🎨 Interactive Visualization**: Beautiful React + Vis.js network graphs with physics-based layout
 - **📤 RDF Export**: Export as Turtle, RDF/XML, or JSON-LD formats
 - **⚡ Real-Time Progress**: WebSocket streaming for live extraction updates
-- **🔄 DSPy Integration**: Advanced reasoning patterns with chain-of-thought extraction
+- **🔄 DSPy Integration (Experimental)**: Optional DSPy route for structured extraction research (not production-validated)
 - **☁️ Cloud-Ready**: Local-first design with abstraction layers for cloud deployment
 
 ## 🏗️ Architecture
@@ -62,6 +62,16 @@ Resume Explorer is a complete full-stack application that extracts structured en
 - **LLM**: Claude (Anthropic), OpenAI GPT, Ollama (local)
 - **Semantic Web**: SKOS, ESCO skill taxonomy, schema.org
 
+
+## ⚠️ DSPy Maturity Status
+
+**Status (as of 2026-05-13): Experimental and not production-validated.**
+
+- The DSPy extraction route exists and can be selected per request (`use_dspy=true`) or via `ENABLE_DSPY=true`.
+- It is not fully tested across providers and concurrency scenarios in this deployed architecture.
+- For production, set `ENABLE_DSPY=false` explicitly and only enable DSPy during focused testing.
+
+See **[docs/DSPY_STATUS.md](docs/DSPY_STATUS.md)** for implemented-vs-tested details and a concrete validation checklist.
 
 ## 🚦 Quick Start
 
@@ -163,6 +173,7 @@ See [GETTING_STARTED.md](docs/GETTING_STARTED.md) for a detailed walkthrough.
 
 ## 📚 Documentation
 
+- **[DSPy Status](docs/DSPY_STATUS.md)** - Canonical status page for DSPy maturity, test coverage gaps, and validation plan
 - **[Getting Started](docs/GETTING_STARTED.md)** - Step-by-step tutorial
 - **[API Reference](docs/API.md)** - REST API and WebSocket documentation
 - **[SKOS Schema](docs/SKOS_SCHEMA.md)** - Vocabulary and ontology specification
