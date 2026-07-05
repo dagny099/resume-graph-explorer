@@ -1,0 +1,33 @@
+{
+  "_comment": "Gold labels for sample_resume_001.txt. Entities may be full dicts or bare strings — the comparator normalizes both. Keep this file in sync with the resume text.",
+  "person": {
+    "name": "Jordan Rivera"
+  },
+  "jobs": [
+    { "title": "Senior Data Scientist", "organization": "Acme Analytics" },
+    { "title": "Data Analyst", "organization": "Bluebird Health" }
+  ],
+  "skills": [
+    "Python",
+    "SQL",
+    "scikit-learn",
+    "XGBoost",
+    "Tableau",
+    "Docker",
+    "AWS",
+    "Google Analytics 4",
+    "Machine Learning"
+  ],
+  "education": [
+    { "degree_type": "MS", "field_of_study": "Statistics", "institution": "State University" },
+    { "degree_type": "BS", "field_of_study": "Mathematics", "institution": "State University" }
+  ],
+  "certifications": [
+    "AWS Certified Solutions Architect"
+  ],
+  "organizations": [
+    "Acme Analytics",
+    "Bluebird Health",
+    "State University"
+  ]
+}

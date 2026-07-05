@@ -35,10 +35,13 @@ def create_app(config: dict = None) -> Flask:
         SECRET_KEY=os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production'),
         MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max upload
         UPLOAD_FOLDER='data/sessions',
+        DATA_PATH=os.getenv('DATA_PATH', 'data'),
 
         # LLM configuration
         LLM_PROVIDER=os.getenv('LLM_PROVIDER', 'claude'),
-        ENABLE_DSPY=os.getenv('ENABLE_DSPY', 'true').lower() == 'true',
+        # DSPy extraction is experimental and has known threading issues in
+        # deployment — it must be opted into explicitly via ENABLE_DSPY=true.
+        ENABLE_DSPY=os.getenv('ENABLE_DSPY', 'false').lower() == 'true',
 
         # Entity normalization configuration
         NORMALIZATION_PROVIDER=os.getenv('NORMALIZATION_PROVIDER', 'mock'),
@@ -79,6 +82,10 @@ def create_app(config: dict = None) -> Flask:
         @app.route('/<path:path>')
         def serve_frontend(path):
             """Serve frontend static files or index.html for SPA routing"""
+            # Unknown API paths must return JSON 404, not the SPA shell —
+            # otherwise API clients get HTML with a misleading 200 status.
+            if path.startswith('api/'):
+                return {'error': f"Unknown API endpoint: /{path}"}, 404
             if path and os.path.exists(os.path.join(frontend_dist, path)):
                 return send_from_directory(frontend_dist, path)
             return send_from_directory(frontend_dist, 'index.html')
@@ -91,8 +98,9 @@ def create_app(config: dict = None) -> Flask:
     # Initialize WebSocket
     socketio = init_socketio(app)
 
-    # Initialize session store
-    session_store = SessionStore(base_path=os.getenv('DATA_PATH', 'data'))
+    # Initialize session store — honors config['DATA_PATH'] so tests can
+    # point the store at a temp directory instead of the real data dir
+    session_store = SessionStore(base_path=app.config['DATA_PATH'])
     app.session_store = session_store
 
     # Initialize LLM client
@@ -108,10 +116,9 @@ def create_app(config: dict = None) -> Flask:
 
     # Initialize pipeline service (wraps offline graph analysis tools)
     from ..services.pipeline_service import PipelineService
-    data_path = os.getenv('DATA_PATH', 'data')
     app.pipeline_service = PipelineService(
         session_store=session_store,
-        data_path=data_path,
+        data_path=app.config['DATA_PATH'],
         llm_client=app.llm_client,
     )
     logger.info("Pipeline service initialized")

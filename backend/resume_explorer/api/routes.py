@@ -18,8 +18,9 @@ from .session_store import SessionStore
 from .websocket import ExtractionEventEmitter, emit_to_session
 from ..services import ResumeExtractor, EntityNormalizer
 from ..utils import DocumentProcessor, logger
-from ..graph import RDFGraphBuilder, NetworkXAdapter
-from ..models import Person, Job, Skill, Education, Certification, Organization
+from ..graph import NetworkXAdapter
+from ..graph.session_graph import build_session_graph, extracted_entity_counts
+from ..graph.graph_validator import GraphValidator
 
 
 api_bp = Blueprint('api', __name__)
@@ -159,6 +160,17 @@ def upload_document(session_id):
         return jsonify({
             'error': f'Unsupported file type. Allowed: {", ".join(allowed_extensions)}'
         }), 400
+
+    # Fail fast if no LLM client is available — otherwise the upload succeeds
+    # and extraction fails opaquely in a background thread.
+    if not getattr(current_app, 'llm_client', None):
+        provider = current_app.config.get('LLM_PROVIDER', 'claude')
+        return jsonify({
+            'error': f"LLM client is not available (provider: {provider})",
+            'hint': ('The server could not initialize its LLM client at startup. '
+                     'Check that the API key for the configured LLM_PROVIDER is set '
+                     '(e.g. ANTHROPIC_API_KEY or OPENAI_API_KEY) and restart the backend.'),
+        }), 503
 
     # Get extraction method preference (query param overrides config default)
     use_dspy_param = request.args.get('use_dspy', '').lower()
@@ -392,6 +404,31 @@ def get_document_entities(document_id):
 # Graph Retrieval and Export Endpoints
 # ============================================================================
 
+def _no_completed_docs_payload(documents):
+    """Build an actionable error payload for sessions without completed extractions."""
+    by_status = {}
+    for doc in documents:
+        by_status[doc.status] = by_status.get(doc.status, 0) + 1
+
+    if not documents:
+        hint = 'Upload a resume document to this session first.'
+    elif by_status.get('processing') or by_status.get('pending'):
+        hint = 'Extraction is still running — retry in a few seconds.'
+    elif by_status.get('error'):
+        hint = ('All documents failed extraction. Check each document\'s '
+                'error_message via GET /documents/<id>.')
+    else:
+        hint = 'Upload a resume document to this session first.'
+
+    return {
+        'error': 'No completed extractions in this session',
+        'hint': hint,
+        'total_documents': len(documents),
+        'documents_by_status': by_status,
+        'complete_documents': 0,
+    }
+
+
 @api_bp.route('/sessions/<session_id>/graph', methods=['GET'])
 def get_session_graph(session_id):
     """Get combined graph for all documents in session (Vis.js format)."""
@@ -401,66 +438,12 @@ def get_session_graph(session_id):
     if not session:
         return jsonify({'error': 'Session not found'}), 404
 
-    # Get all documents
-    documents = session_store.get_session_documents(session_id)
+    result = build_session_graph(session_store, session_id)
+    if result is None:
+        documents = session_store.get_session_documents(session_id)
+        return jsonify(_no_completed_docs_payload(documents)), 404
 
-    # Filter complete documents
-    complete_docs = [d for d in documents if d.status == 'complete']
-
-    if not complete_docs:
-        return jsonify({
-            'error': 'No completed extractions in this session',
-            'total_documents': len(documents),
-            'complete_documents': 0
-        }), 404
-
-    # Build combined graph
-    builder = RDFGraphBuilder()
-
-    all_persons = []
-    all_jobs = []
-    all_skills = []
-    all_education = []
-    all_certifications = []
-    all_organizations = []
-
-    for doc in complete_docs:
-        entities = session_store.load_extracted_entities(doc.id)
-        if not entities:
-            continue
-
-        # Collect entities
-        person = entities.get('person')
-        if person and isinstance(person, dict):
-            all_persons.append(Person.from_dict(person))
-
-        jobs = entities.get('jobs', [])
-        all_jobs.extend([Job.from_dict(j) if isinstance(j, dict) else j for j in jobs])
-
-        skills = entities.get('skills', [])
-        all_skills.extend([Skill.from_dict(s) if isinstance(s, dict) else s for s in skills])
-
-        education = entities.get('education', [])
-        all_education.extend([Education.from_dict(e) if isinstance(e, dict) else e for e in education])
-
-        certifications = entities.get('certifications', [])
-        all_certifications.extend([Certification.from_dict(c) if isinstance(c, dict) else c for c in certifications])
-
-        organizations = entities.get('organizations', [])
-        all_organizations.extend([Organization.from_dict(o) if isinstance(o, dict) else o for o in organizations])
-
-    # Use first person (or create placeholder)
-    person = all_persons[0] if all_persons else Person(name="Unknown")
-
-    # Build RDF graph
-    builder.build_from_entities(
-        person=person,
-        jobs=all_jobs,
-        skills=all_skills,
-        education=all_education,
-        certifications=all_certifications,
-        organizations=all_organizations
-    )
+    builder, _ = result
 
     # Convert to Vis.js format
     adapter = NetworkXAdapter(builder.graph)
@@ -471,7 +454,7 @@ def get_session_graph(session_id):
 
 @api_bp.route('/sessions/<session_id>/export/<format>', methods=['GET'])
 def export_session_graph(session_id, format):
-    """Export session graph as RDF file."""
+    """Export session graph as RDF file (all entity types, same content as /graph)."""
     session_store: SessionStore = current_app.session_store
 
     session = session_store.get_session(session_id)
@@ -482,36 +465,12 @@ def export_session_graph(session_id, format):
     if format not in ['turtle', 'rdfxml', 'jsonld']:
         return jsonify({'error': 'Invalid format. Use: turtle, rdfxml, or jsonld'}), 400
 
-    # Build graph (same logic as get_session_graph)
-    documents = session_store.get_session_documents(session_id)
-    complete_docs = [d for d in documents if d.status == 'complete']
+    result = build_session_graph(session_store, session_id)
+    if result is None:
+        documents = session_store.get_session_documents(session_id)
+        return jsonify(_no_completed_docs_payload(documents)), 404
 
-    if not complete_docs:
-        return jsonify({'error': 'No completed extractions in this session'}), 404
-
-    builder = RDFGraphBuilder()
-
-    # Collect and build entities (abbreviated for brevity)
-    for doc in complete_docs:
-        entities = session_store.load_extracted_entities(doc.id)
-        if not entities:
-            continue
-
-        person = entities.get('person')
-        if person:
-            if isinstance(person, dict):
-                person = Person.from_dict(person)
-            builder.add_person(person)
-
-        for job in entities.get('jobs', []):
-            if isinstance(job, dict):
-                job = Job.from_dict(job)
-            builder.add_job(job)
-
-        for skill in entities.get('skills', []):
-            if isinstance(skill, dict):
-                skill = Skill.from_dict(skill)
-            builder.add_skill(skill)
+    builder, _ = result
 
     # Export graph
     graph_path = session_store.get_session_graph_path(session_id, format)
@@ -565,71 +524,58 @@ def get_session_stats(session_id):
 
     # Count entities from deduplicated graph (not raw storage)
     if complete_docs:
-        # Build graph with deduplication (same logic as get_session_graph)
-        builder = RDFGraphBuilder()
+        result = build_session_graph(session_store, session_id)
+        if result:
+            builder, collected = result
 
-        all_persons = []
-        all_jobs = []
-        all_skills = []
-        all_education = []
-        all_certifications = []
-        all_organizations = []
+            # Get deduplicated counts from graph
+            graph_stats = builder.get_graph_stats()
+            entity_counts = graph_stats['entity_counts']
 
-        for doc in complete_docs:
-            entities = session_store.load_extracted_entities(doc.id)
-            if not entities:
-                continue
+            # Expose person name for filename generation
+            person = collected['persons'][0] if collected['persons'] else None
+            stats['person_name'] = person.name if person and person.name and person.name != 'Unknown' else None
 
-            person = entities.get('person')
-            if person and isinstance(person, dict):
-                all_persons.append(Person.from_dict(person))
-
-            jobs = entities.get('jobs', [])
-            all_jobs.extend([Job.from_dict(j) if isinstance(j, dict) else j for j in jobs])
-
-            skills = entities.get('skills', [])
-            all_skills.extend([Skill.from_dict(s) if isinstance(s, dict) else s for s in skills])
-
-            education = entities.get('education', [])
-            all_education.extend([Education.from_dict(e) if isinstance(e, dict) else e for e in education])
-
-            certifications = entities.get('certifications', [])
-            all_certifications.extend([Certification.from_dict(c) if isinstance(c, dict) else c for c in certifications])
-
-            organizations = entities.get('organizations', [])
-            all_organizations.extend([Organization.from_dict(o) if isinstance(o, dict) else o for o in organizations])
-
-        # Build graph (deduplication happens here)
-        person = all_persons[0] if all_persons else Person(name="Unknown")
-        for org in all_organizations:
-            builder.add_organization(org)
-        for skill in all_skills:
-            builder.add_skill(skill)
-        for job in all_jobs:
-            builder.add_job(job)
-        for edu in all_education:
-            builder.add_education(edu)
-        for cert in all_certifications:
-            builder.add_certification(cert)
-
-        # Get deduplicated counts from graph
-        graph_stats = builder.get_graph_stats()
-        entity_counts = graph_stats['entity_counts']
-
-        # Expose person name for filename generation
-        stats['person_name'] = person.name if person.name and person.name != 'Unknown' else None
-
-        # Map field names to match frontend expectations (plural forms)
-        stats['total_entities'] = {
-            'persons': entity_counts.get('person', 0),
-            'jobs': entity_counts.get('job', 0),
-            'skills': entity_counts.get('skill', 0),
-            'education': entity_counts.get('education', 0),
-            'certifications': entity_counts.get('certification', 0),
-            'organizations': entity_counts.get('organization', 0)
-        }
+            # Map field names to match frontend expectations (plural forms)
+            stats['total_entities'] = {
+                'persons': entity_counts.get('person', 0),
+                'jobs': entity_counts.get('job', 0),
+                'skills': entity_counts.get('skill', 0),
+                'education': entity_counts.get('education', 0),
+                'certifications': entity_counts.get('certification', 0),
+                'organizations': entity_counts.get('organization', 0)
+            }
 
     return jsonify(stats)
+
+
+@api_bp.route('/sessions/<session_id>/graph/validate', methods=['GET'])
+def validate_session_graph(session_id):
+    """
+    Run semantic integrity validation on the session graph.
+
+    Returns a report separating errors (structural problems: dangling
+    references, missing labels, entity types lost in export) from warnings
+    (suspicious patterns: near-duplicate skills, jobs without organizations
+    or dates). Read-only; does not modify the session.
+    """
+    session_store: SessionStore = current_app.session_store
+
+    session = session_store.get_session(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    result = build_session_graph(session_store, session_id)
+    if result is None:
+        documents = session_store.get_session_documents(session_id)
+        return jsonify(_no_completed_docs_payload(documents)), 404
+
+    builder, collected = result
+    validator = GraphValidator(builder.graph)
+    report = validator.validate(extracted_counts=extracted_entity_counts(collected))
+    report['session_id'] = session_id
+
+    return jsonify(report)
 
 
 # ============================================================================
@@ -701,7 +647,7 @@ def run_pipeline_analyze(session_id):
     documents = session_store.get_session_documents(session_id)
     complete_docs = [d for d in documents if d.status == 'complete']
     if not complete_docs:
-        return jsonify({'error': 'No completed extractions in this session'}), 409
+        return jsonify(_no_completed_docs_payload(documents)), 409
 
     data = request.get_json() or {}
     normalize = bool(data.get('normalize', False))

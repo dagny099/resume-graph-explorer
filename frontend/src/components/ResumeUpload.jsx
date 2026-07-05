@@ -144,7 +144,11 @@ const ResumeUpload = ({ sessionId, onUploadComplete, graphData }) => {
 
           setExtractionProgress((prev) => ({
             ...prev,
-            [documentId]: { status: 'error', error: 'Extraction failed' },
+            [documentId]: {
+              status: 'error',
+              // Surface the backend's actual failure reason when available
+              error: docData.document?.error_message || 'Extraction failed',
+            },
           }));
         } else if (attempts >= maxAttempts) {
           // Timeout — try loading anyway

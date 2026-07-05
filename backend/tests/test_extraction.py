@@ -359,7 +359,7 @@ class TestExtractionPipeline:
 
     @patch('resume_explorer.services.extraction_dspy.dspy')
     def test_create_dspy_pipeline(self, mock_dspy):
-        """Test creating DSPy extraction pipeline (when available)."""
+        """DSPy pipeline creation defers dspy.settings.configure to the worker thread."""
         backend = MockLLMBackend()
 
         # Mock DSPy settings
@@ -367,8 +367,11 @@ class TestExtractionPipeline:
 
         pipeline = create_extraction_pipeline(backend, use_dspy=True)
 
-        # Should configure DSPy
-        mock_dspy.settings.configure.assert_called_once()
+        # DSPy is configured lazily inside the extraction worker thread to
+        # avoid the known dspy.settings threading issues — creating the
+        # pipeline must NOT touch global settings.
+        mock_dspy.settings.configure.assert_not_called()
+        assert not isinstance(pipeline, SimplifiedExtractor)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,35 @@
+{
+  "_comment": "Simulated extraction output for demo/testing — same JSON shape SessionStore writes to sessions/<id>/extracted/<doc>.json. Deliberately imperfect: 'Tableau' is missing, 'Data Science' is a hallucinated extra, and 'GA4' is unnormalized — so the demo report shows non-trivial metrics.",
+  "person": {
+    "name": "Jordan Rivera",
+    "email": "jordan.rivera@example.com",
+    "location": "Austin, TX"
+  },
+  "jobs": [
+    { "title": "Senior Data Scientist", "organization_id": "org-acme-analytics" },
+    { "title": "Data Analyst", "organization_id": "org-bluebird-health" }
+  ],
+  "skills": [
+    { "label": "Python" },
+    { "label": "SQL" },
+    { "label": "scikit-learn" },
+    { "label": "XGBoost" },
+    { "label": "Docker" },
+    { "label": "AWS" },
+    { "label": "GA4" },
+    { "label": "Machine Learning" },
+    { "label": "Data Science" }
+  ],
+  "education": [
+    { "degree_type": "MS", "field_of_study": "Statistics", "institution_id": "org-state-university" },
+    { "degree_type": "BS", "field_of_study": "Mathematics", "institution_id": "org-state-university" }
+  ],
+  "certifications": [
+    { "name": "AWS Certified Solutions Architect", "issuing_organization": "Amazon Web Services" }
+  ],
+  "organizations": [
+    { "name": "Acme Analytics, Inc." },
+    { "name": "Bluebird Health" },
+    { "name": "State University" }
+  ]
+}
