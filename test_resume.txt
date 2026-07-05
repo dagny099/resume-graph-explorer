@@ -1,0 +1,13 @@
+Jane Smith
+Software Engineer | jane@example.com
+
+EXPERIENCE
+Senior Software Engineer, Acme Corp (2020-2024)
+- Developed Python and JavaScript applications
+- Used React, Flask, PostgreSQL
+
+SKILLS
+Python, JavaScript, React, Flask, SQL
+
+EDUCATION
+B.S. Computer Science, State University (2018)
