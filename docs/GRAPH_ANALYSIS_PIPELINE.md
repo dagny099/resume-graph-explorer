@@ -221,6 +221,26 @@ See the docstrings in both files for the full architectural rationale.
 
 ---
 
+## Graph Cache Freshness (for developers)
+
+`PipelineService` caches the session graph at `sessions/{id}/graph.jsonld` so
+that graph analysis and narrative synthesis don't rebuild it on every call. That
+file is derived entirely from each completed document's extracted-entities JSON
+(`sessions/{id}/extracted/{doc_id}.json`).
+
+`_ensure_jsonld()` reuses the cache **only when it is fresh**: it rebuilds
+whenever any completed document's extracted-entities file is newer than
+`graph.jsonld` (see `_cache_is_fresh()`). This prevents the stale-analysis bug
+where running analysis, then uploading or re-extracting another document in the
+same session, would silently reuse the old graph. The `/graph`, `/export`,
+`/stats`, and `/graph/validate` routes never cache — they call
+`build_session_graph()` fresh — so only the analysis path needed this guard.
+
+Regression coverage: `backend/tests/test_pipeline_cache.py`. Full write-up:
+[`HANDOFF_GRAPH_CACHE_FIX.md`](HANDOFF_GRAPH_CACHE_FIX.md).
+
+---
+
 ## Relationship to the Interoperability Roadmap
 
 The graph analysis pipeline is complementary to (not a replacement for) the interoperability milestones in [`Roadmap-Interoperability_2025-12-11.md`](Roadmap-Interoperability_2025-12-11.md):

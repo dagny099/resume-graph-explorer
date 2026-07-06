@@ -94,18 +94,49 @@ class PipelineService:
 
     # ─── JSON-LD bootstrap ───────────────────────────────────────────────────
 
+    def _cache_is_fresh(self, jsonld_path: Path, session_id: str) -> bool:
+        """
+        True if the cached graph.jsonld reflects the session's current entities.
+
+        graph.jsonld is derived entirely from each completed document's
+        extracted-entities JSON file. Those files are (re)written whenever a
+        document finishes extraction or is re-normalized, so if any of them is
+        newer than the cache, the cache predates a content change and is stale.
+
+        This is the guard against the stale-analysis bug: run analysis, then
+        upload or re-extract another document in the same session, and the next
+        analysis must rebuild rather than silently reuse the old graph.
+        """
+        if not jsonld_path.exists():
+            return False
+
+        cache_mtime = jsonld_path.stat().st_mtime
+        for doc in self.session_store.get_session_documents(session_id):
+            if doc.status != 'complete' or not doc.extracted_entities_path:
+                continue
+            entities_file = Path(doc.extracted_entities_path)
+            if entities_file.exists() and entities_file.stat().st_mtime > cache_mtime:
+                return False
+        return True
+
     def _ensure_jsonld(self, session_id: str) -> Path:
         """
-        Return the session's graph.jsonld path, building it if needed.
+        Return the session's graph.jsonld path, rebuilding it if missing or stale.
 
         Uses the shared session-graph builder (graph.session_graph), so the
         analyzed graph has the same complete content as /graph and /export.
+        A cached graph is reused only when it is newer than every completed
+        document's extracted entities (see _cache_is_fresh).
         """
         jsonld_path = self._jsonld_path(session_id)
-        if jsonld_path.exists():
+        if self._cache_is_fresh(jsonld_path, session_id):
+            logger.info(f"Reusing fresh graph.jsonld for session {session_id}")
             return jsonld_path
 
-        logger.info(f"graph.jsonld not found for session {session_id}, building now")
+        if jsonld_path.exists():
+            logger.info(f"graph.jsonld for session {session_id} is stale, rebuilding")
+        else:
+            logger.info(f"graph.jsonld not found for session {session_id}, building now")
 
         result = build_session_graph(self.session_store, session_id)
         if result is None:
