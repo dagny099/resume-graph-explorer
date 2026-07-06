@@ -1,0 +1,33 @@
+Samuel Okafor, PhD
+samuel.okafor@example.org | Providence, RI
+
+RESEARCH INTERESTS
+Computational models of auditory perception; neural signal processing.
+
+APPOINTMENTS
+
+Postdoctoral Researcher — Institute for Neural Computation
+2022-09 to present
+- Develop encoding models of auditory cortex responses using Python
+- Apply mixed-effects models to multi-site electrophysiology datasets
+- Findings published in the Journal of Cognitive Neuroscience
+
+Adjunct Lecturer — Riverbend University
+2021-01 to 2022-08
+- Taught two sections of Introduction to Statistics per semester
+
+Graduate Research Assistant — Riverbend University
+2016-09 to 2021-12
+- Conducted fMRI analysis of auditory attention using MATLAB
+- Built EEG preprocessing pipelines with custom signal processing code
+- Presented work at the Society for Neuroscience annual meeting
+
+EDUCATION
+
+PhD in Neuroscience — Riverbend University, 2021
+BS in Biomedical Engineering — Calder Institute of Technology, 2016
+
+TECHNICAL SKILLS
+
+Python, MATLAB, fMRI analysis, EEG preprocessing, mixed-effects models,
+signal processing

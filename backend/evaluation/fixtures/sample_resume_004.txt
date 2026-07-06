@@ -1,0 +1,33 @@
+Priya Raghavan
+priya.raghavan@example.com | Seattle, WA
+
+SUMMARY
+Data engineer focused on ML and NLP products at scale.
+
+EXPERIENCE
+
+Senior Data Engineer — Cascadia Metrics
+2021-04 to present
+- Productionized NLP pipelines for support-ticket triage on GCP
+- Built CI/CD workflows for model deployment
+- Instrumented product analytics with GA4 and BigQuery
+- Prototyped RAG search over internal documentation using an LLM
+
+Data Engineer — Cascadia Metrics
+2019-02 to 2021-03
+- Wrote SQL transformations for the analytics warehouse
+- Maintained batch ML feature pipelines
+
+EDUCATION
+
+BS in Computer Science — Hillcrest University, 2018
+
+CERTIFICATIONS
+
+Google Cloud Professional Data Engineer (Google Cloud, 2022)
+
+SKILLS
+
+Python, SQL, ML, NLP, GCP, GA4, BigQuery, CI/CD, RAG, LLM
+
+Interested in learning Rust and Kubernetes.

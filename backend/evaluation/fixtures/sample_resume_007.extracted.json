@@ -1,0 +1,32 @@
+{
+  "_comment": "Simulated extraction for sample_resume_007 — deliberately imperfect: it hallucinates 'Python' (from Python Creek Ventures) and 'Tableau' (from the Tableau Health Initiative) as skills, invents an MBA into the intentionally empty education list, and extracts the Tableau Health Initiative as an organization.",
+  "person": {
+    "name": "Marcus Webb",
+    "email": "marcus.webb@example.com",
+    "location": "Denver, CO"
+  },
+  "jobs": [
+    { "title": "VP of Product", "organization_id": "org-meridian-commerce" },
+    { "title": "Director of Product Management", "organization_id": "org-meridian-commerce" },
+    { "title": "Senior Product Manager", "organization_id": "org-kite-financial" },
+    { "title": "Board Advisor", "organization_id": "org-python-creek-ventures" }
+  ],
+  "skills": [
+    { "label": "product strategy" },
+    { "label": "OKRs" },
+    { "label": "A/B testing" },
+    { "label": "roadmap planning" },
+    { "label": "Python" },
+    { "label": "Tableau" }
+  ],
+  "education": [
+    { "degree_type": "MBA", "field_of_study": "Business Administration" }
+  ],
+  "certifications": [],
+  "organizations": [
+    { "name": "Meridian Commerce" },
+    { "name": "Kite Financial" },
+    { "name": "Python Creek Ventures" },
+    { "name": "Tableau Health Initiative" }
+  ]
+}

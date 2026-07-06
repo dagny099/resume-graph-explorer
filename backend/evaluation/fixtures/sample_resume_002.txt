@@ -1,0 +1,37 @@
+Maya Chen
+maya.chen@example.com | Chicago, IL
+
+SUMMARY
+From cognitive science research to management consulting to machine
+learning engineering. I build data products informed by how people
+actually think and decide.
+
+EXPERIENCE
+
+Machine Learning Engineer — Verdant AI
+2023-01 to present
+- Built and deployed churn-prediction models in Python with PyTorch
+- Partnered with the client's AWS infrastructure team to scope a cloud
+  migration (infrastructure work owned by the client team)
+- Presented model results to non-technical stakeholders
+
+Management Consultant — Harborview Consulting Group
+2019-08 to 2022-12
+- Advised retail clients on pricing strategy using Excel modeling
+- Built executive dashboards and slide decks in PowerPoint
+- Scoped analytics roadmaps; hands-on analysis in SQL
+
+Research Associate — Lakeshore University
+2016-06 to 2019-07
+- Designed and ran behavioral decision-making experiments
+- Analyzed experimental data in R and SPSS
+- Co-authored two peer-reviewed studies on choice under uncertainty
+
+EDUCATION
+
+MS in Cognitive Science — Lakeshore University, 2016
+BA in Psychology — Ridgeline College, 2014
+
+SKILLS
+
+Python, PyTorch, SQL, R, SPSS, Excel, PowerPoint

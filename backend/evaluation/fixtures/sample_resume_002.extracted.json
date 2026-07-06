@@ -1,0 +1,33 @@
+{
+  "_comment": "Simulated extraction for sample_resume_002 — deliberately imperfect: it falls for the 'partnered with the AWS infrastructure team' trap (AWS extracted as a skill) and misses SPSS. certifications correctly stays empty.",
+  "person": {
+    "name": "Maya Chen",
+    "email": "maya.chen@example.com",
+    "location": "Chicago, IL"
+  },
+  "jobs": [
+    { "title": "Machine Learning Engineer", "organization_id": "org-verdant-ai" },
+    { "title": "Management Consultant", "organization_id": "org-harborview-consulting-group" },
+    { "title": "Research Associate", "organization_id": "org-lakeshore-university" }
+  ],
+  "skills": [
+    { "label": "Python" },
+    { "label": "PyTorch" },
+    { "label": "SQL" },
+    { "label": "R" },
+    { "label": "Excel" },
+    { "label": "PowerPoint" },
+    { "label": "AWS" }
+  ],
+  "education": [
+    { "degree_type": "MS", "field_of_study": "Cognitive Science", "institution_id": "org-lakeshore-university" },
+    { "degree_type": "BA", "field_of_study": "Psychology", "institution_id": "org-ridgeline-college" }
+  ],
+  "certifications": [],
+  "organizations": [
+    { "name": "Verdant AI" },
+    { "name": "Harborview Consulting Group" },
+    { "name": "Lakeshore University" },
+    { "name": "Ridgeline College" }
+  ]
+}

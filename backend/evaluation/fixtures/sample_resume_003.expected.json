@@ -1,0 +1,29 @@
+{
+  "_comment": "Gold labels for sample_resume_003.txt (academic/research-heavy). Annotation decisions: Riverbend University appears once even though Samuel held two roles there (one org node, two jobs). Publication venues and conferences (Journal of Cognitive Neuroscience, Society for Neuroscience) are NOT organizations — the person never worked for them. certifications is intentionally empty.",
+  "person": {
+    "name": "Samuel Okafor"
+  },
+  "jobs": [
+    { "title": "Postdoctoral Researcher", "organization": "Institute for Neural Computation" },
+    { "title": "Adjunct Lecturer", "organization": "Riverbend University" },
+    { "title": "Graduate Research Assistant", "organization": "Riverbend University" }
+  ],
+  "skills": [
+    "Python",
+    "MATLAB",
+    "fMRI analysis",
+    "EEG preprocessing",
+    "mixed-effects models",
+    "signal processing"
+  ],
+  "education": [
+    { "degree_type": "PhD", "field_of_study": "Neuroscience", "institution": "Riverbend University" },
+    { "degree_type": "BS", "field_of_study": "Biomedical Engineering", "institution": "Calder Institute of Technology" }
+  ],
+  "certifications": [],
+  "organizations": [
+    "Institute for Neural Computation",
+    "Riverbend University",
+    "Calder Institute of Technology"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "_comment": "Gold labels for sample_resume_002.txt (career changer). AWS is deliberately NOT a skill: the resume only says Maya partnered with a client's AWS team, which is not evidence of hands-on use. certifications is intentionally empty — the resume has none, and an extraction that invents one is hallucinating.",
+  "person": {
+    "name": "Maya Chen"
+  },
+  "jobs": [
+    { "title": "Machine Learning Engineer", "organization": "Verdant AI" },
+    { "title": "Management Consultant", "organization": "Harborview Consulting Group" },
+    { "title": "Research Associate", "organization": "Lakeshore University" }
+  ],
+  "skills": [
+    "Python",
+    "PyTorch",
+    "SQL",
+    "R",
+    "SPSS",
+    "Excel",
+    "PowerPoint"
+  ],
+  "education": [
+    { "degree_type": "MS", "field_of_study": "Cognitive Science", "institution": "Lakeshore University" },
+    { "degree_type": "BA", "field_of_study": "Psychology", "institution": "Ridgeline College" }
+  ],
+  "certifications": [],
+  "organizations": [
+    "Verdant AI",
+    "Harborview Consulting Group",
+    "Lakeshore University",
+    "Ridgeline College"
+  ]
+}

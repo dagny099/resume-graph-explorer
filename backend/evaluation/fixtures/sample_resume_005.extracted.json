@@ -1,0 +1,32 @@
+{
+  "_comment": "Simulated extraction for sample_resume_005 — deliberately imperfect in parsing-artifact ways: 'VMware vSphere' comes back as bare 'VMware' (column split), the education field is truncated to 'Network' ('Administration' landed on the next line), and the org appears both with and without the ', LLC' suffix (which the comparator's suffix-stripping should collapse into one match).",
+  "person": {
+    "name": "Derek Boone",
+    "email": "derek.boone@example.com",
+    "location": "Tulsa, OK"
+  },
+  "jobs": [
+    { "title": "Systems Administrator", "organization_id": "org-northwind-data" },
+    { "title": "IT Support Specialist", "organization_id": "org-northwind-data" },
+    { "title": "Help Desk Technician", "organization_id": "org-bright-harbor-insurance" }
+  ],
+  "skills": [
+    { "label": "Windows Server" },
+    { "label": "Active Directory" },
+    { "label": "PowerShell" },
+    { "label": "VMware" },
+    { "label": "Linux" }
+  ],
+  "education": [
+    { "degree_type": "AAS", "field_of_study": "Network", "institution_id": "org-pine-valley-community-college" }
+  ],
+  "certifications": [
+    { "name": "CompTIA Network+", "issuing_organization": "CompTIA" }
+  ],
+  "organizations": [
+    { "name": "Northwind Data, LLC" },
+    { "name": "Northwind Data" },
+    { "name": "Bright Harbor Insurance" },
+    { "name": "Pine Valley Community College" }
+  ]
+}

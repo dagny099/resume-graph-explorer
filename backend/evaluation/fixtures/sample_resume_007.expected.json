@@ -1,0 +1,25 @@
+{
+  "_comment": "Gold labels for sample_resume_007.txt (executive/product strategy). Annotation decisions: skills are named, evidenced practices (product strategy, OKRs, A/B testing, roadmap planning) — generic PROFILE adjectives ('visionary leader', 'strategic thinker') are NOT skills. 'Python' is NOT a skill: it only appears inside the org name Python Creek Ventures. 'Tableau' is NOT a skill and the Tableau Health Initiative is NOT an organization — it is a partnership program name. education and certifications are intentionally empty: this resume has no degree or credential section, and an extraction that supplies one is hallucinating. Meridian Commerce appears once despite two roles.",
+  "person": {
+    "name": "Marcus Webb"
+  },
+  "jobs": [
+    { "title": "VP of Product", "organization": "Meridian Commerce" },
+    { "title": "Director of Product Management", "organization": "Meridian Commerce" },
+    { "title": "Senior Product Manager", "organization": "Kite Financial" },
+    { "title": "Board Advisor", "organization": "Python Creek Ventures" }
+  ],
+  "skills": [
+    "product strategy",
+    "OKRs",
+    "A/B testing",
+    "roadmap planning"
+  ],
+  "education": [],
+  "certifications": [],
+  "organizations": [
+    "Meridian Commerce",
+    "Kite Financial",
+    "Python Creek Ventures"
+  ]
+}

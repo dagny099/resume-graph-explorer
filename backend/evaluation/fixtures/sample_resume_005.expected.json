@@ -1,0 +1,29 @@
+{
+  "_comment": "Gold labels for sample_resume_005.txt (messy two-column text simulation). The .txt interleaves two columns the way naive PDF text extraction does, mixes bullet glyphs (>, *, -, •), and splits 'Network Administration' and 'Pine Valley Community College' across lines. Annotation decisions: Northwind Data is ONE organization (canonical name without the ', LLC' suffix) even though it appears with and without the suffix across two roles; the skill is 'VMware vSphere' as printed in SKILLS, not bare 'VMware'.",
+  "person": {
+    "name": "Derek Boone"
+  },
+  "jobs": [
+    { "title": "Systems Administrator", "organization": "Northwind Data" },
+    { "title": "IT Support Specialist", "organization": "Northwind Data" },
+    { "title": "Help Desk Technician", "organization": "Bright Harbor Insurance" }
+  ],
+  "skills": [
+    "Windows Server",
+    "Active Directory",
+    "PowerShell",
+    "VMware vSphere",
+    "Linux"
+  ],
+  "education": [
+    { "degree_type": "AAS", "field_of_study": "Network Administration", "institution": "Pine Valley Community College" }
+  ],
+  "certifications": [
+    "CompTIA Network+"
+  ],
+  "organizations": [
+    "Northwind Data",
+    "Bright Harbor Insurance",
+    "Pine Valley Community College"
+  ]
+}
