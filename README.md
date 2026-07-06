@@ -1,4 +1,4 @@
-# Resume Explorer
+# Resume Graph Explorer
 
 [![Vercel](https://img.shields.io/badge/vercel-deployed-black?logo=vercel)](https://resume-graph-explorer.vercel.app)
 [![Backend Status](https://img.shields.io/website?url=https%3A%2F%2Ffew-wallis-balex-atx-966af829.koyeb.app%2Fhealth&label=backend&up_message=online&down_message=offline)](https://few-wallis-balex-atx-966af829.koyeb.app)
@@ -7,11 +7,28 @@
 [![SKOS](https://img.shields.io/badge/SKOS-compliant-purple)](https://www.w3.org/TR/skos-reference/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Transform your resume into an interactive SKOS-compliant knowledge graph.
+**Turn a resume into a knowledge graph you can inspect, validate, query, and build on.**
 
-## Overview
+Resume Graph Explorer extracts entities from resume documents using LLMs
+(Claude, OpenAI, or local Ollama) and assembles them into an RDF knowledge
+graph aligned with open standards — SKOS for concepts, schema.org for entity
+types, ESCO for skill taxonomy. Explore the graph interactively, export it as
+Turtle / RDF/XML / JSON-LD, check its semantic integrity via a validation
+endpoint, and run a post-export analysis pipeline that turns graph structure
+into natural-language career insights — documents designed to serve as
+grounded memory for RAG systems and Digital Twins.
 
-Resume Explorer is a complete full-stack application that extracts structured entities from resumes using LLMs and visualizes them as interactive knowledge graphs. Built with semantic web standards (SKOS, ESCO, schema.org) for maximum interoperability.
+The deeper idea: a resume is a flat story, but a career has structure —
+skills that bridge chapters, capabilities evidenced but never listed,
+toolkits that drift over time. A resume says what you did; the graph shows
+how it connects. Making that structure explicit, in open standards, is what
+makes it useful to both humans and AI systems.
+
+**Status:** deployed and functional; production-ready for single-resume
+sessions (multi-resume sessions work, with one known cosmetic issue — see
+[Current Status](#-current-status)). The [evaluation harness](backend/evaluation/README.md)
+and [validation checks](#semantic-integrity-validation) are early and honest
+about their scope. DSPy integration is experimental and off by default.
 
 ## ✨ Key Features
 
