@@ -75,15 +75,22 @@ class TestCleanGraph:
 
 
 class TestDanglingReferences:
-    def test_person_referencing_missing_job_is_error(self):
+    def test_person_referencing_missing_job_creates_no_dangling_node(self):
+        # add_person skips (and logs) references it can't resolve rather than
+        # emitting a typeless ghost URI (multi-resume Root Cause D). So a person
+        # pointing at a non-existent job produces no edge and no dangling node,
+        # and the resulting graph is clean. Dangling-reference detection is still
+        # exercised via test_job_referencing_missing_org_is_error below, where
+        # add_job does materialize an untyped org URI.
         builder = RDFGraphBuilder()
         builder.add_person(Person(
             id="person-1", label="P", name="P", jobs=["job-does-not-exist"],
         ))
         report = GraphValidator(builder.graph).validate()
 
-        assert report['valid'] is False
-        assert 'dangling_reference' in checks_in(report['errors'])
+        predicates = {str(p) for p in builder.graph.predicates()}
+        assert not any(p.endswith('hasJob') for p in predicates)
+        assert 'dangling_reference' not in checks_in(report['errors'])
 
     def test_job_referencing_missing_org_is_error(self):
         builder = RDFGraphBuilder()

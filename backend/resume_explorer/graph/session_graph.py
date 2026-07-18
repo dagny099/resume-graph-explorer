@@ -12,6 +12,7 @@ and only added person/jobs/skills — education, certifications, and
 organizations were silently missing from exported RDF.
 """
 
+import copy
 from typing import Any, Dict, List, Optional, Tuple
 
 from .rdf_graph_builder import RDFGraphBuilder
@@ -72,14 +73,39 @@ def collect_session_entities(session_store, session_id: str) -> Optional[Dict[st
     return collected
 
 
+def _merge_persons(persons: List[Person]) -> Person:
+    """
+    Build one graph person for the session (a session describes one person).
+
+    Identity fields come from the first person, but the skill/job/education/
+    certification reference lists are the *union* across all documents. Using
+    only persons[0]'s reference lists would leave a second resume's entity IDs
+    unreferenced, producing ghost URIs / "unknown" nodes in multi-resume
+    sessions (multi-resume Root Cause B).
+    """
+    if not persons:
+        return Person(name="Unknown")
+
+    # Copy the first person (preserving id, name, contact fields, etc.) and
+    # replace only the reference lists with the cross-document union. A fresh
+    # Person() would get a new id/URI and orphan the person node.
+    merged = copy.copy(persons[0])
+    merged.skills = list({sid for p in persons for sid in p.skills})
+    merged.jobs = list({jid for p in persons for jid in p.jobs})
+    merged.education = list({eid for p in persons for eid in p.education})
+    merged.certifications = list({cid for p in persons for cid in p.certifications})
+    return merged
+
+
 def build_graph_from_collected(collected: Dict[str, List[Any]]) -> RDFGraphBuilder:
     """
     Build a deduplicated RDF graph from collected session entities.
 
-    Uses the first person found (multi-resume sessions describe one person);
-    falls back to a placeholder if extraction found none.
+    A session describes one person; their reference lists are unioned across
+    all documents (see _merge_persons). Falls back to a placeholder person if
+    extraction found none.
     """
-    person = collected['persons'][0] if collected['persons'] else Person(name="Unknown")
+    person = _merge_persons(collected['persons'])
 
     builder = RDFGraphBuilder()
     builder.build_from_entities(

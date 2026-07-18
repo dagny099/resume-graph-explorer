@@ -10,6 +10,7 @@ Endpoints for:
 
 from flask import Blueprint, request, jsonify, send_file, current_app
 from werkzeug.utils import secure_filename
+import hashlib
 import os
 from pathlib import Path
 import threading
@@ -150,6 +151,20 @@ def upload_document(session_id):
             'error': f"Session document limit reached ({current_app.config['SESSION_MAX_DOCUMENTS']})"
         }), 400
 
+    # Read file bytes early (needed for both hash check and extraction)
+    file_bytes = file.read()
+
+    # Reject duplicate files (same content already in this session)
+    file_hash = hashlib.md5(file_bytes).hexdigest()
+    existing_docs = session_store.get_session_documents(session_id)
+    for doc in existing_docs:
+        if doc.metadata.get('file_hash') == file_hash:
+            return jsonify({
+                'error': 'This document has already been uploaded to this session.',
+                'duplicate_of': doc.id,
+                'duplicate_filename': doc.filename
+            }), 409
+
     # Secure filename
     filename = secure_filename(file.filename)
 
@@ -183,8 +198,9 @@ def upload_document(session_id):
         use_dspy = current_app.config['ENABLE_DSPY']
 
     # Save document to session
-    file_bytes = file.read()
     document = session_store.add_document(session_id, filename, file_bytes)
+    if document:
+        document.metadata['file_hash'] = file_hash  # persisted on next status update
 
     if not document:
         return jsonify({'error': 'Failed to add document to session'}), 500
@@ -301,11 +317,13 @@ def _maybe_normalize_session_entities(session_id: str):
             f"({len(completed_docs)} documents, llm_phase={run_llm_phase})"
         )
 
-        # Collect all entities from completed documents
+        # Collect entities — track which docs have them so the save loop stays aligned
+        docs_with_entities = []
         all_entities = []
         for doc in completed_docs:
             entities = session_store.load_extracted_entities(doc.id)
             if entities:
+                docs_with_entities.append(doc)
                 all_entities.append(entities)
 
         if not all_entities:
@@ -359,8 +377,8 @@ def _maybe_normalize_session_entities(session_id: str):
         else:
             logger.info("Normalization found no duplicates - all entity names are already unique")
 
-        # Update all documents with normalized entities
-        for i, doc in enumerate(completed_docs):
+        # Update documents with normalized entities — use docs_with_entities (aligned list)
+        for i, doc in enumerate(docs_with_entities):
             if i < len(normalized_entities):
                 session_store.save_extracted_entities(doc.id, normalized_entities[i])
                 logger.info(f"Updated document {doc.id} with normalized entities")
@@ -398,6 +416,132 @@ def get_document_entities(document_id):
         return jsonify({'error': 'No extracted entities found'}), 404
 
     return jsonify({'entities': entities})
+
+
+@api_bp.route('/sessions/<session_id>/entities/<entity_type>/<entity_id>', methods=['PATCH'])
+def patch_entity(session_id, entity_type, entity_id):
+    """
+    Update mutable fields on an extracted entity across all session documents.
+
+    Edits are authoritative: the updated label becomes the canonical prefLabel
+    stored in session entities. Future normalization runs treat user_verified
+    entities as anchors that cannot be overwritten.
+
+    Supports entity_type: skill, job, organization, education, certification, person
+
+    Request body (all fields optional):
+        label (str): New display label (SKOS prefLabel)
+        user_verified (bool): Mark entity as user-curated
+        user_notes (str): Freeform annotation
+    """
+    session_store: SessionStore = current_app.session_store
+
+    session = session_store.get_session(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    # Whitelist mutable fields
+    MUTABLE_FIELDS = {'label', 'user_verified', 'user_notes'}
+    patch = request.get_json(silent=True) or {}
+
+    unknown_fields = set(patch.keys()) - MUTABLE_FIELDS
+    if unknown_fields:
+        return jsonify({'error': f'Unknown fields: {sorted(unknown_fields)}. Allowed: {sorted(MUTABLE_FIELDS)}'}), 400
+
+    if 'label' in patch and (not isinstance(patch['label'], str) or not patch['label'].strip()):
+        return jsonify({'error': 'label must be a non-empty string'}), 400
+
+    if not patch:
+        return jsonify({'error': 'No fields to update'}), 400
+
+    # Determine the entity list key in the stored entities dict
+    TYPE_TO_KEY = {
+        'skill': 'skills',
+        'job': 'jobs',
+        'organization': 'organizations',
+        'education': 'education',
+        'certification': 'certifications',
+        'person': 'person',  # stored as single dict, not a list
+    }
+    if entity_type not in TYPE_TO_KEY:
+        return jsonify({'error': f'Unknown entity_type: {entity_type}'}), 400
+
+    entities_key = TYPE_TO_KEY[entity_type]
+    docs = session_store.get_session_documents(session_id)
+    completed_docs = [d for d in docs if d.status == 'complete']
+
+    updated_docs = 0
+    updated_entity = None
+    old_label = None  # for alt_label tracking
+
+    for doc in completed_docs:
+        entities = session_store.load_extracted_entities(doc.id)
+        if not entities:
+            continue
+
+        doc_modified = False
+
+        if entity_type == 'person':
+            # Person is stored as a single dict, not a list
+            person_dict = entities.get('person')
+            if isinstance(person_dict, dict):
+                if person_dict.get('id') == entity_id:
+                    if old_label is None and 'label' in patch:
+                        old_label = person_dict.get('label', '')
+                    person_dict.update(patch)
+                    entities['person'] = person_dict
+                    updated_entity = person_dict
+                    doc_modified = True
+        else:
+            entity_list = entities.get(entities_key, [])
+            if not isinstance(entity_list, list):
+                continue
+
+            # Capture old label for secondary match (before any update this session)
+            primary_old_label = None
+
+            for item in entity_list:
+                if not isinstance(item, dict):
+                    continue
+                if item.get('id') == entity_id:
+                    # Primary match: exact ID
+                    if old_label is None and 'label' in patch:
+                        old_label = item.get('label', '')
+                        primary_old_label = old_label
+                    item.update(patch)
+                    if entity_type == 'skill' and old_label and old_label != patch.get('label', old_label):
+                        alt_labels = item.get('alt_labels', [])
+                        if old_label not in alt_labels:
+                            alt_labels.append(old_label)
+                        item['alt_labels'] = alt_labels
+                    updated_entity = item
+                    doc_modified = True
+                    break
+
+            if not doc_modified and old_label is not None:
+                # Secondary match: same type, same normalized label (cross-doc dedup coverage)
+                norm_old = old_label.lower().strip()
+                for item in entity_list:
+                    if not isinstance(item, dict):
+                        continue
+                    if item.get('label', '').lower().strip() == norm_old:
+                        item.update(patch)
+                        if entity_type == 'skill' and old_label and old_label != patch.get('label', old_label):
+                            alt_labels = item.get('alt_labels', [])
+                            if old_label not in alt_labels:
+                                alt_labels.append(old_label)
+                            item['alt_labels'] = alt_labels
+                        doc_modified = True
+                        break
+
+        if doc_modified:
+            session_store.save_extracted_entities(doc.id, entities)
+            updated_docs += 1
+
+    if updated_docs == 0:
+        return jsonify({'error': f'Entity {entity_id!r} not found in any document'}), 404
+
+    return jsonify({'updated': updated_docs, 'entity': updated_entity})
 
 
 # ============================================================================

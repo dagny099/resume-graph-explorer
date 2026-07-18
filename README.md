@@ -34,10 +34,11 @@ about their scope. DSPy integration is experimental and off by default.
 
 - **🤖 Provider-Agnostic LLM Extraction**: Support for Claude, OpenAI, and Ollama with automatic fallback
 - **📊 SKOS-Compliant Knowledge Graph**: Uses ESCO skill taxonomy and schema.org vocabularies
-- **📁 Session Management**: Upload multiple documents with cached extraction results
+- **📁 Session Management**: Upload multiple documents per session — entities deduplicate across resumes
 - **🎨 Interactive Visualization**: Beautiful React + Vis.js network graphs with physics-based layout
 - **📤 RDF Export**: Export as Turtle, RDF/XML, or JSON-LD formats
 - **⚡ Real-Time Progress**: WebSocket streaming for live extraction updates
+- **✏️ Editable Node Labels**: Click any graph node to correct its label, add notes, or mark it as verified. Edits are authoritative — future normalization runs treat verified labels as canonical.
 - **🔄 DSPy Integration (Experimental)**: Optional DSPy route for structured extraction research (not production-validated)
 - **☁️ Cloud-Ready**: Local-first design with abstraction layers for cloud deployment
 
@@ -198,6 +199,8 @@ See [GETTING_STARTED.md](docs/GETTING_STARTED.md) for a detailed walkthrough.
 - **[Frontend README](frontend/README.md)** - React app documentation
 - **[Graph Analysis Pipeline](docs/GRAPH_ANALYSIS_PIPELINE.md)** - Why the offline analysis pipeline was built, what it reveals, and the 3-phase roadmap toward a graph-aware Digital Twin
 - **[Post-Export Tools (Operational)](backend/tools/tools-README.md)** - How to run `entity_normalizer.py`, `graph_analyzer.py`, and `narrative_synthesizer.py`
+- **[Evaluation Plan](docs/EVALUATION_PLAN.md)** - Precision/recall methodology, provider comparison matrix, multi-resume test scenarios
+- **[April 2026 Engineering Log](docs/CHANGES_APRIL_2026.md)** - Multi-resume bug postmortem, editable nodes design rationale, what changed and why
 
 ## 🎯 Features in Detail
 
@@ -210,7 +213,6 @@ See [GETTING_STARTED.md](docs/GETTING_STARTED.md) for a detailed walkthrough.
 
 ### LLM Extraction
 
-- **Dual Pipeline**: DSPy-based (advanced reasoning) + simplified fallback
 - **Streaming Progress**: Real-time WebSocket updates
 - **Provider Agnostic**: Switch between Claude, OpenAI, or Ollama
 - **Structured Output**: Automatic conversion to SKOS entities
@@ -383,12 +385,15 @@ Test coverage includes:
 - ✅ RDF serialization for all entity types (Person, Job, Skill, Education, Certification, Organization)
 - ✅ RDF export completeness: all entity types and relationships survive Turtle / RDF/XML / JSON-LD round-trips (`test_session_graph.py`)
 - ✅ Semantic integrity validator: clean and intentionally broken graphs (`test_graph_validator.py`)
-- ✅ Entity normalization pipeline: type-pool separation, alt_labels tracking, phase gating, LLM-phase variant merges via a fake client (no API calls)
-- ✅ RDF graph builder: `skos:altLabel` triple generation, dedup cache behavior
+- ✅ Multi-resume correctness: zero unknown nodes regression suite (`test_unknown_nodes.py`)
+- ✅ Entity normalization pipeline: type-pool separation, alt_labels tracking, phase gating, `user_verified` anchor protection, LLM-phase variant merges via a fake client (no API calls)
+- ✅ RDF graph builder: `skos:altLabel` triple generation, dedup cache behavior, multi-suffix org normalization, similarity job dedup
+- ✅ Graph-analysis cache freshness: stale `graph.jsonld` rebuilt on document changes (`test_pipeline_cache.py`)
 - ✅ LLM extraction pipeline
 - ✅ Session persistence
-- ✅ Evaluation harness comparator (`test_evaluation_harness.py`)
+- ✅ Evaluation harness comparator + fixture/batch suite (`test_evaluation_harness.py`, `test_eval_*.py`)
 - ✅ API endpoint tests run against a temp-directory session store (no real data touched)
+- ⏸️ Ground-truth evaluation tests (`test_evaluation.py`) skip until fixtures are authored — see `docs/EVALUATION_PLAN.md`
 
 No test requires an API key or network access.
 
@@ -442,6 +447,7 @@ The backend exposes a REST API with WebSocket support:
 - `GET /api/sessions/:id/export/:format` - Export RDF
 - `GET /api/sessions/:id/graph/validate` - Semantic integrity validation report
 - `GET /api/sessions/:id/stats` - Get statistics
+- `PATCH /api/sessions/:id/entities/:type/:entity_id` - Update entity label/notes/verified status
 - `GET /health` - Health check
 
 **Analysis pipeline:**
@@ -503,55 +509,29 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 📊 Current Status
 
-### ✅ Production Ready (Single Resume)
-The application works **exceptionally well** for single resume analysis:
+### ✅ Production Ready (Single and Multi-Resume)
+
 - ✅ Fast, accurate AI-powered extraction
 - ✅ Beautiful interactive graph visualization
-- ✅ Complete entity deduplication (no duplicates)
-- ✅ Zero unknown nodes
+- ✅ Complete entity deduplication — no duplicates, no unknown nodes
+- ✅ Multi-resume sessions: two versions of the same resume → 1 Person node, merged skills/jobs, zero unknown nodes
+- ✅ Duplicate file detection: uploading the same file twice returns a clear error
 - ✅ Reliable RDF export in multiple formats
-- ✅ Fuzzy organization matching ("MIT" = "Massachusetts Institute of Technology")
+- ✅ Fuzzy organization matching (iterative suffix stripping: "Acme Corp, Inc." = "Acme Corp")
 - ✅ Local LLM support via Ollama (privacy-first, free)
-- ✅ Skill alias resolution: variant names (e.g. "ML" / "machine learning") are merged to a canonical label and preserved as `skos:altLabel` triples in the export
-
-**✨ Recommended Use:** Upload **one resume per session** for best results.
-
-### 🚧 Multi-Resume Support (In Progress)
-When uploading 2+ resumes to the same session:
-- ✅ Organizations deduplicate correctly (fuzzy name matching working)
-- ✅ Skills deduplicate by label (case-insensitive + semantic), with alias normalization across declared skills and job technology strings
-- ✅ Jobs deduplicate by (title, organization, start_date)
-- ✅ Education deduplicates by (degree, field, institution)
-- ⚠️ **Known Issue:** ~8-10 "unknown nodes" appear with UUID labels
-  - These are orphaned entity references after normalization
-  - Does **not** affect primary visualization or extraction
-  - Cosmetic issue only - all real entities display correctly
-  - Fix in development
-
-**Workaround:** Use separate sessions for each resume, or tolerate cosmetic unknown nodes in multi-resume sessions.
+- ✅ Skill alias resolution: variant names (e.g. "ML" / "machine learning") merged to a canonical label, preserved as `skos:altLabel` triples in the export
+- ✅ Editable node labels: correct LLM extraction errors directly in the graph
 
 ## 🐛 Known Issues
-
-### Multi-Resume Unknown Nodes
-**Symptom:** When uploading 2+ resumes, ~8-10 unknown nodes appear with UUID labels (e.g., `f990444f-889f-4e0f...`)
-
-**Root Cause:** Entity normalization merges duplicate skills/orgs but doesn't update Person entity reference IDs
-
-**Impact:** Cosmetic only - does not affect extraction quality or primary functionality
-
-**Workaround:** Use one session per resume
-
-**Status:** Fix in development
 
 ### DSPy Threading Issues
 **Symptom:** Extraction may fail with "dspy.settings.configure() can only be called from the same async task"
 
-**Solution:** Set `ENABLE_DSPY=false` in `.env` (recommended)
+**Solution:** Set `ENABLE_DSPY=false` in `.env` (already the default)
 
-**Status:** Known DSPy library issue with background threads
+**Status:** Known DSPy library issue with background threads — keep disabled
 
 ---
 
-**Version**: 0.9 (Single-Resume Production Ready)
-**Next Release**: 1.0 (Multi-Resume Unknown Nodes Fix)
-**Last Updated**: March 24, 2026
+**Version**: 0.3.0
+**Last Updated**: April 2026

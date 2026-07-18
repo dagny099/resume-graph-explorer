@@ -11,7 +11,8 @@ from rdflib import Graph, Namespace, Literal, URIRef
 from rdflib.namespace import RDF, RDFS, SKOS, XSD, DCTERMS
 from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, date
+from difflib import SequenceMatcher
 from urllib.parse import quote
 
 from .vocabularies import SCHEMA, ESCO, RE, RESUME, EntityType, bind_namespaces
@@ -90,34 +91,34 @@ class RDFGraphBuilder:
 
         # Add relationships to jobs (use canonical URIs from deduplication)
         for job_id in person.jobs:
-            job_uri = self._job_id_to_uri.get(
-                job_id,
-                self.base_namespace[quote(job_id, safe='')]
-            )
+            job_uri = self._job_id_to_uri.get(job_id)
+            if job_uri is None:
+                logger.warning(f"add_person: unresolved job_id {job_id!r} — skipping edge")
+                continue
             self.graph.add((uri, RE.hasJob, job_uri))
 
         # Add relationships to skills (use canonical URIs from deduplication)
         for skill_id in person.skills:
-            skill_uri = self._skill_id_to_uri.get(
-                skill_id,
-                self.base_namespace[quote(skill_id, safe='')]
-            )
+            skill_uri = self._skill_id_to_uri.get(skill_id)
+            if skill_uri is None:
+                logger.warning(f"add_person: unresolved skill_id {skill_id!r} — skipping edge")
+                continue
             self.graph.add((uri, RE.hasSkill, skill_uri))
 
         # Add relationships to education (use canonical URIs from deduplication)
         for edu_id in person.education:
-            edu_uri = self._edu_id_to_uri.get(
-                edu_id,
-                self.base_namespace[quote(edu_id, safe='')]
-            )
+            edu_uri = self._edu_id_to_uri.get(edu_id)
+            if edu_uri is None:
+                logger.warning(f"add_person: unresolved edu_id {edu_id!r} — skipping edge")
+                continue
             self.graph.add((uri, SCHEMA.alumniOf, edu_uri))
 
         # Add relationships to certifications (use canonical URIs from deduplication)
         for cert_id in person.certifications:
-            cert_uri = self._cert_id_to_uri.get(
-                cert_id,
-                self.base_namespace[quote(cert_id, safe='')]
-            )
+            cert_uri = self._cert_id_to_uri.get(cert_id)
+            if cert_uri is None:
+                logger.warning(f"add_person: unresolved cert_id {cert_id!r} — skipping edge")
+                continue
             self.graph.add((uri, RE.hasCertification, cert_uri))
 
         # Add provenance
@@ -147,7 +148,7 @@ class RDFGraphBuilder:
                 self.base_namespace[quote(job.organization_id, safe='')]
             )
 
-        # Check for duplicate by (title, org, start_date)
+        # Check for duplicate by exact (title, org, start_date) tuple first
         cache_key = (
             (job.title or "").strip().lower(),
             str(org_uri) if org_uri else "",
@@ -155,11 +156,32 @@ class RDFGraphBuilder:
         )
         if cache_key in self._job_cache:
             existing_uri = self._job_cache[cache_key]
-            logger.debug(f"Deduplicated Job: {job.title} -> {existing_uri}")
-            # Map this job's ID to the canonical URI for person references
+            logger.debug(f"Deduplicated Job (exact): {job.title} -> {existing_uri}")
             if job.id:
                 self._job_id_to_uri[job.id] = existing_uri
             return existing_uri
+
+        # Fuzzy match: same org + similar title (≥0.85) + dates within 30 days
+        org_str = str(org_uri) if org_uri else ""
+        for (cached_title, cached_org, cached_date_str), cached_uri in self._job_cache.items():
+            if cached_org != org_str:
+                continue
+            if self._job_title_similarity(job.title or "", cached_title) < 0.85:
+                continue
+            # Parse cached date string for proximity check
+            cached_date = None
+            if cached_date_str:
+                try:
+                    parts = cached_date_str.split('-')
+                    cached_date = date(int(parts[0]), int(parts[1]), int(parts[2]))
+                except Exception:
+                    pass
+            if not self._dates_within_days(job.start_date, cached_date, 30):
+                continue
+            logger.debug(f"Deduplicated Job (fuzzy): {job.title!r} ~ {cached_title!r} -> {cached_uri}")
+            if job.id:
+                self._job_id_to_uri[job.id] = cached_uri
+            return cached_uri
 
         # No duplicate found, create new job
         uri = job.to_rdf(self.graph, self.base_namespace)
@@ -419,18 +441,35 @@ class RDFGraphBuilder:
         logger.debug(f"Added Certification: {certification.name}")
         return uri
 
+    def _job_title_similarity(self, a: str, b: str) -> float:
+        """SequenceMatcher similarity between two job titles (case-insensitive)."""
+        return SequenceMatcher(None, a.strip().lower(), b.strip().lower()).ratio()
+
+    def _dates_within_days(self, d1, d2, days: int = 30) -> bool:
+        """Return True if two dates are within `days` of each other, or both None."""
+        if d1 is None and d2 is None:
+            return True
+        if d1 is None or d2 is None:
+            return False
+        delta = abs((d1 - d2).days) if isinstance(d1, date) else 0
+        return delta <= days
+
     def _normalize_org_name(self, name: str) -> str:
         """
         Normalize organization name for fuzzy matching.
 
         Handles common variations:
-        - "Company, Inc." → "Company"
+        - "Acme Corp, Inc." → "Acme" (strips all matching suffixes iteratively)
         - "The University of X" → "University of X"
         - "MIT" stays "MIT" (we don't expand abbreviations)
         """
         normalized = name.strip().lower()
 
-        # Remove common suffixes
+        # Remove leading "the " first
+        if normalized.startswith('the '):
+            normalized = normalized[4:].strip()
+
+        # Strip all matching legal suffixes iteratively (longest match first per pass)
         suffixes_to_remove = [
             ', inc.', ', inc', ' inc.', ' inc',
             ', llc', ', llc.', ' llc', ' llc.',
@@ -438,14 +477,14 @@ class RDFGraphBuilder:
             ', corp', ', corp.', ' corp', ' corp.',
             ', co', ', co.', ' co', ' co.',
         ]
-        for suffix in suffixes_to_remove:
-            if normalized.endswith(suffix):
-                normalized = normalized[:-len(suffix)].strip()
-                break
-
-        # Remove leading "the "
-        if normalized.startswith('the '):
-            normalized = normalized[4:].strip()
+        changed = True
+        while changed:
+            changed = False
+            for suffix in suffixes_to_remove:
+                if normalized.endswith(suffix):
+                    normalized = normalized[:-len(suffix)].strip()
+                    changed = True
+                    break
 
         return normalized
 

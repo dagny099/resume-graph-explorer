@@ -1,0 +1,45 @@
+{
+  "_comment": "Ground truth schema for Resume Explorer evaluation. Fill in one file per resume version.",
+  "_instructions": [
+    "Copy this file to resume_v1_gt.json (and resume_v2_gt.json for multi-doc tests).",
+    "Fill in the values based on what the resume actually contains.",
+    "skills: canonical labels (after normalization). Include all distinct technical and soft skills.",
+    "jobs: each entry needs at least title and org. start_year is optional but helps test date handling.",
+    "organizations: distinct org names (normalized form you expect after dedup).",
+    "education: include degree abbreviation (e.g. 'MS', 'BS', 'PhD') and field.",
+    "certifications: list of cert titles as they should appear after normalization.",
+    "expected_*_min: minimum count of that entity type you expect to be extracted.",
+    "expected_*_max: maximum acceptable count (catches over-extraction / hallucination)."
+  ],
+  "person": {
+    "name": "FILL IN — exact name as it appears on the resume",
+    "expected_skills_min": 8,
+    "expected_skills_max": 40,
+    "expected_jobs_min": 2,
+    "expected_jobs_max": 15
+  },
+  "skills": [
+    "FILL IN — one canonical skill label per entry",
+    "e.g. Python",
+    "e.g. Machine Learning"
+  ],
+  "jobs": [
+    {
+      "title": "FILL IN — job title as you expect it extracted",
+      "org": "FILL IN — organization name",
+      "start_year": null
+    }
+  ],
+  "organizations": [
+    "FILL IN — normalized org name"
+  ],
+  "education": [
+    {
+      "degree": "FILL IN — e.g. MS, BS, PhD",
+      "field": "FILL IN — e.g. Computer Science"
+    }
+  ],
+  "certifications": [
+    "FILL IN — certification title"
+  ]
+}

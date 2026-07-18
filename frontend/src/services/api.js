@@ -208,6 +208,18 @@ export const getNarratives = async (sessionId) => {
 };
 
 // ============================================================================
+// Entity Editing
+// ============================================================================
+
+export const updateEntity = async (sessionId, entityType, entityId, patch) => {
+  const response = await api.patch(
+    `/sessions/${sessionId}/entities/${entityType}/${entityId}`,
+    patch
+  );
+  return response.data;
+};
+
+// ============================================================================
 // Statistics
 // ============================================================================
 
