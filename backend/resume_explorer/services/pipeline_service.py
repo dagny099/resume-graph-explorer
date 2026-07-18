@@ -21,8 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
 
-from ..models import Person, Job, Skill, Education, Certification, Organization
-from ..graph import RDFGraphBuilder
+from ..graph.session_graph import build_session_graph
 from ..utils.logger import logger
 from . import create_llm_client
 
@@ -95,62 +94,58 @@ class PipelineService:
 
     # ─── JSON-LD bootstrap ───────────────────────────────────────────────────
 
+    def _cache_is_fresh(self, jsonld_path: Path, session_id: str) -> bool:
+        """
+        True if the cached graph.jsonld reflects the session's current entities.
+
+        graph.jsonld is derived entirely from each completed document's
+        extracted-entities JSON file. Those files are (re)written whenever a
+        document finishes extraction or is re-normalized, so if any of them is
+        newer than the cache, the cache predates a content change and is stale.
+
+        This is the guard against the stale-analysis bug: run analysis, then
+        upload or re-extract another document in the same session, and the next
+        analysis must rebuild rather than silently reuse the old graph.
+        """
+        if not jsonld_path.exists():
+            return False
+
+        cache_mtime = jsonld_path.stat().st_mtime
+        for doc in self.session_store.get_session_documents(session_id):
+            if doc.status != 'complete' or not doc.extracted_entities_path:
+                continue
+            entities_file = Path(doc.extracted_entities_path)
+            if entities_file.exists() and entities_file.stat().st_mtime > cache_mtime:
+                return False
+        return True
+
     def _ensure_jsonld(self, session_id: str) -> Path:
         """
-        Return the session's graph.jsonld path, building it if needed.
+        Return the session's graph.jsonld path, rebuilding it if missing or stale.
 
-        Replicates the entity-collect + RDFGraphBuilder pattern from
-        routes.export_session_graph() without touching Flask request context.
+        Uses the shared session-graph builder (graph.session_graph), so the
+        analyzed graph has the same complete content as /graph and /export.
+        A cached graph is reused only when it is newer than every completed
+        document's extracted entities (see _cache_is_fresh).
         """
         jsonld_path = self._jsonld_path(session_id)
-        if jsonld_path.exists():
+        if self._cache_is_fresh(jsonld_path, session_id):
+            logger.info(f"Reusing fresh graph.jsonld for session {session_id}")
             return jsonld_path
 
-        logger.info(f"graph.jsonld not found for session {session_id}, building now")
+        if jsonld_path.exists():
+            logger.info(f"graph.jsonld for session {session_id} is stale, rebuilding")
+        else:
+            logger.info(f"graph.jsonld not found for session {session_id}, building now")
 
-        documents = self.session_store.get_session_documents(session_id)
-        complete_docs = [d for d in documents if d.status == 'complete']
+        result = build_session_graph(self.session_store, session_id)
+        if result is None:
+            raise ValueError(
+                f"Session {session_id} has no completed extractions. "
+                "Upload a resume and wait for extraction to finish before running analysis."
+            )
 
-        if not complete_docs:
-            raise ValueError(f"Session {session_id} has no completed extractions")
-
-        all_persons, all_jobs, all_skills = [], [], []
-        all_education, all_certifications, all_organizations = [], [], []
-
-        for doc in complete_docs:
-            entities = self.session_store.load_extracted_entities(doc.id)
-            if not entities:
-                continue
-
-            person = entities.get('person')
-            if person and isinstance(person, dict):
-                all_persons.append(Person.from_dict(person))
-
-            for j in entities.get('jobs', []):
-                all_jobs.append(Job.from_dict(j) if isinstance(j, dict) else j)
-
-            for s in entities.get('skills', []):
-                all_skills.append(Skill.from_dict(s) if isinstance(s, dict) else s)
-
-            for e in entities.get('education', []):
-                all_education.append(Education.from_dict(e) if isinstance(e, dict) else e)
-
-            for c in entities.get('certifications', []):
-                all_certifications.append(Certification.from_dict(c) if isinstance(c, dict) else c)
-
-            for o in entities.get('organizations', []):
-                all_organizations.append(Organization.from_dict(o) if isinstance(o, dict) else o)
-
-        person = all_persons[0] if all_persons else Person(name="Unknown")
-        builder = RDFGraphBuilder()
-        builder.build_from_entities(
-            person=person,
-            jobs=all_jobs,
-            skills=all_skills,
-            education=all_education,
-            certifications=all_certifications,
-            organizations=all_organizations,
-        )
+        builder, _ = result
         builder.export_jsonld(str(jsonld_path))
         logger.info(f"Built graph.jsonld for session {session_id}: {jsonld_path}")
         return jsonld_path

@@ -1,0 +1,33 @@
+Jordan Rivera
+jordan.rivera@example.com | Austin, TX
+
+SUMMARY
+Data scientist with 6 years of experience building machine learning
+pipelines and analytics products.
+
+EXPERIENCE
+
+Senior Data Scientist — Acme Analytics, Inc.
+2021-03 to present
+- Built customer churn models in Python using scikit-learn and XGBoost
+- Deployed models on AWS with Docker
+- Led migration of reporting to Google Analytics 4
+
+Data Analyst — Bluebird Health
+2018-06 to 2021-02
+- Analyzed clinical operations data using SQL and Tableau
+- Automated weekly reporting with Python
+
+EDUCATION
+
+MS in Statistics — State University, 2018
+BS in Mathematics — State University, 2016
+
+CERTIFICATIONS
+
+AWS Certified Solutions Architect (Amazon Web Services, 2022)
+
+SKILLS
+
+Python, SQL, scikit-learn, XGBoost, Tableau, Docker, AWS,
+Google Analytics 4, Machine Learning

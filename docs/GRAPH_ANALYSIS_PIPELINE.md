@@ -51,7 +51,9 @@ The resume declared 11 skills, but job history referenced 19 distinct technologi
 Out of 19 technologies used across 6 roles, only 1 appeared in more than one job: Python. Every other technology was isolated to a single role. This means the career's continuity lives in *how* the person thinks, not *which tools* they use — each career chapter used an entirely different stack. The graph makes this visible; a flat resume obscures it.
 
 **Ghost Nodes (structural integrity)**
-Organizations were referenced (org-001 through org-005) but never materialized as entities in the export. Five certifications existed as references but not as full nodes. These are both bugs to fix (the normalizer and SHACL validation catch them) and perfect illustrations of why entity resolution matters.
+Organizations were referenced (org-001 through org-005) but never materialized as entities in the export. Five certifications existed as references but not as full nodes. These were perfect illustrations of why entity resolution matters — and they had a concrete root cause: the RDF export route only serialized person/jobs/skills, dropping education, certifications, and organizations.
+
+**Update (July 2026):** that root cause is fixed. All export/graph/analysis paths now share one graph-building code path (`resume_explorer/graph/session_graph.py`), so exports carry all six entity types. A semantic integrity validator (`resume_explorer/graph/graph_validator.py`, surfaced at `GET /api/sessions/:id/graph/validate`) now detects this class of problem — dangling references, missing labels, entity types lost between extraction and graph — before you trust an export. It's a pragmatic checker, not full SHACL validation.
 
 These aren't hypothetical examples. They were found in a real export in under 30 seconds of runtime. The value: the graph contains structure you didn't know was there until you analyzed it.
 
@@ -216,6 +218,26 @@ The live normalizer handles: `"ML"` + `"Machine Learning"` from two different re
 **Option B is now implemented.** The live normalizer now handles cross-namespace reconciliation (skill prefLabels vs. job `usedTechnology` strings), annotates the LLM prompt with `[declared skill]` / `[used in job]` type hints so it can confidently merge aliases, and writes merged variant names as `skos:altLabel` triples on the canonical Skill node. Phase 1 (deterministic) and Phase 2 (ESCO) now run for all sessions including single-resume; Phase 3 (LLM) runs only when 2+ documents are present OR `NORMALIZE_SINGLE_RESUME=true` is set. This makes the tools normalizer an optional audit step rather than a required pre-processing step for clean skill gap analysis.
 
 See the docstrings in both files for the full architectural rationale.
+
+---
+
+## Graph Cache Freshness (for developers)
+
+`PipelineService` caches the session graph at `sessions/{id}/graph.jsonld` so
+that graph analysis and narrative synthesis don't rebuild it on every call. That
+file is derived entirely from each completed document's extracted-entities JSON
+(`sessions/{id}/extracted/{doc_id}.json`).
+
+`_ensure_jsonld()` reuses the cache **only when it is fresh**: it rebuilds
+whenever any completed document's extracted-entities file is newer than
+`graph.jsonld` (see `_cache_is_fresh()`). This prevents the stale-analysis bug
+where running analysis, then uploading or re-extracting another document in the
+same session, would silently reuse the old graph. The `/graph`, `/export`,
+`/stats`, and `/graph/validate` routes never cache — they call
+`build_session_graph()` fresh — so only the analysis path needed this guard.
+
+Regression coverage: `backend/tests/test_pipeline_cache.py`. Full write-up:
+[`HANDOFF_GRAPH_CACHE_FIX.md`](HANDOFF_GRAPH_CACHE_FIX.md).
 
 ---
 

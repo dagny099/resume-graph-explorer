@@ -169,12 +169,14 @@ class TestDocumentEndpoints:
             content_type='multipart/form-data'
         )
 
-        assert response.status_code == 201
+        # The test app has no LLM client (fixture sets it to None), so the
+        # upload is rejected up front with an actionable 503 rather than
+        # accepting the document and failing extraction in the background.
+        assert response.status_code == 503
         data = response.get_json()
 
-        assert 'document' in data
-        assert data['document']['filename'] == 'resume.txt'
-        assert data['document']['status'] in ['pending', 'processing']
+        assert 'LLM client is not available' in data['error']
+        assert 'hint' in data
 
     def test_upload_invalid_file_type(self, client):
         """Test uploading unsupported file type."""
@@ -369,8 +371,8 @@ class TestErrorHandling:
     """Test error handling."""
 
     def test_404_handler(self, client):
-        """Test 404 error handler."""
-        response = client.get('/nonexistent')
+        """Unknown API endpoints return JSON 404 (not the SPA index.html)."""
+        response = client.get('/api/nonexistent')
 
         assert response.status_code == 404
         assert 'error' in response.get_json()

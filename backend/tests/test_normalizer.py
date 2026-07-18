@@ -237,6 +237,99 @@ class TestRDFAltLabels:
 
 
 # ---------------------------------------------------------------------------
+# Phase 3 LLM merges — deterministic fake client, no API calls
+# ---------------------------------------------------------------------------
+
+class FakeLLMClient:
+    """Returns a canned response; records prompts for assertions."""
+
+    def __init__(self, response: str):
+        self.response = response
+        self.prompts = []
+
+    def generate(self, prompt, max_tokens=2000, **kwargs):
+        self.prompts.append(prompt)
+        return self.response
+
+
+def _fake_normalizer(groups):
+    """EntityNormalizer wired to a fake LLM that returns the given groups."""
+    import json as _json
+    client = FakeLLMClient(_json.dumps({"groups": groups}))
+    return EntityNormalizer(provider="anthropic", llm_client=client), client
+
+
+class TestLLMVariantMerges:
+    def test_ga4_merges_to_google_analytics_4(self):
+        """'GA4' and 'Google Analytics 4' across documents merge via Phase 3."""
+        normalizer, _ = _fake_normalizer([{
+            "canonical": "Google Analytics 4",
+            "members": ["GA4", "Google Analytics 4"],
+            "reasoning": "GA4 is the standard abbreviation",
+        }])
+        entities = [
+            _make_entities(skills=["Google Analytics 4"]),
+            _make_entities(skills=["GA4"]),
+        ]
+        result = normalizer.normalize_session_entities(entities, run_llm_phase=True)
+
+        labels = {
+            s["label"]
+            for doc in result["normalized_entities"]
+            for s in doc["skills"]
+        }
+        assert labels == {"Google Analytics 4"}
+        assert result["label_map"]["GA4"] == "Google Analytics 4"
+
+    def test_merged_variant_recorded_as_alt_label(self):
+        """The losing variant ('GA4') is preserved in alt_labels."""
+        normalizer, _ = _fake_normalizer([{
+            "canonical": "Google Analytics 4",
+            "members": ["GA4", "Google Analytics 4"],
+            "reasoning": "same product",
+        }])
+        entities = [
+            _make_entities(skills=["Google Analytics 4"]),
+            _make_entities(skills=["GA4"]),
+        ]
+        result = normalizer.normalize_session_entities(entities, run_llm_phase=True)
+
+        remapped = [
+            s
+            for doc in result["normalized_entities"]
+            for s in doc["skills"]
+            if "GA4" in s.get("alt_labels", [])
+        ]
+        assert len(remapped) == 1
+        assert remapped[0]["label"] == "Google Analytics 4"
+
+    def test_declared_skill_wins_over_job_technology_string(self):
+        """'ML' in a job's technologies_used merges into declared 'Machine Learning'."""
+        normalizer, client = _fake_normalizer([{
+            "canonical": "Machine Learning",
+            "members": ["ML", "Machine Learning"],
+            "reasoning": "abbreviation of declared skill",
+        }])
+        entities = [_make_entities(skills=["Machine Learning"], techs=["ML"])]
+        result = normalizer.normalize_session_entities(entities, run_llm_phase=True)
+
+        techs = result["normalized_entities"][0]["jobs"][0]["technologies_used"]
+        assert techs == ["Machine Learning"]
+        # The skill+tech prompt should annotate which pool each label came from
+        assert any("[declared skill]" in p and "[used in job]" in p for p in client.prompts)
+
+    def test_malformed_llm_response_falls_back_to_no_merges(self):
+        """Garbage LLM output must not corrupt labels — everything stays as-is."""
+        client = FakeLLMClient("this is not JSON at all")
+        normalizer = EntityNormalizer(provider="anthropic", llm_client=client)
+        entities = [_make_entities(skills=["Python", "GA4"])]
+        result = normalizer.normalize_session_entities(entities, run_llm_phase=True)
+
+        labels = {s["label"] for s in result["normalized_entities"][0]["skills"]}
+        assert labels == {"Python", "GA4"}
+
+
+# ---------------------------------------------------------------------------
 # End-to-end: normalization → Skill model → RDF builder
 # ---------------------------------------------------------------------------
 

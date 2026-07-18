@@ -220,6 +220,38 @@ Export your knowledge graph in standard formats:
 - **RDF/XML (.rdf)**: Standard XML-based RDF
 - **JSON-LD (.jsonld)**: Web-friendly JSON format
 
+All three formats contain the same complete semantic content as the
+interactive graph — person, jobs, skills, education, certifications,
+organizations, and their relationships — because the export, graph view,
+stats, and analysis pipeline all share a single graph-building code path.
+
+### Semantic Integrity Validation
+
+A lightweight validator checks a session's graph for structural problems
+before you trust or export it: dangling references, entities without SKOS
+labels, near-duplicate skill labels that normalization missed, jobs with no
+organization/dates, and entity types that were extracted but lost on the way
+into the graph.
+
+```bash
+curl http://localhost:5000/api/sessions/<session-id>/graph/validate
+```
+
+The report separates **errors** (structurally wrong) from **warnings**
+(suspicious but sometimes legitimate). It is not a full SHACL validation —
+it's a pragmatic set of checks tuned to this schema. See
+[`docs/API.md`](docs/API.md#validate-session-graph) for the check list and
+response shape.
+
+### Extraction Evaluation Harness (Lite)
+
+`backend/evaluation/` contains a small, deterministic scaffold for measuring
+extraction quality: sample resume fixtures, gold-label JSON, and a comparator
+that reports per-entity-type precision/recall/F1 — offline, no API keys.
+It measures *whatever extraction output you point it at*; it is not (yet) a
+benchmark of the LLM extractors themselves. See
+[`backend/evaluation/README.md`](backend/evaluation/README.md).
+
 ### Post-Export Analysis Pipeline
 
 Once you've exported a graph, a separate offline pipeline turns the structural data into natural language insight documents — optimized for embedding in a vector database (ChromaDB) or reading directly.
@@ -332,12 +364,16 @@ pytest tests/ -v
 Test coverage includes:
 - ✅ Data models (creation, JSON export, SKOS relationships)
 - ✅ RDF serialization for all entity types (Person, Job, Skill, Education, Certification, Organization)
-- ✅ Entity normalization pipeline: type-pool separation, alt_labels tracking, phase gating
+- ✅ RDF export completeness: all entity types and relationships survive Turtle / RDF/XML / JSON-LD round-trips (`test_session_graph.py`)
+- ✅ Semantic integrity validator: clean and intentionally broken graphs (`test_graph_validator.py`)
+- ✅ Entity normalization pipeline: type-pool separation, alt_labels tracking, phase gating, LLM-phase variant merges via a fake client (no API calls)
 - ✅ RDF graph builder: `skos:altLabel` triple generation, dedup cache behavior
 - ✅ LLM extraction pipeline
 - ✅ Session persistence
-- ⚠️ DSPy pipeline test skipped/failing — known DSPy threading issue; set `ENABLE_DSPY=false`
-- ⚠️ API endpoint tests require a running app instance
+- ✅ Evaluation harness comparator (`test_evaluation_harness.py`)
+- ✅ API endpoint tests run against a temp-directory session store (no real data touched)
+
+No test requires an API key or network access.
 
 ## 🔧 Configuration
 
@@ -387,6 +423,7 @@ The backend exposes a REST API with WebSocket support:
 - `POST /api/sessions/:id/documents` - Upload document
 - `GET /api/sessions/:id/graph` - Get Vis.js graph
 - `GET /api/sessions/:id/export/:format` - Export RDF
+- `GET /api/sessions/:id/graph/validate` - Semantic integrity validation report
 - `GET /api/sessions/:id/stats` - Get statistics
 - `GET /health` - Health check
 

@@ -330,6 +330,15 @@ Upload a resume document to a session and trigger extraction.
 }
 ```
 
+**Response** (503 Service Unavailable) — the server has no working LLM client,
+so the upload is rejected up front instead of failing extraction in the background:
+```json
+{
+  "error": "LLM client is not available (provider: claude)",
+  "hint": "The server could not initialize its LLM client at startup. Check that the API key for the configured LLM_PROVIDER is set (e.g. ANTHROPIC_API_KEY or OPENAI_API_KEY) and restart the backend."
+}
+```
+
 **Example**:
 ```bash
 curl -X POST http://localhost:5000/api/sessions/session-id-1/documents \
@@ -561,7 +570,10 @@ curl http://localhost:5000/api/sessions/session-id-1/graph
 
 #### `GET /api/sessions/:id/export/:format`
 
-Export session graph as RDF file.
+Export session graph as RDF file. The export contains the **same complete
+semantic content** as `GET /sessions/:id/graph` — person, jobs, skills,
+education, certifications, organizations, and all relationships among them
+— in every format (both routes share one graph-building code path).
 
 **Parameters**:
 - `id` (string) - Session ID
@@ -616,6 +628,58 @@ resume:skill-python a <http://data.europa.eu/esco/Skill> ;
     skos:prefLabel "Python" ;
     re:skillCategory "Technical" ;
     re:proficiencyLevel "Expert" .
+```
+
+---
+
+### Validate Session Graph
+
+#### `GET /api/sessions/:id/graph/validate`
+
+Run semantic integrity validation on the session's RDF graph. Read-only —
+builds the same graph as `/graph` and `/export`, then checks it for
+structural problems.
+
+**Errors** (graph is structurally wrong):
+- `dangling_reference` — a relationship points at a URI with no typed node
+- `missing_label` — a typed entity has no non-empty `skos:prefLabel`
+- `type_missing_in_export` — extraction produced entities of a type but the graph has none
+
+**Warnings** (suspicious but sometimes legitimate):
+- `near_duplicate_skills` — skill labels differing only in case/punctuation
+- `job_missing_organization` / `job_missing_dates` / `job_no_technologies`
+- `skos_dangling` — SKOS broader/narrower/related targets not materialized
+- `low_entity_count` — graph has fewer than half the extracted entities of a type
+- `no_person` — graph contains no Person node
+
+**Response** (200 OK):
+```json
+{
+  "session_id": "session-id-1",
+  "valid": true,
+  "errors": [],
+  "warnings": [
+    {
+      "check": "job_missing_dates",
+      "message": "Job 'Data Scientist' has no schema:startDate",
+      "subject": "http://resumeexplorer.org/resource/job-1"
+    }
+  ],
+  "stats": {
+    "triple_count": 142,
+    "entity_counts": {
+      "person": 1, "job": 3, "skill": 24,
+      "education": 2, "certification": 1, "organization": 4
+    }
+  }
+}
+```
+
+`valid` is `true` when there are no errors (warnings are allowed).
+
+**Example**:
+```bash
+curl http://localhost:5000/api/sessions/session-id-1/graph/validate
 ```
 
 ---
