@@ -1,0 +1,32 @@
+{
+  "_comment": "RAW-extraction gold labels for sample_resume_004.txt (abbreviation-heavy). Skills use the SURFACE forms as printed (ML, NLP, GA4, GCP, CI/CD, RAG, LLM) — raw extraction should preserve what the resume says; canonicalization is the normalizer's job (see sample_resume_004.expected.normalized.json). Rust and Kubernetes are 'interested in learning' — aspirational, NOT skills. Cascadia Metrics appears once despite two roles. Google Cloud is a certification issuer, not an employer, so it is not in organizations.",
+  "person": {
+    "name": "Priya Raghavan"
+  },
+  "jobs": [
+    { "title": "Senior Data Engineer", "organization": "Cascadia Metrics" },
+    { "title": "Data Engineer", "organization": "Cascadia Metrics" }
+  ],
+  "skills": [
+    "Python",
+    "SQL",
+    "ML",
+    "NLP",
+    "GCP",
+    "GA4",
+    "BigQuery",
+    "CI/CD",
+    "RAG",
+    "LLM"
+  ],
+  "education": [
+    { "degree_type": "BS", "field_of_study": "Computer Science", "institution": "Hillcrest University" }
+  ],
+  "certifications": [
+    "Google Cloud Professional Data Engineer"
+  ],
+  "organizations": [
+    "Cascadia Metrics",
+    "Hillcrest University"
+  ]
+}

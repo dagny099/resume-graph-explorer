@@ -1,0 +1,34 @@
+{
+  "_comment": "Simulated RAW extraction for sample_resume_004 — deliberately imperfect: it extracts 'Rust' despite the 'interested in learning' phrasing (aspirational trap) and misses 'CI/CD'. It preserves surface abbreviations, so it scores well against the raw gold and poorly against the normalized gold — demonstrating the two eval modes.",
+  "person": {
+    "name": "Priya Raghavan",
+    "email": "priya.raghavan@example.com",
+    "location": "Seattle, WA"
+  },
+  "jobs": [
+    { "title": "Senior Data Engineer", "organization_id": "org-cascadia-metrics" },
+    { "title": "Data Engineer", "organization_id": "org-cascadia-metrics" }
+  ],
+  "skills": [
+    { "label": "Python" },
+    { "label": "SQL" },
+    { "label": "ML" },
+    { "label": "NLP" },
+    { "label": "GCP" },
+    { "label": "GA4" },
+    { "label": "BigQuery" },
+    { "label": "RAG" },
+    { "label": "LLM" },
+    { "label": "Rust" }
+  ],
+  "education": [
+    { "degree_type": "BS", "field_of_study": "Computer Science", "institution_id": "org-hillcrest-university" }
+  ],
+  "certifications": [
+    { "name": "Google Cloud Professional Data Engineer", "issuing_organization": "Google Cloud" }
+  ],
+  "organizations": [
+    { "name": "Cascadia Metrics" },
+    { "name": "Hillcrest University" }
+  ]
+}

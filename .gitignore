@@ -4,6 +4,7 @@
 venv/
 .venv/
 backend/data/
+backend/evaluation/live_runs/
 __pycache__/
 *.pyc
 *.pyo

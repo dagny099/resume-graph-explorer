@@ -1,0 +1,26 @@
+Derek Boone                         SKILLS
+derek.boone@example.com             Windows Server
+Tulsa, OK                           Active Directory
+                                    PowerShell
+EXPERIENCE                          VMware vSphere
+                                    Linux
+Systems Administrator
+Northwind Data, LLC                 CERTIFICATIONS
+2020-05 to present                  CompTIA Network+
+> Manage 40+ Windows Server VMs     (CompTIA, 2019)
+> Automated user provisioning
+with PowerShell scripts             EDUCATION
+* Migrated on-prem hosts to
+VMware vSphere                      AAS in Network
+                                    Administration
+IT Support Specialist               Pine Valley
+Northwind Data                      Community College
+2017-03 to 2020-04                  2016
+- Tier 2 support for 300 users
+- Administered Active Directory
+group policy
+
+Help Desk Technician — Bright Harbor Insurance
+2015-06 to 2017-02
+• Password resets, ticket triage, hardware setup
+• Supported Linux print servers

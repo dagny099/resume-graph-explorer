@@ -1,0 +1,31 @@
+{
+  "_comment": "Gold labels for sample_resume_006.txt (healthcare/operations). Annotation decisions: skills are the six evidenced clinical/operational competencies from the SKILLS section — generic soft-skill adjectives in the PROFILE ('compassionate communicator', 'team leader') are NOT skills. Certification names use the full surface form as printed, including the parenthesized abbreviation. The Board of Certification for Emergency Nursing is a certification ISSUER, not an employer, so it is not in organizations.",
+  "person": {
+    "name": "Angela Reyes"
+  },
+  "jobs": [
+    { "title": "Charge Nurse", "organization": "Cedar Ridge Medical Center" },
+    { "title": "Staff Nurse", "organization": "St. Anne's Hospital" }
+  ],
+  "skills": [
+    "Patient triage",
+    "Epic EHR",
+    "medication administration",
+    "care coordination",
+    "quality improvement",
+    "HIPAA compliance"
+  ],
+  "education": [
+    { "degree_type": "BSN", "field_of_study": "Nursing", "institution": "Mercy College of Nursing" }
+  ],
+  "certifications": [
+    "Basic Life Support (BLS)",
+    "Advanced Cardiac Life Support (ACLS)",
+    "Certified Emergency Nurse (CEN)"
+  ],
+  "organizations": [
+    "Cedar Ridge Medical Center",
+    "St. Anne's Hospital",
+    "Mercy College of Nursing"
+  ]
+}

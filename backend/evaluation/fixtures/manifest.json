@@ -1,0 +1,104 @@
+{
+  "_comment": "Fixture manifest for the evaluation suite. Each fixture is a deliberately designed test case, not just a sample resume. File paths follow the convention <id>.txt / <id>.expected.json / <id>.extracted.json (simulated extraction for the offline batch demo) / <id>.expected.normalized.json (only when has_normalized_expected is true). 'target' says which pipeline stage the fixture is designed to probe: raw-extraction, normalization, parsing, or graph-construction. 'excluded_near_matches' lists terms that appear in the resume text but must NOT be extracted for that entity type — the tests enforce that they are absent from the gold labels.",
+  "fixtures": [
+    {
+      "id": "sample_resume_001",
+      "profile": "Clean technical resume (data scientist)",
+      "tests": "Baseline: straightforward single-column resume with every entity type present.",
+      "failure_modes": ["missed skills", "hallucinated skills", "org legal-suffix variation (Acme Analytics, Inc. vs Acme Analytics)"],
+      "target": "raw-extraction",
+      "present_types": ["person", "jobs", "skills", "education", "certifications", "organizations"],
+      "absent_types": [],
+      "excluded_near_matches": {},
+      "has_normalized_expected": false,
+      "notes": "The bundled simulated extraction misses Tableau, hallucinates 'Data Science', and returns 'GA4' where the resume says 'Google Analytics 4' — so the demo report shows non-trivial metrics."
+    },
+    {
+      "id": "sample_resume_002",
+      "profile": "Career changer (cognitive science research -> consulting -> ML engineering)",
+      "tests": "Preserving career discontinuities across unrelated fields; not hallucinating certifications; not crediting skills that belong to someone else's team.",
+      "failure_modes": ["hallucinated certifications into an empty section", "mentioned-but-not-evidenced skill (AWS belongs to the client's team)"],
+      "target": "raw-extraction",
+      "present_types": ["person", "jobs", "skills", "education", "organizations"],
+      "absent_types": ["certifications"],
+      "excluded_near_matches": {
+        "skills": ["AWS"]
+      },
+      "has_normalized_expected": false,
+      "notes": "The resume says Maya 'partnered with the client's AWS infrastructure team' — that is adjacency, not evidence of hands-on AWS use. The bundled simulated extraction falls for this trap on purpose."
+    },
+    {
+      "id": "sample_resume_003",
+      "profile": "Academic / research-heavy (neuroscience postdoc)",
+      "tests": "Non-corporate career structure: appointments, methods-as-skills, publication language; one org node for two roles at the same university.",
+      "failure_modes": ["publication venues or conferences extracted as organizations", "duplicate org nodes for repeated affiliations", "missed method-style skills"],
+      "target": "raw-extraction",
+      "present_types": ["person", "jobs", "skills", "education", "organizations"],
+      "absent_types": ["certifications"],
+      "excluded_near_matches": {
+        "organizations": ["Journal of Cognitive Neuroscience", "Society for Neuroscience"]
+      },
+      "has_normalized_expected": false,
+      "notes": "Riverbend University hosts two jobs (Adjunct Lecturer, Graduate Research Assistant) but appears once in the organizations gold. Journals and conferences the person published/presented at are not employers."
+    },
+    {
+      "id": "sample_resume_004",
+      "profile": "Abbreviation-heavy data engineer",
+      "tests": "The raw-extraction vs post-normalization boundary: surface abbreviations (ML, NLP, GA4, GCP, CI/CD, RAG, LLM) in the raw gold, canonical labels in the normalized gold; aspirational skills excluded.",
+      "failure_modes": ["extractor silently canonicalizing abbreviations (raw eval should preserve surface forms)", "normalizer failing to canonicalize (normalized eval)", "aspirational 'interested in learning X' extracted as a skill"],
+      "target": "normalization",
+      "present_types": ["person", "jobs", "skills", "education", "certifications", "organizations"],
+      "absent_types": [],
+      "excluded_near_matches": {
+        "skills": ["Rust", "Kubernetes"],
+        "organizations": ["Google Cloud"]
+      },
+      "has_normalized_expected": true,
+      "notes": "The only fixture with a second gold file (sample_resume_004.expected.normalized.json). Google Cloud is a certification issuer, not an employer. Two roles at Cascadia Metrics -> one org node."
+    },
+    {
+      "id": "sample_resume_005",
+      "profile": "IT systems administrator, messy two-column text",
+      "tests": "Parsing robustness: the .txt simulates naive two-column PDF extraction with interleaved lines, mixed bullet glyphs, and entity names split across lines; org suffix variation plus two roles at the same org.",
+      "failure_modes": ["skills or fields truncated by column splits (VMware vs VMware vSphere, Network vs Network Administration)", "duplicate org nodes for 'Northwind Data, LLC' vs 'Northwind Data'", "section headers leaking into entities"],
+      "target": "parsing",
+      "present_types": ["person", "jobs", "skills", "education", "certifications", "organizations"],
+      "absent_types": [],
+      "excluded_near_matches": {
+        "organizations": ["CompTIA"]
+      },
+      "has_normalized_expected": false,
+      "notes": "Canonical org name is 'Northwind Data' (suffix stripped). CompTIA is a certification issuer, not an employer. The simulated extraction shows realistic column-split damage."
+    },
+    {
+      "id": "sample_resume_006",
+      "profile": "Healthcare / clinical operations (emergency nurse)",
+      "tests": "Non-software domain coverage: clinical skills, healthcare orgs, multiple certifications; the soft-skill boundary (PROFILE adjectives are not skills); certification issuers are not organizations.",
+      "failure_modes": ["soft-skill phrases ('compassionate communicator') promoted to skills", "certification issuer extracted as an employer", "certification abbreviation vs full surface form mismatch (BLS vs Basic Life Support (BLS))"],
+      "target": "raw-extraction",
+      "present_types": ["person", "jobs", "skills", "education", "certifications", "organizations"],
+      "absent_types": [],
+      "excluded_near_matches": {
+        "skills": ["compassionate communicator", "team leader"],
+        "organizations": ["Board of Certification for Emergency Nursing"]
+      },
+      "has_normalized_expected": false,
+      "notes": "Certification gold uses the full printed surface form ('Basic Life Support (BLS)'). Raw matching is strict about this — a bare 'BLS' scores as both a miss and an unexpected entity, which is a documented limitation, not a fixture bug."
+    },
+    {
+      "id": "sample_resume_007",
+      "profile": "Executive / product strategy (VP of Product)",
+      "tests": "Hallucination resistance: no education or certification sections (both gold lists empty); tool-looking words inside proper names (Python Creek Ventures, Tableau Health Initiative) must not become skills; generic leadership adjectives are not skills.",
+      "failure_modes": ["invented degrees into an empty education list", "'Python'/'Tableau' extracted as skills from org/program names", "partnership program name extracted as an organization", "PROFILE adjectives ('visionary leader', 'strategic thinker') promoted to skills"],
+      "target": "raw-extraction",
+      "present_types": ["person", "jobs", "skills", "organizations"],
+      "absent_types": ["education", "certifications"],
+      "excluded_near_matches": {
+        "skills": ["Python", "Tableau", "visionary leader", "strategic thinker"],
+        "organizations": ["Tableau Health Initiative"]
+      },
+      "has_normalized_expected": false,
+      "notes": "Skills gold is a small set of named, evidenced practices (product strategy, OKRs, A/B testing, roadmap planning). The bundled simulated extraction deliberately fails every trap so the batch report demonstrates detection."
+    }
+  ]
+}

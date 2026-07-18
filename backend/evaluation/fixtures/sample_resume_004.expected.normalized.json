@@ -1,0 +1,32 @@
+{
+  "_comment": "POST-NORMALIZATION gold labels for sample_resume_004.txt. Same entities as the raw gold, but skill abbreviations are canonicalized the way the entity normalizer is expected to resolve them (ML -> Machine Learning, GA4 -> Google Analytics 4, etc.). CI/CD, BigQuery, Python, and SQL are already canonical and stay as-is. Use with: run_eval.py --all --mode normalized.",
+  "person": {
+    "name": "Priya Raghavan"
+  },
+  "jobs": [
+    { "title": "Senior Data Engineer", "organization": "Cascadia Metrics" },
+    { "title": "Data Engineer", "organization": "Cascadia Metrics" }
+  ],
+  "skills": [
+    "Python",
+    "SQL",
+    "Machine Learning",
+    "Natural Language Processing",
+    "Google Cloud Platform",
+    "Google Analytics 4",
+    "BigQuery",
+    "CI/CD",
+    "Retrieval-Augmented Generation",
+    "Large Language Models"
+  ],
+  "education": [
+    { "degree_type": "BS", "field_of_study": "Computer Science", "institution": "Hillcrest University" }
+  ],
+  "certifications": [
+    "Google Cloud Professional Data Engineer"
+  ],
+  "organizations": [
+    "Cascadia Metrics",
+    "Hillcrest University"
+  ]
+}

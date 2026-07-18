@@ -1,0 +1,31 @@
+{
+  "_comment": "Simulated extraction for sample_resume_003 — deliberately imperfect: it extracts the Journal of Cognitive Neuroscience as an organization (publication-venue trap) and misses the 'signal processing' skill. Riverbend University is correctly listed once despite two roles.",
+  "person": {
+    "name": "Samuel Okafor",
+    "email": "samuel.okafor@example.org",
+    "location": "Providence, RI"
+  },
+  "jobs": [
+    { "title": "Postdoctoral Researcher", "organization_id": "org-institute-for-neural-computation" },
+    { "title": "Adjunct Lecturer", "organization_id": "org-riverbend-university" },
+    { "title": "Graduate Research Assistant", "organization_id": "org-riverbend-university" }
+  ],
+  "skills": [
+    { "label": "Python" },
+    { "label": "MATLAB" },
+    { "label": "fMRI analysis" },
+    { "label": "EEG preprocessing" },
+    { "label": "mixed-effects models" }
+  ],
+  "education": [
+    { "degree_type": "PhD", "field_of_study": "Neuroscience", "institution_id": "org-riverbend-university" },
+    { "degree_type": "BS", "field_of_study": "Biomedical Engineering", "institution_id": "org-calder-institute-of-technology" }
+  ],
+  "certifications": [],
+  "organizations": [
+    { "name": "Institute for Neural Computation" },
+    { "name": "Riverbend University" },
+    { "name": "Calder Institute of Technology" },
+    { "name": "Journal of Cognitive Neuroscience" }
+  ]
+}
