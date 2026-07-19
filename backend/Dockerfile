@@ -7,10 +7,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Install Python dependencies
+# Install Python dependencies (gunicorn + eventlet are declared in the file)
 COPY requirements-prod.txt .
-RUN pip install --no-cache-dir -r requirements-prod.txt \
-    && pip install --no-cache-dir gunicorn eventlet
+RUN pip install --no-cache-dir -r requirements-prod.txt
 
 # Copy application source
 COPY resume_explorer/ ./resume_explorer/
