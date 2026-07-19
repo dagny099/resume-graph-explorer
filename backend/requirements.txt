@@ -11,6 +11,16 @@ python-socketio>=5.10.0              # Socket.IO client/server
 werkzeug>=3.0.0                      # WSGI utilities
 
 # ==============================================================================
+# Production WSGI Server + Async Worker
+# ==============================================================================
+# Declared here (not only in requirements-prod.txt) so that build paths which
+# read this base file — e.g. Koyeb's native Python buildpack — install the
+# eventlet worker class. Without it, `gunicorn --worker-class eventlet` fails
+# with: Entry point ('gunicorn.workers', 'eventlet') not found.
+gunicorn>=21.2.0                     # WSGI HTTP server
+eventlet>=0.35.2                     # Async worker required by Flask-SocketIO WebSockets
+
+# ==============================================================================
 # LLM Provider Abstraction (from montrose-marathon patterns)
 # ==============================================================================
 dspy-ai>=2.4.9                       # DSPy for advanced LLM pipelines
