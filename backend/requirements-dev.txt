@@ -32,3 +32,10 @@ sphinx-rtd-theme>=2.0.0              # ReadTheDocs theme
 ipython>=8.18.0                      # Enhanced REPL
 ipdb>=0.13.13                        # Debugger
 watchdog>=3.0.0                      # File system event monitoring
+
+# ==============================================================================
+# Optional: Experiment Tracking
+# ==============================================================================
+# ~200MB; excluded from base/production requirements to stay within Koyeb
+# free-tier RAM. Available here for local experiment tracking.
+mlflow>=2.10.0                       # ML experiment tracking (optional)
