@@ -57,7 +57,11 @@ python-dotenv>=1.0.0                 # Environment variable management
 # ==============================================================================
 # Optional: Experiment Tracking
 # ==============================================================================
-mlflow>=2.10.0                       # ML experiment tracking (optional)
+# mlflow is intentionally NOT declared here. It is ~200MB and exceeds the
+# Koyeb free-tier RAM budget, and build paths that read this base file (e.g.
+# Koyeb's native Python buildpack) would otherwise install it into production.
+# It is unused by the runtime app; developers who want experiment tracking get
+# it via requirements-dev.txt.
 
 # ==============================================================================
 # Utilities
