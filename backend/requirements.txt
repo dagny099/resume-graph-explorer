@@ -17,7 +17,10 @@ werkzeug>=3.0.0                      # WSGI utilities
 # read this base file — e.g. Koyeb's native Python buildpack — install the
 # eventlet worker class. Without it, `gunicorn --worker-class eventlet` fails
 # with: Entry point ('gunicorn.workers', 'eventlet') not found.
-gunicorn>=21.2.0                     # WSGI HTTP server
+# The <26 cap is essential: gunicorn 26.0.0 removed the bundled eventlet worker
+# entirely (25.3.0 is the last release that ships it). An unbounded pin resolves
+# to 26.x on a fresh build and boots with exit code 1.
+gunicorn>=21.2.0,<26                  # WSGI HTTP server (eventlet worker dropped in 26.0)
 eventlet>=0.35.2                     # Async worker required by Flask-SocketIO WebSockets
 
 # ==============================================================================
