@@ -62,6 +62,40 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional
 
+# Make the model registry importable whether this runs standalone or is loaded
+# via importlib.util.spec_from_file_location() from pipeline_service. The backend
+# dir (parent of tools/) holds the resume_explorer package; the registry only
+# needs PyYAML, so this stays lightweight (no dspy/flask/rdflib pulled in).
+_BACKEND_DIR = str(Path(__file__).resolve().parent.parent)
+if _BACKEND_DIR not in sys.path:
+    sys.path.insert(0, _BACKEND_DIR)
+try:
+    from resume_explorer.config import model_registry as _registry
+except Exception:
+    _registry = None  # standalone copy without the package: use a current fallback
+
+# Resolution order matches the app: explicit → <PROVIDER>_MODEL env → registry
+# default. Fallbacks below are used only if the registry can't be imported and
+# are deliberately current (never a retired snapshot).
+_PROVIDER_KEYS = {"anthropic": "claude", "openai": "openai"}
+_FALLBACK_MODELS = {"anthropic": "claude-haiku-4-5", "openai": "gpt-4.1-mini"}
+
+
+def _resolve_model(provider: str, explicit: Optional[str] = None) -> str:
+    """Resolve the model for a provider, routed through the model registry."""
+    if explicit:
+        return explicit
+    key = _PROVIDER_KEYS.get(provider, provider)
+    env = os.getenv(f"{key.upper()}_MODEL")
+    if env:
+        return env
+    if _registry is not None:
+        try:
+            return _registry.default_model(key)
+        except Exception:
+            pass
+    return _FALLBACK_MODELS.get(provider, "")
+
 
 # ─── CONSTANTS ────────────────────────────────────────────────
 
@@ -234,7 +268,7 @@ def call_llm(
     Returns the raw text response.
     """
     if provider == "anthropic":
-        model = model or "claude-sonnet-4-20250514"
+        model = _resolve_model("anthropic", model)
         try:
             import anthropic
             client = anthropic.Anthropic()
@@ -253,7 +287,7 @@ def call_llm(
             sys.exit(1)
 
     elif provider == "openai":
-        model = model or "gpt-4o"
+        model = _resolve_model("openai", model)
         try:
             import openai
             client = openai.OpenAI()
@@ -380,8 +414,8 @@ def main():
         "--model", "-m",
         default=None,
         help=(
-            "Specific model to use. Defaults: claude-sonnet-4-20250514 (anthropic), "
-            "gpt-4o (openai). For deeper synthesis, try claude-opus-4-20250514."
+            "Specific model to use. Defaults to <PROVIDER>_MODEL env or the model "
+            "registry default (backend/resume_explorer/config/models.yaml)."
         ),
     )
     parser.add_argument(
@@ -400,9 +434,7 @@ def main():
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    effective_model = args.model or (
-        "claude-sonnet-4-20250514" if args.provider == "anthropic" else "gpt-4o"
-    )
+    effective_model = _resolve_model(args.provider, args.model)
 
     print(f"\nNarrative Synthesizer")
     print(f"{'=' * 40}")
