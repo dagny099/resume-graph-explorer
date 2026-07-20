@@ -22,6 +22,7 @@ from ..utils import DocumentProcessor, logger
 from ..graph import NetworkXAdapter
 from ..graph.session_graph import build_session_graph, extracted_entity_counts
 from ..graph.graph_validator import GraphValidator
+from ..config import model_registry
 
 
 api_bp = Blueprint('api', __name__)
@@ -732,6 +733,34 @@ def get_storage_stats():
     session_store: SessionStore = current_app.session_store
 
     return jsonify(session_store.get_stats())
+
+
+# ============================================================================
+# Runtime LLM Configuration
+# ============================================================================
+
+@api_bp.route('/config', methods=['GET'])
+def get_config():
+    """Report the running LLM configuration (for the on-screen indicator).
+
+    Reads everything at request time and never returns secrets (no API keys).
+    Handles the case where the LLM client failed to initialize (llm_client None).
+    EXTRACTION_MAX_TOKENS is read live with the same default the extractor uses,
+    so the reported value always matches what extraction actually applies.
+    """
+    client = getattr(current_app, 'llm_client', None)
+    backend = getattr(client, 'backend', None) if client else None
+
+    return jsonify({
+        'provider': current_app.config.get('LLM_PROVIDER'),
+        'model': backend.model_name if backend else None,
+        'backend_class': type(backend).__name__ if backend else None,
+        'llm_available': client is not None,
+        'enable_dspy': current_app.config.get('ENABLE_DSPY'),
+        'normalization_provider': current_app.config.get('NORMALIZATION_PROVIDER'),
+        'extraction_max_tokens': int(os.getenv('EXTRACTION_MAX_TOKENS', '8000')),
+        'model_registry_as_of': model_registry.as_of(),
+    })
 
 
 # ============================================================================

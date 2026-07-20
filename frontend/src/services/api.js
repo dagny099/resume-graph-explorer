@@ -56,6 +56,15 @@ export const warmupBackend = async () => {
   }
 };
 
+/**
+ * Fetch the running LLM configuration (provider, model, etc.) for the
+ * on-screen indicator. Non-critical: callers should tolerate failure.
+ */
+export const getConfig = async () => {
+  const response = await api.get('/config');
+  return response.data;
+};
+
 // ============================================================================
 // Session Management
 // ============================================================================
