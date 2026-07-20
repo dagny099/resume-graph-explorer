@@ -337,8 +337,14 @@ class PipelineService:
         formatted = ns.format_analyses_for_prompt(analyses)
         source_list = list(analyses.keys())
 
-        effective_model = model or (
-            'claude-sonnet-4-20250514' if provider == 'anthropic' else 'gpt-4o'
+        # Record the model the client actually resolved to, so the narrative's
+        # front-matter is truthful. Reading it from the backend (rather than a
+        # hardcoded default) means it reflects a fresh client, an env override,
+        # or the app-client fallback alike — never a stale/retired snapshot.
+        effective_model = (
+            getattr(getattr(synthesis_client, 'backend', None), 'model_name', None)
+            or model
+            or 'unknown'
         )
 
         results = {}

@@ -23,6 +23,10 @@ body {
   color: white;
   padding: 30px 40px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .app-header h1 {
@@ -35,6 +39,27 @@ body {
   margin: 0;
   font-size: 1.1rem;
   opacity: 0.95;
+}
+
+/* Subtle runtime LLM readout — sits quietly opposite the title. */
+.model-badge {
+  flex-shrink: 0;
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.model-badge--warn {
+  background: rgba(220, 53, 69, 0.85);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 .app-main {

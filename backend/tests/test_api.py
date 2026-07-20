@@ -399,5 +399,56 @@ class TestErrorHandling:
         assert response.status_code == 413
 
 
+class TestConfigEndpoint:
+    """Test GET /api/config (runtime LLM configuration readout)."""
+
+    def test_config_reports_keys_and_no_secrets(self, client):
+        """Endpoint returns the expected config keys and never leaks API keys."""
+        response = client.get('/api/config')
+
+        assert response.status_code == 200
+        data = response.get_json()
+
+        for key in (
+            'provider', 'model', 'backend_class', 'llm_available',
+            'enable_dspy', 'normalization_provider',
+            'extraction_max_tokens', 'model_registry_as_of',
+        ):
+            assert key in data
+
+        assert data['provider'] == 'claude'
+        assert isinstance(data['extraction_max_tokens'], int)
+        assert isinstance(data['model_registry_as_of'], str)
+        # No secret should ever be exposed.
+        assert not any('key' in k.lower() for k in data)
+
+    def test_config_handles_unavailable_llm(self, client):
+        """With no LLM client (fixture sets it to None), report unavailable, not crash."""
+        response = client.get('/api/config')
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['llm_available'] is False
+        assert data['model'] is None
+        assert data['backend_class'] is None
+
+    def test_config_reports_running_model(self, app, client):
+        """With an initialized client, report its model and backend class."""
+        class _FakeBackend:
+            model_name = 'claude-haiku-4-5'
+
+        class _FakeClient:
+            backend = _FakeBackend()
+
+        app.llm_client = _FakeClient()
+
+        response = client.get('/api/config')
+        data = response.get_json()
+
+        assert data['llm_available'] is True
+        assert data['model'] == 'claude-haiku-4-5'
+        assert data['backend_class'] == '_FakeBackend'
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

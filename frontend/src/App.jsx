@@ -25,7 +25,7 @@ import ExportPanel from './components/ExportPanel';
 import AnalysisPipelinePanel from './components/AnalysisPipelinePanel';
 import InsightsViewer from './components/InsightsViewer';
 import NarrativeViewer from './components/NarrativeViewer';
-import { createSession, getSession, getSessionGraph, getPipelineStatus, warmupBackend } from './services/api';
+import { createSession, getSession, getSessionGraph, getPipelineStatus, warmupBackend, getConfig } from './services/api';
 import './App.css';
 
 // Resolved once at module load — changing the env var requires a rebuild.
@@ -35,10 +35,33 @@ const AUTO_SESSION = import.meta.env.VITE_AUTO_SESSION === 'true';
 const SESSION_STORAGE_KEY = 'resume_explorer_session_id';
 
 // ─── Header — shared across all render states ────────────────────────────────
-const AppHeader = () => (
+// `config` is the running LLM configuration (from GET /api/config); the subtle
+// badge is a dev-stage transparency aid — it confirms which model/provider is
+// actually in play and flags an unavailable LLM at a glance. No secrets shown.
+const AppHeader = ({ config }) => (
   <header className="app-header">
-    <h1>Resume Explorer</h1>
-    <p>Transform your resume into an interactive knowledge graph</p>
+    <div className="app-header-titles">
+      <h1>Resume Explorer</h1>
+      <p>Transform your resume into an interactive knowledge graph</p>
+    </div>
+    {config && (
+      <span
+        className={`model-badge${config.llm_available ? '' : ' model-badge--warn'}`}
+        title={
+          `provider: ${config.provider}\n` +
+          `model: ${config.model ?? 'n/a'}\n` +
+          `backend: ${config.backend_class ?? 'n/a'}\n` +
+          `max tokens: ${config.extraction_max_tokens}\n` +
+          `normalization: ${config.normalization_provider}\n` +
+          `dspy: ${config.enable_dspy ? 'on' : 'off'}\n` +
+          `models as of: ${config.model_registry_as_of}`
+        }
+      >
+        {config.llm_available
+          ? `${config.provider} · ${config.model}`
+          : 'LLM unavailable'}
+      </span>
+    )}
   </header>
 );
 
@@ -69,6 +92,9 @@ function App() {
   // Auto mode: dismissed by clicking "Get Started". Auto-dismissed if returning user has graph data.
   // Manual mode: dismissed when user creates/selects a session (currentSessionId becomes non-null).
   const [showWelcome, setShowWelcome] = useState(AUTO_SESSION);
+
+  // Running LLM configuration (provider/model/etc.) for the header indicator.
+  const [modelConfig, setModelConfig] = useState(null);
 
   // ─── Auto-session initialization ──────────────────────────────────────────
   useEffect(() => {
@@ -114,6 +140,13 @@ function App() {
 
     initSession();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── LLM config indicator ──────────────────────────────────────────────────
+  // Runs in both auto and manual modes (unlike the auto-session effect above).
+  // Fire-and-forget; failure just leaves the badge hidden.
+  useEffect(() => {
+    getConfig().then(setModelConfig).catch(() => {});
+  }, []);
 
   // ─── Graph loading ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -236,7 +269,7 @@ function App() {
 
     return (
       <div className="app">
-        <AppHeader />
+        <AppHeader config={modelConfig} />
         <div className="loading-state">
           <p>{statusMessages[connectionStatus] || 'Starting up…'}</p>
           {connectionStatus === 'warming' && (
@@ -252,7 +285,7 @@ function App() {
   if (AUTO_SESSION && sessionError) {
     return (
       <div className="app">
-        <AppHeader />
+        <AppHeader config={modelConfig} />
         <div className="loading-state" style={{ textAlign: 'center' }}>
           <p style={{ fontSize: '18px', marginBottom: '10px' }}>⏳ Backend is waking up from sleep...</p>
           <p style={{ fontSize: '14px', opacity: 0.8, marginBottom: '20px' }}>
@@ -284,7 +317,7 @@ function App() {
   // ─── Main UI ───────────────────────────────────────────────────────────────
   return (
     <div className="app">
-      <AppHeader />
+      <AppHeader config={modelConfig} />
 
       <main className="app-main">
         <div className="sidebar">

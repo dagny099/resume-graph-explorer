@@ -1,0 +1,90 @@
+# ==============================================================================
+# LLM Model Registry
+# ==============================================================================
+# Single source of truth for which models the app may use, per provider.
+#
+# HOW TO MAINTAIN:
+#   - `as_of` is the date this list was last verified against provider docs.
+#     Re-verify periodically and bump it — model IDs get retired and return a
+#     404 not_found_error once removed (see the `notes` below).
+#   - Cloud providers (claude, openai) use `validation: strict` — the extraction
+#     model MUST be one of the listed `id`s, or the app fails fast at startup
+#     with the list of valid options (instead of a silent 404 at request time).
+#   - Ollama uses `validation: open` — models are arbitrary local tags the user
+#     has pulled (`ollama list`), so any non-empty value is accepted.
+#   - Prefer floating aliases (e.g. `claude-haiku-4-5`) over dated snapshots
+#     (e.g. `claude-sonnet-4-20250514`); dated snapshots get retired and 404.
+#
+# Sources verified on the as_of date:
+#   - Anthropic:  https://platform.claude.com/docs/en/about-claude/models/overview
+#   - OpenAI:     https://developers.openai.com/api/docs/pricing
+# ==============================================================================
+
+as_of: "2026-07-20"
+
+providers:
+
+  # ----------------------------------------------------------------------------
+  claude:
+    validation: strict
+    default: claude-haiku-4-5          # cheapest; good enough for resume extraction
+    models:
+      - id: claude-haiku-4-5
+        label: Claude Haiku 4.5
+        input_per_mtok: 1.0
+        output_per_mtok: 5.0
+        context: 200000
+        max_output: 64000
+        notes: Fastest / cheapest. Default extraction model.
+      - id: claude-sonnet-4-6
+        label: Claude Sonnet 4.6
+        input_per_mtok: 3.0
+        output_per_mtok: 15.0
+        context: 1000000
+        max_output: 128000
+        notes: Strong mid-tier, 1M context. Good accuracy/cost balance for A/B.
+      - id: claude-sonnet-5
+        label: Claude Sonnet 5
+        input_per_mtok: 3.0              # $2 introductory through 2026-08-31
+        output_per_mtok: 15.0            # $10 introductory through 2026-08-31
+        context: 1000000
+        max_output: 128000
+        notes: Current Sonnet. Introductory pricing $2/$10 per MTok until 2026-08-31.
+      - id: claude-opus-4-8
+        label: Claude Opus 4.8
+        input_per_mtok: 5.0
+        output_per_mtok: 25.0
+        context: 1000000
+        max_output: 128000
+        notes: Highest quality Opus-tier. Overkill (and pricey) for most extraction.
+
+  # ----------------------------------------------------------------------------
+  openai:
+    validation: strict
+    default: gpt-4.1-mini
+    models:
+      - id: gpt-4.1-nano
+        label: GPT-4.1 nano
+        input_per_mtok: 0.10
+        output_per_mtok: 0.40
+        notes: Cheapest capable OpenAI option.
+      - id: gpt-4.1-mini
+        label: GPT-4.1 mini
+        input_per_mtok: 0.40
+        output_per_mtok: 1.60
+        notes: Default OpenAI extraction model.
+      - id: gpt-4.1
+        label: GPT-4.1
+        input_per_mtok: 2.0
+        output_per_mtok: 8.0
+        notes: Full GPT-4.1. Add newer GPT-5.x ids here after verifying on the pricing page.
+
+  # ----------------------------------------------------------------------------
+  ollama:
+    validation: open                    # local runtime: any pulled tag is valid
+    default: llama3.1:8b
+    models:
+      # Informational only (validation is open). Whatever `ollama list` shows works.
+      - id: llama3.1:8b
+        label: Llama 3.1 8B
+        notes: Local, no API cost. Any locally pulled Ollama tag is accepted.

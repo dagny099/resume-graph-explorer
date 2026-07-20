@@ -77,15 +77,30 @@ If adding new file formats, follow the pattern in `DocumentProcessor`. Always pr
 ```bash
 LLM_PROVIDER=claude              # claude | openai | ollama
 CLAUDE_MODEL=claude-haiku-4-5    # optional; overrides the extraction model (default: haiku). Also OPENAI_MODEL / OLLAMA_MODEL.
+EXTRACTION_MAX_TOKENS=8000       # optional; caps extraction output (raise if long resumes truncate)
 ENABLE_DSPY=false                # MUST stay false — threading issues
 NORMALIZATION_PROVIDER=mock      # mock | ollama | anthropic | openai
 NORMALIZE_SINGLE_RESUME=false    # true = run LLM Phase 3 for single-resume sessions
 ```
 
-**Model selection:** each backend in `services/llm_client.py` resolves its model as
-`explicit arg → <PROVIDER>_MODEL env var → built-in default`. A retired/inaccessible
-model surfaces as a Claude API `404 not_found_error` during extraction — fix it by
-setting `CLAUDE_MODEL` in deployment config, no code change needed.
+**Model selection:** the extraction client (`create_llm_client(..., validate=True)`,
+called from `api/app.py`) resolves its model as `explicit arg → <PROVIDER>_MODEL env
+var → registry default` and validates it against the curated allow-list in
+`config/models.yaml`. Cloud providers (claude, openai) are **strict** — an
+unknown/retired model fails fast at startup with the valid options, instead of a
+silent `404 not_found_error` during extraction; Ollama is **open** (any local tag).
+The registry (`config/models.yaml` + `config/model_registry.py`) is the single source
+of truth and carries an `as_of` date — re-verify against provider docs and bump it
+when models change; to use a newer model, add it there first. Other call sites
+(normalization, narrative synthesis) pass `validate=False` and skip the registry check.
+
+**Provider aliases:** `create_llm_client` accepts `"anthropic"` as an alias for
+`"claude"` (`_PROVIDER_ALIASES`). The API/pipeline layer speaks vendor names
+(`provider='anthropic'`); without the alias, `create_llm_client('anthropic')` raised
+and the synthesis path silently fell back to the app's default client. Narrative
+front-matter now records the model the client actually resolved
+(`synthesis_client.backend.model_name`), not a hardcoded default — so it can't cite a
+stale/retired snapshot.
 
 ## Working Model
 

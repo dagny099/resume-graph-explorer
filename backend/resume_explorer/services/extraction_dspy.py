@@ -8,6 +8,7 @@ Provides advanced reasoning patterns and graceful fallback to simple prompts.
 import dspy
 from typing import Dict, List, Optional, Any
 import json
+import os
 from dataclasses import asdict
 
 from ..models import Person, Job, Skill, Education, Certification, Organization
@@ -299,46 +300,83 @@ Return ONLY the JSON, no additional text."""
 
         prompt = self.EXTRACTION_PROMPT.format(resume_text=resume_text)
 
-        try:
-            response = self.llm_backend.generate(
-                prompt=prompt,
-                temperature=0.1,  # Low temperature for structured output
-                max_tokens=4000
+        # Output cap. Default 8000 gives dense multi-page resumes room so the JSON
+        # isn't truncated mid-object (the old 4000 cap silently truncated, then the
+        # clipped JSON failed to parse). Configurable without a code change; 8000 is
+        # within every registered model's output ceiling and safe for non-streaming.
+        max_tokens = int(os.getenv("EXTRACTION_MAX_TOKENS", "8000"))
+
+        response = self.llm_backend.generate(
+            prompt=prompt,
+            temperature=0.1,  # Low temperature for structured output
+            max_tokens=max_tokens,
+        )
+
+        # Parse the model output. _parse_json_response is tolerant of code fences and
+        # of stray preamble/trailing prose some models add despite "return ONLY JSON".
+        # On unrecoverable failure it RAISES (rather than returning an empty result)
+        # so the document is marked 'error' with a clear message instead of a silent,
+        # misleading "complete" with an empty graph.
+        result = self._parse_json_response(response)
+
+        job_count = len(result.get('jobs', []))
+        skill_count = len(result.get('skills', []))
+        logger.info(f"Simplified extraction complete: {job_count} jobs, {skill_count} skills")
+
+        # Parsed fine but nothing came back — surface it (not an exception: could be a
+        # genuinely sparse document or a model that returned an empty object).
+        if not any(result.get(k) for k in
+                   ('person', 'jobs', 'skills', 'education', 'certifications', 'organizations')):
+            logger.warning(
+                "Extraction parsed valid JSON but found no entities. "
+                "The model may have returned an empty result for this document."
             )
 
-            # Parse JSON response
-            # Remove markdown code blocks if present
-            response = response.strip()
-            if response.startswith('```json'):
-                response = response[7:]
-            if response.startswith('```'):
-                response = response[3:]
-            if response.endswith('```'):
-                response = response[:-3]
+        return result
 
-            result = json.loads(response.strip())
+    @staticmethod
+    def _parse_json_response(response: str) -> Dict[str, Any]:
+        """Parse a model reply into a dict, tolerating common wrappers.
 
-            logger.info(f"Simplified extraction complete: {len(result.get('jobs', []))} jobs, "
-                       f"{len(result.get('skills', []))} skills")
+        Tries, in order: the raw text, the text with ```json/``` fences stripped,
+        and the outermost {...} object substring. Raises RuntimeError if none parse.
+        """
+        text = (response or "").strip()
 
-            return result
+        candidates = [text]
 
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse LLM response as JSON: {e}")
-            logger.debug(f"LLM response: {response[:500]}...")
+        # Strip a leading ```json / ``` fence and a trailing ``` fence.
+        fenced = text
+        if fenced.startswith('```json'):
+            fenced = fenced[7:]
+        elif fenced.startswith('```'):
+            fenced = fenced[3:]
+        if fenced.endswith('```'):
+            fenced = fenced[:-3]
+        fenced = fenced.strip()
+        if fenced != text:
+            candidates.append(fenced)
 
-            # Return empty structure
-            return {
-                'person': {},
-                'jobs': [],
-                'skills': [],
-                'education': [],
-                'certifications': [],
-                'organizations': []
-            }
-        except Exception as e:
-            logger.error(f"Extraction error: {e}")
-            raise
+        # Fall back to the outermost object: first '{' to last '}'. Handles preamble
+        # ("Here is the JSON:") and trailing commentary around an otherwise valid object.
+        start = text.find('{')
+        end = text.rfind('}')
+        if start != -1 and end != -1 and end > start:
+            candidates.append(text[start:end + 1])
+
+        for candidate in candidates:
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError:
+                continue
+
+        snippet = text[:500]
+        logger.error(f"Failed to parse LLM response as JSON. Response begins: {snippet!r}")
+        raise RuntimeError(
+            "Could not parse the model's response as JSON. This usually means the "
+            "output was truncated (raise EXTRACTION_MAX_TOKENS) or the model wrapped "
+            "the JSON in extra text. No entities were extracted."
+        )
 
 
 def create_extraction_pipeline(llm_backend, use_dspy: bool = True) -> Any:

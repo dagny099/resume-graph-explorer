@@ -103,13 +103,20 @@ def create_app(config: dict = None) -> Flask:
     session_store = SessionStore(base_path=app.config['DATA_PATH'])
     app.session_store = session_store
 
-    # Initialize LLM client
+    # Initialize LLM client. validate=True resolves the model from
+    # <PROVIDER>_MODEL / the registry default and checks it against the curated
+    # allow-list in config/models.yaml, so a wrong/retired model surfaces here
+    # with the valid options instead of a silent 404 during extraction.
     try:
         llm_client = create_llm_client(
-            provider=app.config['LLM_PROVIDER']
+            provider=app.config['LLM_PROVIDER'],
+            validate=True,
         )
         app.llm_client = llm_client
-        logger.info(f"LLM client initialized: {app.config['LLM_PROVIDER']}")
+        logger.info(
+            f"LLM client initialized: {app.config['LLM_PROVIDER']} "
+            f"(model={llm_client.backend.model_name})"
+        )
     except Exception as e:
         logger.warning(f"LLM client initialization failed: {e}")
         app.llm_client = None

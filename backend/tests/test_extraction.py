@@ -14,7 +14,9 @@ from unittest.mock import Mock, MagicMock, patch
 from datetime import date
 import json
 
-from resume_explorer.services.llm_client import LLMBackend, LLMClient
+from resume_explorer.services.llm_client import (
+    LLMBackend, LLMClient, ClaudeBackend, create_llm_client,
+)
 from resume_explorer.services.extraction_dspy import (
     SimplifiedExtractor,
     create_extraction_pipeline
@@ -114,17 +116,52 @@ class TestSimplifiedExtractor:
 
         assert result['person']['name'] == "Jane Smith"
 
-    def test_extraction_with_invalid_json(self):
-        """Test handling invalid JSON response."""
+    def test_extraction_with_invalid_json_raises(self):
+        """Unparseable output must raise (not silently return an empty result).
+
+        A silent empty return marks a failed document as 'complete' with an empty
+        graph; raising lets _run_extraction mark it 'error' with a clear message.
+        """
         backend = MockLLMBackend(response="This is not JSON")
         extractor = SimplifiedExtractor(backend)
 
-        result = extractor.extract("Resume text...")
+        with pytest.raises(RuntimeError):
+            extractor.extract("Resume text...")
 
-        # Should return empty structure
-        assert result['person'] == {}
-        assert result['jobs'] == []
-        assert result['skills'] == []
+    def test_extraction_recovers_from_fenced_and_wrapped_json(self):
+        """JSON wrapped in code fences or surrounding prose is still parsed."""
+        payload = '{"person": {"name": "Barbara"}, "jobs": [], "skills": ["Python"]}'
+        for wrapped in (
+            f"```json\n{payload}\n```",
+            f"Here is the JSON you requested:\n{payload}\nLet me know if you need more.",
+        ):
+            extractor = SimplifiedExtractor(MockLLMBackend(response=wrapped))
+            result = extractor.extract("Resume text...")
+            assert result['person'] == {"name": "Barbara"}
+            assert result['skills'] == ["Python"]
+
+
+class TestProviderFactory:
+    """Test create_llm_client provider handling."""
+
+    def test_anthropic_alias_maps_to_claude(self, monkeypatch):
+        """'anthropic' is accepted as an alias for 'claude' (previously raised).
+
+        This is what the synthesis pipeline passes; before the alias it always
+        threw and silently fell back to the app's default client.
+        """
+        monkeypatch.setenv("CLAUDE_API_KEY", "sk-ant-test")
+        monkeypatch.delenv("CLAUDE_MODEL", raising=False)
+
+        client = create_llm_client(provider="anthropic")
+
+        assert isinstance(client.backend, ClaudeBackend)
+        assert client.backend.model_name == "claude-haiku-4-5"
+
+    def test_claude_provider_still_works(self, monkeypatch):
+        monkeypatch.setenv("CLAUDE_API_KEY", "sk-ant-test")
+        client = create_llm_client(provider="claude")
+        assert isinstance(client.backend, ClaudeBackend)
 
 
 class TestResumeExtractor:
