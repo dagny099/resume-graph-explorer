@@ -130,10 +130,13 @@ CLAUDE_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
 OLLAMA_BASE_URL=http://localhost:11434  # If using local Ollama
 
-# Optional: override the model per provider (defaults shown).
-# Set these if the default 404s ("not_found_error") because your account
-# doesn't have access to it, or to pin a newer model.
-CLAUDE_MODEL=claude-haiku-4-5     # default; any model your Anthropic account can access (e.g. claude-sonnet-4-6, claude-opus-4-8)
+# Optional: override the extraction model per provider (defaults shown).
+# The value must be one of the models listed for that provider in
+# backend/resume_explorer/config/models.yaml (the curated "available models"
+# list, with an `as_of` verification date). A model not in the list fails fast
+# at startup with the valid options — instead of a silent 404 mid-extraction.
+# To use a newer model, add it to models.yaml first. (Ollama accepts any local tag.)
+CLAUDE_MODEL=claude-haiku-4-5     # default; e.g. claude-sonnet-4-6, claude-sonnet-5, claude-opus-4-8
 OPENAI_MODEL=gpt-4.1-mini
 OLLAMA_MODEL=llama3.1:8b
 

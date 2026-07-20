@@ -567,22 +567,43 @@ except ImportError:
 # ============================================================================
 
 
-def create_llm_client(provider: Optional[str] = None, **kwargs) -> LLMClient:
+def create_llm_client(
+    provider: Optional[str] = None,
+    validate: bool = False,
+    **kwargs,
+) -> LLMClient:
     """
     Factory function for creating LLM clients with different providers.
 
     Args:
         provider: "claude", "openai", or "ollama" (defaults to env var LLM_PROVIDER)
+        validate: When True, resolve the model (explicit ``model`` kwarg →
+            ``<PROVIDER>_MODEL`` env → registry default) and validate it against
+            the curated allow-list in ``config/models.yaml`` before instantiating
+            the backend. Cloud providers are strict; ollama is open. Raises
+            ``ModelValidationError`` on an unknown/retired model so it fails fast
+            with the valid options instead of a silent 404 at request time.
         **kwargs: Provider-specific configuration
 
     Returns:
         LLMClient instance
 
     Example:
-        >>> client = create_llm_client("claude")
+        >>> client = create_llm_client("claude", validate=True)
         >>> answer = client.generate("Extract entities from this resume...")
     """
     provider = provider or os.getenv("LLM_PROVIDER", "claude")
+
+    if validate:
+        from ..config import model_registry as registry
+
+        model = (
+            kwargs.get("model")
+            or os.getenv(f"{provider.upper()}_MODEL")
+            or registry.default_model(provider)
+        )
+        registry.validate_model(provider, model)
+        kwargs["model"] = model
 
     if provider == "claude":
         backend = ClaudeBackend(**kwargs)

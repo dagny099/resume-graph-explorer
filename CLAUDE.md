@@ -82,10 +82,16 @@ NORMALIZATION_PROVIDER=mock      # mock | ollama | anthropic | openai
 NORMALIZE_SINGLE_RESUME=false    # true = run LLM Phase 3 for single-resume sessions
 ```
 
-**Model selection:** each backend in `services/llm_client.py` resolves its model as
-`explicit arg → <PROVIDER>_MODEL env var → built-in default`. A retired/inaccessible
-model surfaces as a Claude API `404 not_found_error` during extraction — fix it by
-setting `CLAUDE_MODEL` in deployment config, no code change needed.
+**Model selection:** the extraction client (`create_llm_client(..., validate=True)`,
+called from `api/app.py`) resolves its model as `explicit arg → <PROVIDER>_MODEL env
+var → registry default` and validates it against the curated allow-list in
+`config/models.yaml`. Cloud providers (claude, openai) are **strict** — an
+unknown/retired model fails fast at startup with the valid options, instead of a
+silent `404 not_found_error` during extraction; Ollama is **open** (any local tag).
+The registry (`config/models.yaml` + `config/model_registry.py`) is the single source
+of truth and carries an `as_of` date — re-verify against provider docs and bump it
+when models change; to use a newer model, add it there first. Other call sites
+(normalization, offline pipeline) pass `validate=False` and are unaffected for now.
 
 ## Working Model
 

@@ -56,6 +56,7 @@ python-magic>=0.4.27                 # File type detection
 pydantic>=2.5.0                      # Data validation with type hints
 python-dateutil>=2.8.2               # Date/time parsing utilities
 python-dotenv>=1.0.0                 # Environment variable management
+PyYAML>=6.0                          # Model registry (config/models.yaml)
 
 # ==============================================================================
 # Optional: Experiment Tracking
