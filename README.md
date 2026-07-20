@@ -140,6 +140,10 @@ CLAUDE_MODEL=claude-haiku-4-5     # default; e.g. claude-sonnet-4-6, claude-sonn
 OPENAI_MODEL=gpt-4.1-mini
 OLLAMA_MODEL=llama3.1:8b
 
+# Optional: cap extraction output tokens (default 8000). Raise it if extraction
+# of long resumes fails to parse because the JSON was truncated.
+EXTRACTION_MAX_TOKENS=8000
+
 # Optional features
 ENABLE_DSPY=false                # Keep false — DSPy has threading issues in this setup
 SESSION_AUTO_SAVE=true
@@ -150,6 +154,40 @@ NORMALIZATION_PROVIDER=mock      # mock | ollama | anthropic | openai
 OLLAMA_MODEL=llama3:latest       # Model for Ollama normalization (if using ollama)
 NORMALIZE_SINGLE_RESUME=false    # true = run LLM alias resolution even for single-resume sessions
 ```
+
+##### LLM provider & model configuration
+
+Entity extraction can run on any of three providers, selected with `LLM_PROVIDER`:
+
+| `LLM_PROVIDER` | Model env var | API key env var | Notes |
+|----------------|---------------|-----------------|-------|
+| `claude`       | `CLAUDE_MODEL` | `CLAUDE_API_KEY` | Default provider. |
+| `openai`       | `OPENAI_MODEL` | `OPENAI_API_KEY` | |
+| `ollama`       | `OLLAMA_MODEL` | — (`OLLAMA_BASE_URL`) | Local models; no API cost. |
+
+Model resolution order is **explicit argument → `<PROVIDER>_MODEL` env var → the
+provider's default**. The set of allowed models lives in a single registry file,
+`backend/resume_explorer/config/models.yaml`, which carries an `as_of` date noting
+when the list was last checked against provider docs.
+
+- **Cloud providers (`claude`, `openai`) are validated strictly.** A `CLAUDE_MODEL`
+  or `OPENAI_MODEL` that isn't in the registry fails fast at startup, logging the
+  valid options — instead of a silent `404 not_found_error` mid-extraction. To use a
+  newer model, add it to `models.yaml` first (and bump `as_of`).
+- **Ollama is open** — any locally pulled tag (`ollama list`) is accepted.
+
+Example — run extraction on OpenAI instead of Claude:
+
+```bash
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4.1-mini      # must be listed under `openai` in models.yaml
+```
+
+`EXTRACTION_MAX_TOKENS` (default `8000`) caps the extraction response length. If a
+long resume comes back with nothing extracted, check the backend log: a
+`Could not parse the model's response as JSON` error means the output was likely
+truncated (raise this value) or the model wrapped the JSON in extra prose.
 
 #### 4. Set up frontend
 

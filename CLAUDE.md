@@ -77,6 +77,7 @@ If adding new file formats, follow the pattern in `DocumentProcessor`. Always pr
 ```bash
 LLM_PROVIDER=claude              # claude | openai | ollama
 CLAUDE_MODEL=claude-haiku-4-5    # optional; overrides the extraction model (default: haiku). Also OPENAI_MODEL / OLLAMA_MODEL.
+EXTRACTION_MAX_TOKENS=8000       # optional; caps extraction output (raise if long resumes truncate)
 ENABLE_DSPY=false                # MUST stay false — threading issues
 NORMALIZATION_PROVIDER=mock      # mock | ollama | anthropic | openai
 NORMALIZE_SINGLE_RESUME=false    # true = run LLM Phase 3 for single-resume sessions
