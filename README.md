@@ -133,7 +133,7 @@ OLLAMA_BASE_URL=http://localhost:11434  # If using local Ollama
 # Optional: override the model per provider (defaults shown).
 # Set these if the default 404s ("not_found_error") because your account
 # doesn't have access to it, or to pin a newer model.
-CLAUDE_MODEL=claude-sonnet-4-5    # any model your Anthropic account can access
+CLAUDE_MODEL=claude-haiku-4-5     # default; any model your Anthropic account can access (e.g. claude-sonnet-4-6, claude-opus-4-8)
 OPENAI_MODEL=gpt-4.1-mini
 OLLAMA_MODEL=llama3.1:8b
 

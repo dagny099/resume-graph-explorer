@@ -62,9 +62,11 @@ class ClaudeBackend(LLMBackend):
     """
 
     # Default model when neither an explicit `model` nor CLAUDE_MODEL is set.
-    # Kept as a current, generally-available Sonnet alias — a dated snapshot
+    # Haiku 4.5 is the cheapest current Claude model (~3x under Sonnet) and its
+    # 200K context is ample for resumes; override via CLAUDE_MODEL to A/B a
+    # stronger model. Use a current alias, not a dated snapshot — a snapshot
     # here 404s ("not_found_error") once it ages out of an account's access.
-    DEFAULT_MODEL = "claude-sonnet-4-5"
+    DEFAULT_MODEL = "claude-haiku-4-5"
 
     def __init__(
         self,
