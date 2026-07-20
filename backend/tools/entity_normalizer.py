@@ -118,7 +118,42 @@ import os
 from urllib.parse import unquote
 from datetime import datetime
 from collections import defaultdict
-from typing import Any
+from typing import Any, Optional
+
+# Make the model registry importable whether this runs standalone or is loaded
+# via importlib from pipeline_service. The backend dir (parent of tools/) holds
+# the resume_explorer package; the registry only needs PyYAML, so this stays
+# lightweight (no dspy/flask/rdflib pulled in).
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _BACKEND_DIR not in sys.path:
+    sys.path.insert(0, _BACKEND_DIR)
+try:
+    from resume_explorer.config import model_registry as _registry
+except Exception:
+    _registry = None  # standalone copy without the package: use a current fallback
+
+# Resolution order matches the app: explicit → <PROVIDER>_MODEL env → registry
+# default. Fallbacks are used only if the registry can't be imported and are
+# deliberately current (never a retired snapshot).
+_PROVIDER_KEYS = {"anthropic": "claude", "openai": "openai"}
+_FALLBACK_MODELS = {"anthropic": "claude-haiku-4-5", "openai": "gpt-4.1-mini"}
+
+
+def _resolve_model(provider: str, explicit: Optional[str] = None) -> str:
+    """Resolve the model for a provider, routed through the model registry."""
+    if explicit:
+        return explicit
+    key = _PROVIDER_KEYS.get(provider, provider)
+    env = os.getenv(f"{key.upper()}_MODEL")
+    if env:
+        return env
+    if _registry is not None:
+        try:
+            return _registry.default_model(key)
+        except Exception:
+            pass
+    return _FALLBACK_MODELS.get(provider, "")
+
 
 # ─── CONSTANTS ────────────────────────────────────────────────
 
@@ -384,7 +419,7 @@ def call_llm_for_normalization(
             import anthropic
             client = anthropic.Anthropic()
             response = client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model=_resolve_model("anthropic"),
                 max_tokens=2000,
                 messages=[{"role": "user", "content": prompt}],
             )
@@ -399,7 +434,7 @@ def call_llm_for_normalization(
             import openai
             client = openai.OpenAI()
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=_resolve_model("openai"),
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=2000,
             )
