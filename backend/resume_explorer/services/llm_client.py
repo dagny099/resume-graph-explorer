@@ -61,11 +61,22 @@ class ClaudeBackend(LLMBackend):
     Excellent for structured output and nuanced entity extraction.
     """
 
+    # Default model when neither an explicit `model` nor CLAUDE_MODEL is set.
+    # Haiku 4.5 is the cheapest current Claude model (~3x under Sonnet) and its
+    # 200K context is ample for resumes; override via CLAUDE_MODEL to A/B a
+    # stronger model. Use a current alias, not a dated snapshot — a snapshot
+    # here 404s ("not_found_error") once it ages out of an account's access.
+    DEFAULT_MODEL = "claude-haiku-4-5"
+
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "claude-sonnet-4-20250514",  # Default to latest Sonnet
+        model: Optional[str] = None,
     ):
+        # Model resolution order: explicit arg → CLAUDE_MODEL env → default.
+        # Making it env-configurable means a wrong/retired model can be fixed
+        # from deployment config without a code change.
+        model = model or os.getenv("CLAUDE_MODEL") or self.DEFAULT_MODEL
         super().__init__(model_name=model)
         self.api_key = api_key or os.getenv("CLAUDE_API_KEY")
         if not self.api_key:
@@ -158,8 +169,9 @@ class OpenAIBackend(LLMBackend):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "gpt-4.1-mini",  # Default to GPT-4.1 mini
+        model: Optional[str] = None,
     ):
+        model = model or os.getenv("OPENAI_MODEL") or "gpt-4.1-mini"
         super().__init__(model_name=model)
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
@@ -247,8 +259,9 @@ class OllamaBackend(LLMBackend):
     def __init__(
         self,
         base_url: Optional[str] = None,
-        model: str = "llama3.1:8b",
+        model: Optional[str] = None,
     ):
+        model = model or os.getenv("OLLAMA_MODEL") or "llama3.1:8b"
         super().__init__(model_name=model)
         self.base_url = (base_url or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")).rstrip("/")
         logger.info(f"Initialized OllamaBackend: {self.base_url}, model={model}")

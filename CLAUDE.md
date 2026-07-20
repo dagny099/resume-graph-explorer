@@ -76,10 +76,16 @@ If adding new file formats, follow the pattern in `DocumentProcessor`. Always pr
 
 ```bash
 LLM_PROVIDER=claude              # claude | openai | ollama
+CLAUDE_MODEL=claude-haiku-4-5    # optional; overrides the extraction model (default: haiku). Also OPENAI_MODEL / OLLAMA_MODEL.
 ENABLE_DSPY=false                # MUST stay false — threading issues
 NORMALIZATION_PROVIDER=mock      # mock | ollama | anthropic | openai
 NORMALIZE_SINGLE_RESUME=false    # true = run LLM Phase 3 for single-resume sessions
 ```
+
+**Model selection:** each backend in `services/llm_client.py` resolves its model as
+`explicit arg → <PROVIDER>_MODEL env var → built-in default`. A retired/inaccessible
+model surfaces as a Claude API `404 not_found_error` during extraction — fix it by
+setting `CLAUDE_MODEL` in deployment config, no code change needed.
 
 ## Working Model
 
