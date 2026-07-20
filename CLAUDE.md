@@ -92,7 +92,15 @@ silent `404 not_found_error` during extraction; Ollama is **open** (any local ta
 The registry (`config/models.yaml` + `config/model_registry.py`) is the single source
 of truth and carries an `as_of` date — re-verify against provider docs and bump it
 when models change; to use a newer model, add it there first. Other call sites
-(normalization, offline pipeline) pass `validate=False` and are unaffected for now.
+(normalization, narrative synthesis) pass `validate=False` and skip the registry check.
+
+**Provider aliases:** `create_llm_client` accepts `"anthropic"` as an alias for
+`"claude"` (`_PROVIDER_ALIASES`). The API/pipeline layer speaks vendor names
+(`provider='anthropic'`); without the alias, `create_llm_client('anthropic')` raised
+and the synthesis path silently fell back to the app's default client. Narrative
+front-matter now records the model the client actually resolved
+(`synthesis_client.backend.model_name`), not a hardcoded default — so it can't cite a
+stale/retired snapshot.
 
 ## Working Model
 

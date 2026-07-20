@@ -567,6 +567,11 @@ except ImportError:
 # ============================================================================
 
 
+# Vendor-name aliases → internal backend keys. Keeps the API/pipeline layer
+# (which speaks 'anthropic'/'openai') compatible with the factory's provider keys.
+_PROVIDER_ALIASES = {"anthropic": "claude"}
+
+
 def create_llm_client(
     provider: Optional[str] = None,
     validate: bool = False,
@@ -576,7 +581,10 @@ def create_llm_client(
     Factory function for creating LLM clients with different providers.
 
     Args:
-        provider: "claude", "openai", or "ollama" (defaults to env var LLM_PROVIDER)
+        provider: "claude"/"anthropic", "openai", or "ollama" (defaults to env
+            var LLM_PROVIDER). "anthropic" is accepted as an alias for "claude"
+            so callers that speak the vendor name (e.g. the synthesis pipeline)
+            don't fail — previously create_llm_client("anthropic") raised.
         validate: When True, resolve the model (explicit ``model`` kwarg →
             ``<PROVIDER>_MODEL`` env → registry default) and validate it against
             the curated allow-list in ``config/models.yaml`` before instantiating
@@ -593,6 +601,8 @@ def create_llm_client(
         >>> answer = client.generate("Extract entities from this resume...")
     """
     provider = provider or os.getenv("LLM_PROVIDER", "claude")
+    # Normalize vendor-name aliases to the internal backend key.
+    provider = _PROVIDER_ALIASES.get(provider.lower(), provider.lower())
 
     if validate:
         from ..config import model_registry as registry
