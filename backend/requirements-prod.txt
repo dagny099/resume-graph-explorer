@@ -11,7 +11,10 @@ werkzeug>=3.0.0
 # Must be declared here (not just pip-installed in the Dockerfile) so the
 # gunicorn `--worker-class eventlet` command works regardless of build path.
 # eventlet floor is the first release that imports cleanly on Python 3.12.
-gunicorn>=21.2.0
+# The <26 cap is essential: gunicorn 26.0.0 removed the bundled eventlet worker
+# (25.3.0 is the last release that ships it). Without the cap, a fresh Koyeb
+# build resolves to 26.x and `--worker-class eventlet` fails → exit code 1.
+gunicorn>=21.2.0,<26
 eventlet>=0.35.2
 
 # LLM clients
